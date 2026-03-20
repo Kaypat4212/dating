@@ -135,11 +135,14 @@ class ProfileSetupController extends Controller
             'country'         => 'nullable|max:100',
             'latitude'        => 'nullable|numeric|between:-90,90',
             'longitude'       => 'nullable|numeric|between:-180,180',
-            'min_age'         => 'nullable|integer|between:18,80',
+            'min_age'         => 'nullable|integer|between:18,100',
             'max_age'         => 'nullable|integer|between:18,100',
             'max_distance_km' => 'nullable|integer|between:1,500',
             'seeking_gender'  => 'nullable|in:male,female,everyone',
             'preferred_state' => 'nullable|max:100',
+            'body_types'      => 'nullable|array',
+            'body_types.*'    => 'in:slim,athletic,average,curvy,large',
+            'show_online_only'=> 'nullable|boolean',
         ]);
 
         $isPremium = (bool) $user->is_premium;
@@ -174,13 +177,15 @@ class ProfileSetupController extends Controller
         $profile->update($updates);
 
         UserPreference::updateOrCreate(['user_id' => $user->id], [
-            'min_age'         => $data['min_age'] ?? 18,
-            'max_age'         => $data['max_age'] ?? 50,
-            'max_distance_km' => isset($data['max_distance_km']) && $data['max_distance_km'] !== '' && $data['max_distance_km'] !== null
+            'min_age'          => $data['min_age'] ?? 18,
+            'max_age'          => $data['max_age'] ?? 50,
+            'max_distance_km'  => isset($data['max_distance_km']) && $data['max_distance_km'] !== '' && $data['max_distance_km'] !== null
                 ? (int) $data['max_distance_km']
                 : null,
-            'seeking_gender'  => $data['seeking_gender'] ?? 'everyone',
-            'preferred_state' => $data['preferred_state'] ?? null,
+            'seeking_gender'   => $data['seeking_gender'] ?? 'everyone',
+            'preferred_state'  => $data['preferred_state'] ?? null,
+            'body_types'       => $data['body_types'] ?? [],
+            'show_online_only' => ! empty($data['show_online_only']),
         ]);
     }
 

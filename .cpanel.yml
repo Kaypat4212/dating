@@ -1,0 +1,14 @@
+---
+deployment:
+  tasks:
+    # Install PHP dependencies (production only, no dev packages)
+    - composer install --no-dev --optimize-autoloader --no-interaction
+
+    # Run any pending database migrations
+    - php artisan migrate --force
+
+    # Cache config, routes, and views for maximum performance
+    - php artisan optimize
+
+    # Ensure public/storage symlink exists
+    - php artisan storage:link --force

@@ -260,17 +260,56 @@
     const detectBtn = document.getElementById('detect-location');
     if (!detectBtn) return;
     detectBtn.addEventListener('click', function () {
-        const btn    = this;
-        const status = document.getElementById('geo-status');
+        const btn      = this;
+        const status   = document.getElementById('geo-status');
+        const isSecure = location.protocol === 'https:'
+            || location.hostname === 'localhost'
+            || location.hostname === '127.0.0.1';
 
-        if (!navigator.geolocation) {
-            status.innerHTML = '<span class="text-danger">⚠️ Geolocation is not supported by your browser.</span>';
-            return;
-        }
-
-        btn.disabled = true;
+        btn.disabled  = true;
         btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Detecting…';
         status.textContent = '';
+
+        function fillFields(city, state, country, lat, lng) {
+            if (city)    document.getElementById('city').value    = city;
+            if (state) {
+                const stEl = document.getElementById('stateText') || document.getElementById('stateSelect');
+                if (stEl) stEl.value = state;
+            }
+            if (country) {
+                const sel = document.getElementById('country');
+                for (let i = 0; i < sel.options.length; i++) {
+                    if (sel.options[i].value.toLowerCase() === country.toLowerCase()) {
+                        sel.value = sel.options[i].value; break;
+                    }
+                }
+                sel.dispatchEvent(new Event('change'));
+            }
+            if (lat) document.getElementById('latitude').value  = lat;
+            if (lng) document.getElementById('longitude').value = lng;
+            const parts = [city, state, country].filter(Boolean);
+            status.innerHTML = '<span class="text-success"><i class="bi bi-check-circle-fill me-1"></i>Detected: ' + parts.join(', ') + '</span>';
+            btn.innerHTML = '<i class="bi bi-geo-alt-fill me-1"></i> Location detected!';
+            btn.disabled  = false;
+        }
+
+        async function ipFallback() {
+            status.innerHTML = '<span class="text-muted"><i class="bi bi-globe me-1"></i> GPS unavailable — detecting via network…</span>';
+            try {
+                const res  = await fetch('https://ipapi.co/json/');
+                const data = await res.json();
+                if (data && data.city) {
+                    fillFields(data.city || '', data.region || '', data.country_name || '', data.latitude || null, data.longitude || null);
+                } else { throw new Error('empty'); }
+            } catch (_) {
+                status.innerHTML = '<span class="text-warning">⚠️ Could not auto-detect. Please type your city and country manually.</span>';
+                btn.innerHTML = '<i class="bi bi-geo-alt me-1"></i> Detect my location';
+                btn.disabled  = false;
+            }
+        }
+
+        if (!isSecure) { ipFallback(); return; }
+        if (!navigator.geolocation) { ipFallback(); return; }
 
         navigator.geolocation.getCurrentPosition(
             async function (pos) {
@@ -278,48 +317,31 @@
                 const lng = pos.coords.longitude;
                 document.getElementById('latitude').value  = lat;
                 document.getElementById('longitude').value = lng;
-
                 try {
                     const res  = await fetch(
-                        `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=en`,
+                        'https://nominatim.openstreetmap.org/reverse?lat=' + lat + '&lon=' + lng + '&format=json&accept-language=en',
                         { headers: { 'Accept': 'application/json' } }
                     );
                     const data = await res.json();
-                    const addr = data.address ?? {};
-                    const city    = addr.city || addr.town || addr.village ||
-                                    addr.municipality || addr.county || '';
+                    const addr    = data.address ?? {};
+                    const city    = addr.city || addr.town || addr.village || addr.municipality || addr.county || '';
+                    const state   = addr.state || addr.state_district || '';
                     const country = addr.country || '';
-
-                    if (city)    document.getElementById('city').value    = city;
-                    if (country) {
-                        // Try to match country name in select, then trigger state update
-                        const sel = document.getElementById('country');
-                        for (let i = 0; i < sel.options.length; i++) {
-                            if (sel.options[i].value.toLowerCase() === country.toLowerCase()) {
-                                sel.value = sel.options[i].value;
-                                break;
-                            }
-                        }
-                        sel.dispatchEvent(new Event('change'));
-                    }
-
-                    status.innerHTML = `<span class="text-success"><i class="bi bi-check-circle-fill me-1"></i>Detected: ${[city, country].filter(Boolean).join(', ')}</span>`;
-                    btn.innerHTML = '<i class="bi bi-geo-alt-fill me-1"></i> Location detected!';
+                    fillFields(city, state, country, lat, lng);
                 } catch (_) {
-                    status.innerHTML = '<span class="text-warning">✓ Got coordinates — please confirm your city &amp; country above.</span>';
+                    status.innerHTML = '<span class="text-warning">✓ Coordinates saved — please confirm your city &amp; country above.</span>';
                     btn.innerHTML = '<i class="bi bi-geo-alt me-1"></i> Detect my location';
+                    btn.disabled  = false;
                 }
-                btn.disabled = false;
             },
-            function (err) {
-                btn.disabled = false;
-                btn.innerHTML = '<i class="bi bi-geo-alt me-1"></i> Detect my location';
-                const msgs = {
-                    1: '⚠️ Permission denied — please allow location access in your browser settings.',
-                    2: '⚠️ Location unavailable — check your device\'s location services are on.',
-                    3: '⚠️ Request timed out — please try again.',
-                };
-                status.innerHTML = `<span class="text-danger">${msgs[err.code] ?? 'Could not detect location.'}</span>`;
+            async function (err) {
+                if (err.code === 1 || err.code === 2) {
+                    await ipFallback();
+                } else {
+                    btn.disabled  = false;
+                    btn.innerHTML = '<i class="bi bi-geo-alt me-1"></i> Detect my location';
+                    status.innerHTML = '<span class="text-warning">⚠️ Request timed out — please try again.</span>';
+                }
             },
             { enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 }
         );
