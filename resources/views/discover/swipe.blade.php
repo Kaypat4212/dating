@@ -3,6 +3,9 @@
 
 @push('styles')
 <style>
+/* ── Force dark background for this page only ────────────── */
+body, main { background: #0d0118 !important; }
+
 /* ── Root tokens ─────────────────────────────────────────── */
 :root {
   --hc-pink:    #ff3e6c;
@@ -12,17 +15,29 @@
   --hc-pass:    #64748b;
   --hc-dark:    #0f0a1e;
   --hc-dark2:   #1a1133;
-  --card-r:     20px;
-  --btn-size-lg: 68px;
-  --btn-size-md: 54px;
-  --btn-size-sm: 44px;
+  --card-r:     22px;
+  --btn-size-lg: 72px;
+  --btn-size-md: 56px;
+  --btn-size-sm: 46px;
+  --action-h:   100px;   /* height reserved for action buttons */
 }
 
 /* ── Page shell ──────────────────────────────────────────── */
-.swipe-page { max-width: 480px; margin: 0 auto; padding: 0 12px 32px; }
+.swipe-page {
+  max-width: 460px;
+  margin: 0 auto;
+  padding: 0 14px calc(var(--action-h) + 32px);
+  min-height: 100vh;
+}
 
-/* ── Stack wrapper ───────────────────────────────────────── */
-#swipe-stack { height: 540px; position: relative; }
+/* ── Stack wrapper — fills available viewport height ─────── */
+#swipe-stack {
+  /* Full viewport minus: navbar (~56px) + topbar (~52px) + actions (var) + bottom-nav (~60px) + safety buffer */
+  height: calc(100svh - 56px - 52px - var(--action-h) - 60px - 8px);
+  min-height: 340px;
+  max-height: 580px;
+  position: relative;
+}
 
 /* ── Card ────────────────────────────────────────────────── */
 .swipe-card {
@@ -88,20 +103,24 @@
 /* Profile info area */
 .card-info {
   position:absolute; bottom:0; left:0; right:0;
-  padding:0 16px 80px; z-index:10; pointer-events:none;
+  padding:0 18px 18px; z-index:10; pointer-events:none;
   color:#fff;
 }
 .card-name {
-  font-size:1.55rem; font-weight:800; line-height:1.1;
-  text-shadow:0 2px 8px rgba(0,0,0,.6);
+  font-size:1.65rem; font-weight:900; line-height:1.1;
+  text-shadow:0 2px 12px rgba(0,0,0,.7);
+  letter-spacing:-.02em;
 }
-.card-meta { font-size:.82rem; opacity:.78; margin-top:3px; }
-.card-headline { font-size:.9rem; opacity:.88; margin-top:5px; line-height:1.35; }
+.card-meta { font-size:.83rem; opacity:.8; margin-top:4px; }
+.card-headline {
+  font-size:.88rem; opacity:.9; margin-top:6px; line-height:1.4;
+  text-shadow:0 1px 4px rgba(0,0,0,.5);
+}
 .card-tags { margin-top:8px; display:flex; flex-wrap:wrap; gap:5px; }
 .card-tag {
-  font-size:.72rem; padding:3px 10px; border-radius:20px;
-  background:rgba(255,255,255,.13); backdrop-filter:blur(6px);
-  border:1px solid rgba(255,255,255,.15);
+  font-size:.73rem; padding:4px 11px; border-radius:20px;
+  background:rgba(255,255,255,.14); backdrop-filter:blur(8px);
+  border:1px solid rgba(255,255,255,.18); font-weight:500;
 }
 
 /* Compat badge */
@@ -168,66 +187,88 @@
 
 /* ── Action buttons ──────────────────────────────────────── */
 .swipe-actions {
-  display:flex; align-items:center; justify-content:center;
-  gap:16px; padding:4px 0 8px;
+  position: fixed;
+  bottom: 60px; /* above mobile bottom nav */
+  left: 50%; transform: translateX(-50%);
+  width: 100%; max-width: 460px;
+  display: flex; align-items: center; justify-content: center;
+  gap: 18px; padding: 10px 16px 12px;
+  background: linear-gradient(to top, rgba(13,1,24,1) 0%, rgba(13,1,24,.9) 60%, transparent 100%);
+  z-index: 200;
+}
+/* On desktop there's no bottom nav */
+@media (min-width: 992px) {
+  .swipe-actions { bottom: 0; padding-bottom: 16px; }
 }
 .action-btn {
   border:none; border-radius:50%; display:flex;
   align-items:center; justify-content:center;
-  cursor:pointer; transition:transform .15s cubic-bezier(.34,1.56,.64,1), box-shadow .2s;
+  cursor:pointer; transition:transform .18s cubic-bezier(.34,1.56,.64,1), box-shadow .2s;
   position:relative; flex-shrink:0;
+  -webkit-tap-highlight-color: transparent;
 }
-.action-btn:active { transform:scale(.9) !important; }
+.action-btn:active { transform:scale(.88) !important; }
 
 .btn-pass {
   width:var(--btn-size-md); height:var(--btn-size-md);
-  background:#1e1836; color:var(--hc-pass);
-  box-shadow:0 4px 16px rgba(0,0,0,.3), 0 0 0 1px rgba(100,116,139,.2);
-  font-size:1.45rem;
+  background:rgba(30,24,54,.95); color:#ef4444;
+  box-shadow:0 0 0 2px rgba(239,68,68,.25), 0 6px 18px rgba(0,0,0,.4);
+  font-size:1.5rem;
 }
-.btn-pass:hover { transform:scale(1.08); box-shadow:0 6px 20px rgba(100,116,139,.35), 0 0 0 1px rgba(100,116,139,.4); }
-.btn-pass.active-glow { box-shadow:0 0 0 3px #ef4444, 0 6px 24px rgba(239,68,68,.45); color:#ef4444; }
+.btn-pass:hover { transform:scale(1.1); box-shadow:0 0 0 2px #ef4444, 0 8px 24px rgba(239,68,68,.4); }
 
 .btn-super {
   width:var(--btn-size-sm); height:var(--btn-size-sm);
-  background:#1e1836; color:var(--hc-gold);
-  box-shadow:0 4px 16px rgba(0,0,0,.3), 0 0 0 1px rgba(245,158,11,.2);
-  font-size:1.2rem;
+  background:rgba(30,24,54,.95); color:var(--hc-gold);
+  box-shadow:0 0 0 2px rgba(245,158,11,.25), 0 6px 18px rgba(0,0,0,.4);
+  font-size:1.25rem;
 }
-.btn-super:hover { transform:scale(1.1); box-shadow:0 6px 22px rgba(245,158,11,.4), 0 0 0 1px rgba(245,158,11,.5); }
+.btn-super:hover { transform:scale(1.1); box-shadow:0 0 0 2px var(--hc-gold), 0 8px 24px rgba(245,158,11,.4); }
 
 .btn-like {
   width:var(--btn-size-lg); height:var(--btn-size-lg);
   background:linear-gradient(135deg, var(--hc-pink), var(--hc-rose));
-  color:#fff; font-size:1.9rem;
-  box-shadow:0 6px 24px rgba(255,62,108,.5), 0 2px 8px rgba(255,62,108,.3);
+  color:#fff; font-size:2rem;
+  box-shadow:0 6px 28px rgba(255,62,108,.55), 0 2px 8px rgba(255,62,108,.3);
 }
-.btn-like:hover { transform:scale(1.1); box-shadow:0 8px 32px rgba(255,62,108,.65); }
-.btn-like.active-glow { box-shadow:0 0 0 3px #22c55e, 0 8px 32px rgba(34,197,94,.5); }
+.btn-like:hover { transform:scale(1.12); box-shadow:0 10px 36px rgba(255,62,108,.7); }
 
 .btn-browse {
   width:var(--btn-size-sm); height:var(--btn-size-sm);
-  background:#1e1836; color:rgba(255,255,255,.6);
-  box-shadow:0 4px 16px rgba(0,0,0,.3), 0 0 0 1px rgba(255,255,255,.08);
-  font-size:1.1rem; text-decoration:none;
+  background:rgba(30,24,54,.95); color:rgba(255,255,255,.55);
+  box-shadow:0 0 0 2px rgba(255,255,255,.08), 0 6px 18px rgba(0,0,0,.4);
+  font-size:1.15rem; text-decoration:none;
 }
 .btn-browse:hover { transform:scale(1.08); color:#fff; }
 
 /* Heart burst on like */
 @keyframes heart-burst {
   0%   { transform:scale(1); opacity:1; }
-  60%  { transform:scale(1.55); opacity:.8; }
+  60%  { transform:scale(1.6); opacity:.85; }
   100% { transform:scale(1); opacity:1; }
 }
-.btn-like.burst { animation:heart-burst .3s cubic-bezier(.34,1.56,.64,1); }
+.btn-like.burst { animation:heart-burst .32s cubic-bezier(.34,1.56,.64,1); }
+
+/* Button labels */
+.action-btn-wrap {
+  display:flex; flex-direction:column; align-items:center; gap:5px;
+}
+.action-btn-label {
+  font-size:.65rem; color:rgba(255,255,255,.4); letter-spacing:.04em;
+  text-transform:uppercase; font-weight:600;
+}
 
 /* ── Top bar ─────────────────────────────────────────────── */
 .swipe-topbar {
   display:flex; align-items:center; justify-content:space-between;
-  padding:8px 0 14px;
+  padding:10px 0 12px;
 }
-.swipe-topbar-title { font-size:1.2rem; font-weight:800; color:#fff; display:flex; align-items:center; gap:8px; }
-.swipe-topbar-title .fire { font-size:1.3rem; }
+.swipe-topbar-title {
+  font-size:1.25rem; font-weight:900; color:#fff;
+  display:flex; align-items:center; gap:8px;
+  letter-spacing:-.01em;
+}
+.swipe-topbar-title .fire { font-size:1.35rem; }
 
 /* Filter chips */
 .filter-chip {
@@ -246,9 +287,10 @@
 
 /* ── Empty state ─────────────────────────────────────────── */
 .empty-state {
-  text-align:center; padding:40px 20px;
-  background:rgba(255,255,255,.03); border-radius:20px;
-  border:1px solid rgba(255,255,255,.06);
+  text-align:center; padding:60px 24px;
+  background:rgba(255,255,255,.025); border-radius:24px;
+  border:1px solid rgba(255,255,255,.07);
+  margin-top:20px;
 }
 
 /* ── Fallback alert ──────────────────────────────────────── */
@@ -539,28 +581,40 @@
         @endforeach
     </div>
 
-    {{-- ══ Action buttons ══════════════════════════════════ --}}
-    <div class="swipe-actions mt-2">
+    {{-- ══ Action buttons (fixed bottom bar) ═════════════ --}}
+    <div class="swipe-actions">
         {{-- Pass --}}
-        <button id="btn-pass" class="action-btn btn-pass" title="Pass  ←">
-            <i class="bi bi-x-lg"></i>
-        </button>
+        <div class="action-btn-wrap">
+            <button id="btn-pass" class="action-btn btn-pass" title="Pass  ←">
+                <i class="bi bi-x-lg"></i>
+            </button>
+            <span class="action-btn-label" style="color:rgba(239,68,68,.6)">Nope</span>
+        </div>
         {{-- Super Like --}}
-        <button id="btn-super-like" class="action-btn btn-super" title="Super Like  ↑">
-            <i class="bi bi-star-fill"></i>
-        </button>
+        <div class="action-btn-wrap">
+            <button id="btn-super-like" class="action-btn btn-super" title="Super Like  ↑">
+                <i class="bi bi-star-fill"></i>
+            </button>
+            <span class="action-btn-label" style="color:rgba(245,158,11,.6)">Super</span>
+        </div>
         {{-- Like --}}
-        <button id="btn-like" class="action-btn btn-like" title="Like  →">
-            <i class="bi bi-heart-fill"></i>
-        </button>
+        <div class="action-btn-wrap">
+            <button id="btn-like" class="action-btn btn-like" title="Like  →">
+                <i class="bi bi-heart-fill"></i>
+            </button>
+            <span class="action-btn-label" style="color:rgba(255,107,145,.7)">Like</span>
+        </div>
         {{-- Browse --}}
-        <a href="{{ route('discover.index') }}" class="action-btn btn-browse" title="Browse all">
-            <i class="bi bi-grid-3x3-gap-fill"></i>
-        </a>
+        <div class="action-btn-wrap">
+            <a href="{{ route('discover.index') }}" class="action-btn btn-browse" title="Browse all">
+                <i class="bi bi-grid-3x3-gap-fill"></i>
+            </a>
+            <span class="action-btn-label">Browse</span>
+        </div>
     </div>
 
-    {{-- Keyboard hints --}}
-    <div class="key-hints d-none d-md-flex">
+    {{-- Keyboard hints (desktop) --}}
+    <div class="key-hints d-none d-md-flex" style="margin-bottom:80px">
         <span><kbd>←</kbd>Pass</span>
         <span><kbd>↑</kbd>Super Like</span>
         <span><kbd>→</kbd>Like</span>
