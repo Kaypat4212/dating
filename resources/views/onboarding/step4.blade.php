@@ -142,7 +142,7 @@
         $locationLocked  = ! $isPremium && $locationUpdates >= 2;
         $onbCountry      = old('country', $profile?->country ?? '');
         $onbState        = old('state',   $profile?->state   ?? '');
-        $pref            = $preference ?? null;
+        $pref            = $preference ?? new \App\Models\UserPreference();
     @endphp
 
     <form method="POST" action="{{ isset($is_edit) ? route('preferences.update') : route('setup.store', ['step' => 4]) }}">
@@ -297,7 +297,7 @@
                         @foreach(['male' => ['Men','bi-gender-male'], 'female' => ['Women','bi-gender-female'], 'everyone' => ['Everyone','bi-people-fill']] as $gv => [$gl, $gi])
                         <div class="gender-pill">
                             <input type="radio" name="seeking_gender" id="sg_{{ $gv }}" value="{{ $gv }}"
-                                   {{ old('seeking_gender', $pref?->seeking_gender ?? 'everyone') === $gv ? 'checked' : '' }}>
+                                   {{ old('seeking_gender', $pref->seeking_gender ?? 'everyone') === $gv ? 'checked' : '' }}>
                             <label for="sg_{{ $gv }}">
                                 <i class="bi {{ $gi }}"></i> {{ $gl }}
                             </label>
@@ -315,7 +315,7 @@
                         <label class="form-label fw-semibold mb-0">Age Range</label>
                         <span class="badge bg-primary-subtle text-primary border border-primary-subtle fw-bold px-3 py-1"
                               id="age-badge">
-                            {{ old('min_age', $pref?->min_age ?? 18) }} – {{ old('max_age', $pref?->max_age ?? 50) }}
+                            {{ old('min_age', $pref->min_age ?? 18) }} – {{ old('max_age', $pref->max_age ?? 50) }}
                         </span>
                     </div>
                     <div class="dual-range-wrap mb-1">
@@ -323,11 +323,11 @@
                         <div class="range-track-fill" id="age-fill"></div>
                         <input type="range" id="min_age" name="min_age"
                                min="18" max="100"
-                               value="{{ old('min_age', $pref?->min_age ?? 18) }}"
+                               value="{{ old('min_age', $pref->min_age ?? 18) }}"
                                style="z-index:2">
                         <input type="range" id="max_age" name="max_age"
                                min="18" max="100"
-                               value="{{ old('max_age', $pref?->max_age ?? 50) }}"
+                               value="{{ old('max_age', $pref->max_age ?? 50) }}"
                                style="z-index:3">
                     </div>
                     <div class="d-flex justify-content-between mt-1">
@@ -347,7 +347,7 @@
                         <div class="d-flex align-items-center gap-2">
                             <span class="badge bg-primary-subtle text-primary border border-primary-subtle fw-bold px-3 py-1"
                                   id="dist-badge">
-                                <span id="dist-val">{{ old('max_distance_km') !== null ? old('max_distance_km') : ($pref?->max_distance_km ?? 100) }}</span><span id="dist-unit">{{ (old('max_distance_km') !== null ? old('max_distance_km') : $pref?->max_distance_km) !== null ? ' km' : '' }}</span>
+                                <span id="dist-val">{{ old('max_distance_km') !== null ? old('max_distance_km') : ($pref->max_distance_km ?? 100) }}</span><span id="dist-unit">{{ (old('max_distance_km') !== null ? old('max_distance_km') : $pref->max_distance_km) !== null ? ' km' : '' }}</span>
                             </span>
                             <button type="button" id="reset-distance"
                                     class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1"
@@ -359,13 +359,13 @@
                     <input type="range" class="form-range" id="max_distance_km"
                            name="max_distance_km"
                            min="1" max="500" step="5"
-                           value="{{ old('max_distance_km') !== null ? old('max_distance_km') : ($pref?->max_distance_km ?? 100) }}">
+                           value="{{ old('max_distance_km') !== null ? old('max_distance_km') : ($pref->max_distance_km ?? 100) }}">
                     <div class="d-flex justify-content-between">
                         <small class="text-muted">1 km</small>
                         <small class="text-muted">500 km</small>
                     </div>
                     <div id="dist-reset-note"
-                         class="mt-1 {{ (old('max_distance_km') !== null ? old('max_distance_km') : $pref?->max_distance_km) !== null ? 'd-none' : '' }}">
+                         class="mt-1 {{ (old('max_distance_km') !== null ? old('max_distance_km') : $pref->max_distance_km) !== null ? 'd-none' : '' }}">
                         <small class="text-success">
                             <i class="bi bi-check-circle me-1"></i>No distance limit — showing everyone regardless of location.
                         </small>
@@ -384,13 +384,13 @@
                             class="form-select {{ !\App\Helpers\StateHelper::hasStates($onbCountry) ? 'd-none' : '' }}">
                         <option value="">No preference — show all</option>
                         @foreach(\App\Helpers\StateHelper::forCountry($onbCountry) as $s)
-                            <option value="{{ $s }}" {{ old('preferred_state', $pref?->preferred_state ?? '') === $s ? 'selected' : '' }}>{{ $s }}</option>
+                            <option value="{{ $s }}" {{ old('preferred_state', $pref->preferred_state ?? '') === $s ? 'selected' : '' }}>{{ $s }}</option>
                         @endforeach
                     </select>
                     <input type="text" name="preferred_state" id="onbPrefStateText"
                            class="form-control {{ \App\Helpers\StateHelper::hasStates($onbCountry) ? 'd-none' : '' }}"
                            placeholder="Preferred state (optional)"
-                           value="{{ old('preferred_state', $pref?->preferred_state ?? '') }}">
+                           value="{{ old('preferred_state', $pref->preferred_state ?? '') }}">
                 </div>
 
                 <hr class="my-4">
@@ -403,7 +403,7 @@
                     <p class="text-muted small mb-2">Select any that apply — leave blank to match all body types.</p>
                     <div class="d-flex flex-wrap gap-2">
                         @foreach(['slim' => 'Slim', 'athletic' => 'Athletic', 'average' => 'Average', 'curvy' => 'Curvy', 'large' => 'Large'] as $bv => $bl)
-                        @php $btChecked = in_array($bv, (array)(old('body_types', $pref?->body_types ?? []))); @endphp
+                        @php $btChecked = in_array($bv, (array)(old('body_types', $pref->body_types ?? []))); @endphp
                         <div class="body-chip">
                             <input type="checkbox" name="body_types[]" id="bt_{{ $bv }}"
                                    value="{{ $bv }}" {{ $btChecked ? 'checked' : '' }}>
@@ -424,7 +424,7 @@
                     <div class="form-check form-switch ms-3 mb-0">
                         <input class="form-check-input" type="checkbox" role="switch"
                                name="show_online_only" id="show_online_only" value="1"
-                               {{ old('show_online_only', $pref?->show_online_only ?? false) ? 'checked' : '' }}
+                               {{ old('show_online_only', $pref->show_online_only ?? false) ? 'checked' : '' }}
                                style="width:2.6em;height:1.4em">
                         <label class="form-check-label visually-hidden" for="show_online_only">Online only</label>
                     </div>
@@ -697,7 +697,7 @@
         loadStates(
             init,
             '{{ addslashes(old('state', $profile?->state ?? '')) }}',
-            '{{ addslashes(old('preferred_state', $pref?->preferred_state ?? '')) }}'
+            '{{ addslashes(old('preferred_state', $pref->preferred_state ?? '')) }}'
         );
     }
 })();
