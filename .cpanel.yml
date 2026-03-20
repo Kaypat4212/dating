@@ -17,7 +17,8 @@ deployment:
     # ── 4. Database migrations ───────────────────────────────────────────────
     - php artisan migrate --force
 
-    # ── 5. Cache config, routes & views ─────────────────────────────────────
+    # ── 5. Clear stale caches then rebuild ─────────────────────────────────
+    - php artisan optimize:clear
     - php artisan optimize
 
     # ── 6. Storage symlink ───────────────────────────────────────────────────
