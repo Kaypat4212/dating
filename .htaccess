@@ -2,12 +2,17 @@
     Options -Indexes +FollowSymLinks
     RewriteEngine On
 
-    # If the URI maps to a real file inside public/ (assets, images, build, storage…)
-    # serve it directly — this covers /build/*, /storage/*, /css/*, /js/*, /fonts/* etc.
+    # Static assets (JS, CSS, images, fonts, build manifest, storage)
+    # are physically inside public/ — rewrite them there directly.
     RewriteCond %{DOCUMENT_ROOT}/public%{REQUEST_URI} -f
     RewriteRule ^(.*)$ public/$1 [L,QSA]
 
-    # Anything else — including the bare root / — goes to Laravel's front controller.
-    RewriteCond %{REQUEST_FILENAME} !-f
-    RewriteRule ^(.*)$ public/index.php [L,QSA]
+    # Skip rewriting real files/dirs that already exist at the root
+    # (e.g. robots.txt, sw.js, favicon.svg served from public/ above).
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+
+    # Everything else goes to the root index.php front controller.
+    RewriteRule ^ index.php [L,QSA]
 </IfModule>

@@ -1,14 +1,29 @@
 ---
 deployment:
   tasks:
-    # Install PHP dependencies (production only, no dev packages)
+    # ── 1. PHP dependencies ─────────────────────────────────────────────────
+    # Installs vendor/ which is gitignored — required before any artisan call.
     - composer install --no-dev --optimize-autoloader --no-interaction
 
-    # Run any pending database migrations
+    # ── 2. Environment file ──────────────────────────────────────────────────
+    # Copy .env.example only if .env is missing (first deploy).
+    # On subsequent deploys the existing .env is preserved.
+    - test -f .env || cp .env.example .env
+
+    # ── 3. App encryption key ────────────────────────────────────────────────
+    # Only generates a key when APP_KEY is still blank (safe on re-deploys).
+    - grep -q '^APP_KEY=base64:' .env || php artisan key:generate --force
+
+    # ── 4. Database migrations ───────────────────────────────────────────────
     - php artisan migrate --force
 
-    # Cache config, routes, and views for maximum performance
+    # ── 5. Cache config, routes & views ─────────────────────────────────────
     - php artisan optimize
 
-    # Ensure public/storage symlink exists
+    # ── 6. Storage symlink ───────────────────────────────────────────────────
     - php artisan storage:link --force
+
+    # ── 7. File permissions ──────────────────────────────────────────────────
+    # Laravel needs write access to storage/ and bootstrap/cache/.
+    - chmod -R 775 storage bootstrap/cache
+    - chmod 644 .env
