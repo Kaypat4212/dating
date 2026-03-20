@@ -1,0 +1,872 @@
+// ============================================================
+//  HeartsConnect – Main Stylesheet
+//  Bootstrap 5.3 + custom dating-site theme
+// ============================================================
+
+// ----- 1. Bootstrap variable overrides -----
+$primary:   #c2185b;   // deep rose
+$secondary: #7b1fa2;   // plum
+$success:   #2e7d32;
+$info:      #0277bd;
+$warning:   #f57f17;
+$danger:    #d32f2f;
+$light:     #fafafa;
+$dark:      #1a1a2e;
+
+$font-family-sans-serif: 'Inter', system-ui, -apple-system, sans-serif;
+$border-radius:      0.625rem;
+$border-radius-lg:   1rem;
+$border-radius-pill: 50rem;
+
+$navbar-light-brand-color: $primary;
+$link-color: $primary;
+$link-hover-color: darken($primary, 10%);
+
+// ----- 2. Bootstrap core -----
+@import "bootstrap/scss/bootstrap";
+
+// ----- 3. Bootstrap Icons -----
+@import "bootstrap-icons/font/bootstrap-icons.scss";
+
+// ============================================================
+//  Custom Components
+// ============================================================
+
+// ---- Gradient hero / brand backgrounds ----
+.bg-brand-gradient {
+    background: linear-gradient(135deg, $secondary 0%, $primary 100%);
+}
+
+.text-brand {
+    background: linear-gradient(90deg, $secondary, $primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+// ---- Navbar ----
+.navbar-dating,
+#mainNav {
+    background: linear-gradient(90deg, $dark 0%, #2d1b69 100%);
+    .navbar-brand {
+        font-weight: 800;
+        font-size: 1.5rem;
+        letter-spacing: -0.5px;
+        background: linear-gradient(90deg, #f48fb1, #ce93d8);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    .nav-link {
+        color: rgba(255,255,255,.8) !important;
+        font-weight: 500;
+        &:hover, &.active { color: #fff !important; }
+    }
+    // White toggler icon
+    .navbar-toggler {
+        color: rgba(255,255,255,.85);
+        border-color: rgba(255,255,255,.2);
+        &:focus { box-shadow: none; }
+    }
+    .navbar-toggler-icon {
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28255%2C255%2C255%2C0.85%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+    }
+    // Dropdown styling on dark nav
+    .navbar-collapse {
+        .dropdown-menu {
+            @include media-breakpoint-up(lg) {
+                margin-top: .5rem;
+            }
+        }
+    }
+}
+
+// ---- Navbar user dropdown — always anchored to right edge, never off-screen ----
+.navbar-dropdown-menu {
+    min-width: 230px;
+    right: 0 !important;
+    left: auto !important;
+    transform: none !important;
+
+    @include media-breakpoint-down(lg) {
+        position: absolute !important;
+        right: 0 !important;
+        left: auto !important;
+        top: 100% !important;
+        transform: none !important;
+        width: 260px;
+        max-width: calc(100vw - 12px);
+    }
+}
+
+// ---- Profile Cards ----
+.profile-card {
+    border: none;
+    border-radius: $border-radius-lg;
+    overflow: hidden;
+    transition: transform .2s ease, box-shadow .2s ease;
+    cursor: pointer;
+    &:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 40px rgba($primary, .25);
+    }
+    .profile-card-img {
+        height: 260px;
+        object-fit: cover;
+        width: 100%;
+    }
+    .profile-card-overlay {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        padding: 1.25rem;
+        background: linear-gradient(transparent, rgba(0,0,0,.75));
+        color: #fff;
+    }
+    .compatibility-badge {
+        position: absolute;
+        top: .75rem;
+        right: .75rem;
+        font-size: .7rem;
+        font-weight: 700;
+        padding: .3em .7em;
+        border-radius: $border-radius-pill;
+        backdrop-filter: blur(4px);
+    }
+    .online-dot {
+        width: 10px; height: 10px;
+        background: #4caf50;
+        border-radius: 50%;
+        border: 2px solid #fff;
+        display: inline-block;
+    }
+}
+
+// ---- Swipe Deck ----
+.swipe-deck {
+    position: relative;
+    height: 540px;
+    width: 100%;
+    max-width: 380px;
+    margin: 0 auto;
+}
+
+.swipe-card {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    border-radius: 1.5rem;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0,0,0,.2);
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+    transition: box-shadow .15s;
+    background: #fff;
+    height: 520px;
+
+    &:active { cursor: grabbing; }
+
+    img {
+        width: 100%; height: 380px;
+        object-fit: cover;
+        pointer-events: none;
+    }
+
+    .swipe-card-info {
+        padding: 1rem 1.25rem;
+    }
+
+    &.is-like .swipe-stamp-like { opacity: 1; }
+    &.is-nope .swipe-stamp-nope { opacity: 1; }
+}
+
+.swipe-stamp-like,
+.swipe-stamp-nope {
+    position: absolute;
+    top: 1.5rem;
+    font-size: 1.8rem;
+    font-weight: 900;
+    border: 4px solid;
+    padding: .25rem .75rem;
+    border-radius: .5rem;
+    opacity: 0;
+    transition: opacity .15s;
+    pointer-events: none;
+}
+
+.swipe-stamp-like {
+    left: 1.25rem;
+    color: #4caf50;
+    border-color: #4caf50;
+    transform: rotate(-15deg);
+}
+
+.swipe-stamp-nope {
+    right: 1.25rem;
+    color: $danger;
+    border-color: $danger;
+    transform: rotate(15deg);
+}
+
+.swipe-actions {
+    display: flex;
+    justify-content: center;
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+
+    .btn-swipe {
+        width: 64px; height: 64px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        border: none;
+        box-shadow: 0 4px 16px rgba(0,0,0,.15);
+        transition: transform .15s, box-shadow .15s;
+        &:hover { transform: scale(1.12); box-shadow: 0 8px 24px rgba(0,0,0,.2); }
+    }
+}
+
+// ---- Match Modal ----
+.match-modal-bg {
+    background: linear-gradient(135deg, $secondary, $primary);
+    #match-canvas { position: absolute; inset: 0; pointer-events: none; }
+}
+
+// ---- Chat ----
+
+// ─── Inbox list ──────────────────────────────────────────────────────────────
+.conv-item {
+    display: flex; align-items: center; gap: .9rem;
+    padding: .85rem 1.1rem;
+    border-bottom: 1px solid var(--bs-border-color);
+    text-decoration: none; color: inherit;
+    transition: background .15s;
+    &:last-child { border-bottom: none; }
+    &:hover      { background: var(--bs-tertiary-bg); }
+    &.unread .conv-name    { font-weight: 700; }
+    &.unread .conv-preview { color: var(--bs-body-color); font-weight: 500; }
+}
+.conv-avatar {
+    position: relative; flex-shrink: 0;
+    img, .conv-avatar-ph { width: 54px; height: 54px; border-radius: 50%; object-fit: cover; display: block; }
+    .conv-avatar-ph {
+        display: flex; align-items: center; justify-content: center;
+        font-weight: 700; font-size: 1.2rem;
+        background: linear-gradient(135deg, rgba($primary,.1), rgba($secondary,.1));
+        color: var(--bs-secondary-color);
+    }
+    .conv-online {
+        position: absolute; bottom: 2px; right: 2px;
+        width: 13px; height: 13px; border-radius: 50%;
+        background: #22c55e; border: 2.5px solid var(--bs-body-bg);
+    }
+}
+.conv-body    { flex: 1; min-width: 0; }
+.conv-name    { font-size: .95rem; color: var(--bs-body-color); line-height: 1.3; }
+.conv-preview { font-size: .82rem; color: var(--bs-secondary-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.conv-meta    { flex-shrink: 0; text-align: right; }
+.conv-time    { font-size: .73rem; color: var(--bs-secondary-color); white-space: nowrap; }
+.conv-unread-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 20px; height: 20px; border-radius: 10px;
+    padding: 0 .4rem; background: $primary; color: #fff;
+    font-size: .7rem; font-weight: 700; margin-top: .3rem;
+}
+
+// ─── Full-height chat window ──────────────────────────────────────────────────
+.chat-page {
+    height: calc(100dvh - 60px);
+    display: flex; flex-direction: column; overflow: hidden;
+    @media (max-width: 991.98px) {
+        height: calc(100dvh - 60px - 62px - env(safe-area-inset-bottom, 0px));
+    }
+}
+.chat-header {
+    flex-shrink: 0;
+    display: flex; align-items: center; gap: .75rem;
+    padding: .75rem 1rem;
+    border-bottom: 1px solid var(--bs-border-color);
+    background: var(--bs-body-bg);
+    box-shadow: 0 2px 8px rgba(0,0,0,.05);
+}
+.chat-header-avatar {
+    width: 42px; height: 42px; border-radius: 50%; object-fit: cover; flex-shrink: 0;
+}
+.chat-header-avatar-ph {
+    width: 42px; height: 42px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 1rem;
+    background: linear-gradient(135deg, rgba($primary,.14), rgba($secondary,.14));
+    color: var(--bs-secondary-color);
+}
+.chat-status-line   { font-size: .73rem; color: var(--bs-secondary-color); line-height: 1.4; }
+.chat-status-online { color: #22c55e !important; }
+
+.chat-body-scroll {
+    flex: 1; overflow-y: auto;
+    padding: 1rem 1.25rem;
+    display: flex; flex-direction: column; gap: .15rem;
+    scroll-behavior: smooth;
+    &::-webkit-scrollbar       { width: 4px; }
+    &::-webkit-scrollbar-track { background: transparent; }
+    &::-webkit-scrollbar-thumb { background: var(--bs-border-color); border-radius: 2px; }
+}
+
+.chat-footer {
+    flex-shrink: 0;
+    display: flex; align-items: flex-end; gap: .5rem;
+    padding: .65rem .9rem;
+    border-top: 1px solid var(--bs-border-color);
+    background: var(--bs-body-bg);
+    position: relative;
+}
+.chat-footer-btn {
+    width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    padding: 0; border: 1px solid var(--bs-border-color);
+    background: var(--bs-body-bg); color: var(--bs-secondary-color);
+    font-size: 1.05rem; cursor: pointer;
+    transition: background .15s, color .15s;
+    &:hover { background: var(--bs-secondary-bg); color: var(--bs-body-color); }
+}
+.chat-textarea {
+    flex: 1; border-radius: 1.3rem; padding: .55rem .95rem;
+    resize: none; max-height: 130px; overflow-y: auto;
+    line-height: 1.45; font-size: .93rem;
+}
+.chat-send-btn {
+    width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center; padding: 0;
+    transition: transform .12s;
+    &:active { transform: scale(.88); }
+}
+.chat-emoji-popover {
+    position: absolute; bottom: calc(100% + .4rem); left: .9rem;
+    background: var(--bs-body-bg); border: 1px solid var(--bs-border-color);
+    border-radius: 1rem; padding: .5rem .65rem;
+    display: flex; flex-wrap: wrap; gap: .3rem; max-width: 230px;
+    box-shadow: 0 4px 20px rgba(0,0,0,.12); z-index: 20;
+    span { font-size: 1.25rem; cursor: pointer; transition: transform .1s; &:hover { transform: scale(1.25); } }
+}
+
+// ─── Message rows ─────────────────────────────────────────────────────────────
+.msg-row {
+    display: flex; align-items: flex-end; gap: .4rem;
+    &.me          { flex-direction: row-reverse; }
+    &.them        { flex-direction: row; }
+    &.group-start { margin-top: .45rem; }
+}
+.msg-avatar-cell { width: 28px; height: 28px; flex-shrink: 0; }
+.msg-avatar-cell img, .msg-avatar-cell .av-ph {
+    width: 28px; height: 28px; border-radius: 50%; object-fit: cover; display: block;
+}
+.msg-avatar-cell .av-ph {
+    display: flex; align-items: center; justify-content: center;
+    background: var(--bs-secondary-bg); color: var(--bs-body-color);
+    font-size: .6rem; font-weight: 700;
+}
+.msg-avatar-cell.hidden { visibility: hidden; }
+
+// ─── Message bubbles ──────────────────────────────────────────────────────────
+.message-bubble {
+    max-width: 70%;
+    padding: .6rem .95rem;
+    border-radius: 1.2rem;
+    font-size: .93rem;
+    word-break: break-word;
+    position: relative;
+
+    &.me {
+        align-self: flex-end;
+        background: $primary;
+        color: #fff;
+        border-bottom-right-radius: .3rem;
+    }
+    &.them {
+        align-self: flex-start;
+        background: var(--bs-gray-200);
+        color: var(--bs-body-color);
+        border-bottom-left-radius: .3rem;
+    }
+    // Consecutive message radius smoothing
+    &.me.not-first   { border-top-right-radius:    .4rem; }
+    &.me.not-last    { border-bottom-right-radius: .4rem; }
+    &.them.not-first { border-top-left-radius:     .4rem; }
+    &.them.not-last  { border-bottom-left-radius:  .4rem; }
+}
+
+// ─── Date divider ─────────────────────────────────────────────────────────────
+.date-sep {
+    display: flex; align-items: center; gap: .5rem;
+    font-size: .71rem; font-weight: 500; color: var(--bs-secondary-color);
+    margin: .5rem 0 .2rem;
+    &::before, &::after { content: ''; flex: 1; height: 1px; background: var(--bs-border-color); }
+}
+
+// ─── Typing bubble ────────────────────────────────────────────────────────────
+.typing-bubble {
+    display: inline-flex; align-items: center; gap: .3rem;
+    background: var(--bs-gray-200);
+    border-radius: 1.2rem;
+    padding: .5rem .75rem;
+}
+.typing-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--bs-secondary-color);
+    animation: typing-bounce 1.3s infinite;
+    &:nth-child(2) { animation-delay: .2s; }
+    &:nth-child(3) { animation-delay: .4s; }
+}
+
+// ─── Message reactions ────────────────────────────────────────────────────────
+.message-meta { font-size: .67rem; opacity: .6; margin-top: .25rem; }
+.reaction-picker-trigger {
+    position: absolute; bottom: -8px; right: 8px;
+    width: 22px; height: 22px;
+    border-radius: 50%; border: 1px solid var(--bs-border-color);
+    background: var(--bs-body-bg); color: var(--bs-body-color);
+    display: flex; align-items: center; justify-content: center;
+    font-size: .8rem; cursor: pointer; opacity: 0;
+    transition: opacity .2s; line-height: 1;
+}
+.message-bubble:hover .reaction-picker-trigger { opacity: 1; }
+.reaction-picker {
+    position: absolute; bottom: 22px; right: 8px;
+    background: var(--bs-body-bg); border: 1px solid var(--bs-border-color);
+    border-radius: 2rem; padding: .3rem .5rem;
+    display: flex; gap: .4rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,.15); z-index: 10;
+}
+.reaction-choice { cursor: pointer; font-size: 1.2rem; transition: transform .15s; &:hover { transform: scale(1.3); } }
+.msg-reactions {
+    margin-top: .3rem; display: flex; flex-wrap: wrap; gap: .25rem;
+    .reaction-badge {
+        font-size: .75rem; padding: .1rem .4rem; border-radius: 1rem;
+        background: var(--bs-gray-200); border: 1px solid var(--bs-border-color);
+        cursor: pointer;
+    }
+}
+
+// ── Media message bubbles ─────────────────────────────────────────────────────
+.media-bubble { padding: .3rem !important; background: transparent !important; box-shadow: none !important; }
+.msg-img-link { display: block; line-height: 0; border-radius: .75rem; overflow: hidden; }
+.msg-image {
+    max-width: min(280px, 65vw); max-height: 260px;
+    border-radius: .75rem; display: block;
+    cursor: zoom-in; object-fit: cover;
+    transition: opacity .2s;
+    &:hover { opacity: .9; }
+}
+.msg-audio {
+    display: flex; flex-direction: column;
+    padding: .5rem .6rem; background: var(--bs-body-bg);
+    border-radius: .75rem; border: 1px solid var(--bs-border-color);
+    min-width: 180px; max-width: min(280px, 65vw);
+}
+.msg-audio-player { width: 100%; max-width: 260px; height: 36px; border-radius: .5rem; }
+.msg-audio-name   { font-size: .7rem; max-width: 240px; }
+
+// ── Attachment preview bar ────────────────────────────────────────────────────
+.chat-attach-preview {
+    display: flex; align-items: center; gap: .5rem;
+    padding: .4rem .75rem; background: var(--bs-body-bg);
+    border-top: 1px solid var(--bs-border-color);
+}
+.chat-preview-img { max-height: 60px; max-width: 100px; border-radius: .4rem; object-fit: cover; }
+
+// Legacy (kept for compatibility)
+.chat-messages {
+    overflow-y: auto; display: flex; flex-direction: column; gap: .5rem;
+    padding: 1rem; background: var(--bs-body-bg);
+}
+.typing-indicator span {
+    display: inline-block; width: 7px; height: 7px;
+    background: var(--bs-gray-500); border-radius: 50%;
+    animation: typing-bounce 1.3s infinite;
+    &:nth-child(2) { animation-delay: .2s; }
+    &:nth-child(3) { animation-delay: .4s; }
+}
+
+// ---- Stories ----
+.story-ring { transition: transform .15s; &:hover { transform: scale(1.05); } }
+
+@keyframes typing-bounce {
+    0%, 60%, 100% { transform: translateY(0); }
+    30% { transform: translateY(-6px); }
+}
+
+// ---- Notification toast ----
+.toast-notification {
+    position: fixed; bottom: 1.5rem; right: 1.5rem;
+    z-index: 1100; min-width: 300px;
+}
+
+// ---- Who Liked Me blurred ----
+.blur-premium { filter: blur(12px); pointer-events: none; user-select: none; }
+
+// ---- Premium badge ----
+.badge-premium {
+    background: linear-gradient(90deg, #f59e0b, #ef4444);
+    color: #fff;
+    font-size: .7rem;
+    font-weight: 700;
+}
+
+// ---- Profile completeness ----
+.progress-thin { height: 6px; }
+
+// ---- Bottom nav (mobile) ----
+.bottom-nav {
+    display: none;
+
+    @media (max-width: 991.98px) {
+        display: flex;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 62px;
+        background: var(--bs-body-bg);
+        border-top: 1px solid var(--bs-border-color);
+        z-index: 1030;
+        box-shadow: 0 -2px 12px rgba(0, 0, 0, .08);
+        // Safe area inset for iPhone home-bar
+        padding-bottom: env(safe-area-inset-bottom, 0);
+
+        a {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 3px;
+            padding: .35rem .25rem .3rem;
+            color: var(--bs-secondary-color);
+            text-decoration: none;
+            min-width: 0;           // allow text to shrink
+            transition: color .18s;
+
+            i {
+                font-size: 1.35rem;
+                line-height: 1;
+                flex-shrink: 0;
+            }
+
+            span {
+                font-size: .625rem;  // 10px
+                font-weight: 600;
+                line-height: 1;
+                letter-spacing: .01em;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                max-width: 100%;
+            }
+
+            &.active {
+                color: $primary;
+
+                i { transform: translateY(-1px); }
+            }
+
+            &:active { opacity: .7; }
+        }
+    }
+
+    // Slightly larger labels on medium screens
+    @media (min-width: 400px) and (max-width: 991.98px) {
+        a span { font-size: .7rem; }
+        a i    { font-size: 1.45rem; }
+    }
+}
+
+// Push main content above the bottom nav on mobile
+@media (max-width: 991.98px) {
+    main { padding-bottom: calc(62px + env(safe-area-inset-bottom, 0px)) !important; }
+}
+
+// ============================================================
+//  LIGHT MODE  (default — data-bs-theme="light")
+// ============================================================
+
+// Subtle warm-tinted page background
+body { background-color: #f8f5fc; }
+
+// Navbar: clean white card in light mode
+#mainNav {
+    background: linear-gradient(90deg, #120026 0%, #2d1b69 100%);
+}
+
+// Cards
+.card {
+    --bs-card-bg: #ffffff;
+    border-color: rgba(0,0,0,.07) !important;
+    box-shadow: 0 2px 12px rgba(0,0,0,.06);
+}
+
+// Dropdown menu
+.dropdown-menu {
+    border: 1px solid rgba(0,0,0,.08);
+    box-shadow: 0 8px 32px rgba(0,0,0,.12);
+}
+
+// Chat bubble (them) in light mode
+.message-bubble.them {
+    background: #f0e9f9;
+    color: #1a1a2e;
+}
+.typing-bubble { background: #f0e9f9; }
+
+// Swipe card in light mode — white
+.swipe-card {
+    background: #fff;
+    color: #1a1a2e;
+}
+
+// Bottom nav — light mode
+.bottom-nav {
+    background: rgba(255,255,255,.97) !important;
+    backdrop-filter: blur(10px);
+}
+
+// Discover / profile grid cards
+.profile-card {
+    background: #fff;
+}
+
+// Form controls — light mode
+.form-control, .form-select {
+    background-color: #fff;
+    border-color: rgba(0,0,0,.14);
+}
+
+// Alert refinement in light mode
+.alert-success { background-color: #e8f5e9; border-color: #a5d6a7; color: #1b5e20; }
+.alert-danger  { background-color: #fce4ec; border-color: #f48fb1; color: #880e4f; }
+
+// Input group addon
+.input-group-text {
+    background-color: #f3f0fa;
+    border-color: rgba(0,0,0,.14);
+    color: $primary;
+}
+
+
+// ============================================================
+//  DARK MODE  (data-bs-theme="dark")
+// ============================================================
+[data-bs-theme="dark"] {
+
+    // ── Page background ─────────────────────────────────────
+    body { background-color: #0d0118 !important; }
+
+    html { background-color: #0d0118; }
+
+    // ── Navbar ──────────────────────────────────────────────
+    #mainNav {
+        background: linear-gradient(90deg, #0a000f 0%, #1a0533 100%);
+        border-bottom: 1px solid rgba(255,255,255,.07);
+    }
+
+    // ── Generic card ────────────────────────────────────────
+    .card {
+        --bs-card-bg: #1a1030;
+        border-color: rgba(255,255,255,.06) !important;
+        box-shadow: 0 2px 16px rgba(0,0,0,.4);
+    }
+
+    // ── Dropdown ────────────────────────────────────────────
+    .dropdown-menu {
+        background-color: #1e1238;
+        border: 1px solid rgba(255,255,255,.08);
+        box-shadow: 0 8px 32px rgba(0,0,0,.5);
+
+        .dropdown-item {
+            color: rgba(255,255,255,.8);
+            &:hover, &:focus { background-color: rgba(255,255,255,.07); color: #fff; }
+        }
+        .dropdown-divider { border-color: rgba(255,255,255,.08); }
+        .text-muted { color: rgba(255,255,255,.38) !important; }
+    }
+
+    // ── Profile & discover cards ─────────────────────────────
+    .profile-card {
+        background: #1a1030;
+        .profile-card-img { opacity: .92; }
+        .card-body { color: rgba(255,255,255,.85); }
+        .text-muted { color: rgba(255,255,255,.5) !important; }
+    }
+
+    // ── Swipe card ───────────────────────────────────────────
+    .swipe-card {
+        background: #1a1030;
+        color: rgba(255,255,255,.9);
+    }
+
+    // ── Chat ─────────────────────────────────────────────────
+    .chat-body-scroll, .chat-messages { background: transparent; }
+
+    .chat-header, .chat-footer {
+        background: #0d0118;
+        border-color: rgba(255,255,255,.06) !important;
+    }
+
+    .message-bubble.them {
+        background: #1e1238;
+        color: rgba(255,255,255,.85);
+    }
+
+    .typing-bubble { background: #1e1238; }
+
+    .msg-audio { background: #1a0f36; border-color: rgba(255,255,255,.1); }
+    .chat-attach-preview { background: #14082a; border-color: rgba(255,255,255,.1); }
+
+    .chat-emoji-popover { background: #1a1030; }
+
+    .conv-item:hover { background: rgba(255,255,255,.03); }
+
+    .conv-avatar-ph { background: rgba(194,24,91,.15); }
+
+    // ── Forms ────────────────────────────────────────────────
+    .form-control, .form-select, textarea {
+        background-color: #14082a;
+        border-color: rgba(255,255,255,.1);
+        color: rgba(255,255,255,.85);
+
+        &:focus {
+            background-color: #1a0f36;
+            border-color: rgba($primary, .6);
+            color: #fff;
+            box-shadow: 0 0 0 .2rem rgba($primary, .2);
+        }
+
+        &::placeholder { color: rgba(255,255,255,.3); }
+    }
+
+    .form-check-input {
+        background-color: #14082a;
+        border-color: rgba(255,255,255,.2);
+    }
+
+    .input-group-text {
+        background-color: #1a0533;
+        border-color: rgba(255,255,255,.1);
+        color: #ce93d8;
+    }
+
+    // ── Tables ───────────────────────────────────────────────
+    .table {
+        --bs-table-bg: transparent;
+        --bs-table-striped-bg: rgba(255,255,255,.03);
+        --bs-table-hover-bg: rgba(255,255,255,.05);
+        --bs-table-border-color: rgba(255,255,255,.07);
+        color: rgba(255,255,255,.8);
+    }
+
+    // ── List group ───────────────────────────────────────────
+    .list-group-item {
+        background-color: #1a1030;
+        border-color: rgba(255,255,255,.06);
+        color: rgba(255,255,255,.8);
+
+        &.active {
+            background-color: $primary;
+            border-color: $primary;
+        }
+    }
+
+    // ── Alerts ───────────────────────────────────────────────
+    .alert-success {
+        background-color: rgba(46,125,50,.2);
+        border-color: rgba(46,125,50,.4);
+        color: #a5d6a7;
+    }
+    .alert-danger {
+        background-color: rgba(211,47,47,.2);
+        border-color: rgba(211,47,47,.4);
+        color: #ef9a9a;
+    }
+    .alert-warning {
+        background-color: rgba(245,127,23,.15);
+        border-color: rgba(245,127,23,.35);
+        color: #ffe082;
+    }
+    .alert-info {
+        background-color: rgba(2,119,189,.15);
+        border-color: rgba(2,119,189,.35);
+        color: #81d4fa;
+    }
+
+    // ── Badges / pills ───────────────────────────────────────
+    .badge.bg-light { background-color: rgba(255,255,255,.12) !important; color: rgba(255,255,255,.85); }
+
+    // ── Bottom nav ───────────────────────────────────────────
+    .bottom-nav {
+        background: rgba(13,1,24,.95) !important;
+        border-top-color: rgba(255,255,255,.1) !important;
+        backdrop-filter: blur(16px);
+    }
+
+    // ── Footer (already dark, just ensure border) ────────────
+    .site-footer { border-top-color: rgba(255,255,255,.05) !important; }
+
+    // ── Modal ────────────────────────────────────────────────
+    .modal-content {
+        background-color: #1a1030;
+        border: 1px solid rgba(255,255,255,.08);
+    }
+    .modal-header, .modal-footer {
+        border-color: rgba(255,255,255,.07);
+    }
+
+    // ── Pagination ───────────────────────────────────────────
+    .pagination {
+        .page-link {
+            background-color: #1a1030;
+            border-color: rgba(255,255,255,.08);
+            color: rgba(255,255,255,.7);
+            &:hover { background-color: rgba(255,255,255,.08); color: #fff; }
+        }
+        .page-item.active .page-link {
+            background-color: $primary;
+            border-color: $primary;
+        }
+        .page-item.disabled .page-link { background-color: #14082a; color: rgba(255,255,255,.3); }
+    }
+
+    // ── Breadcrumb ───────────────────────────────────────────
+    .breadcrumb-item { color: rgba(255,255,255,.55); }
+    .breadcrumb-item.active { color: rgba(255,255,255,.3); }
+
+    // ── Tooltips ─────────────────────────────────────────────
+    .tooltip-inner { background-color: #3a0a4a; }
+
+    // ── Progress bars ────────────────────────────────────────
+    .progress { background-color: rgba(255,255,255,.08); }
+
+    // ── Horizontal rule ──────────────────────────────────────
+    hr { border-color: rgba(255,255,255,.08); }
+
+    // ── Text overrides ───────────────────────────────────────
+    .text-dark { color: rgba(255,255,255,.85) !important; }
+    .bg-white { background-color: #1a1030 !important; }
+    .bg-light { background-color: #12082a !important; }
+    .border { border-color: rgba(255,255,255,.08) !important; }
+
+    // ── Dark-mode toggle icon ─────────────────────────────────
+    #darkToggle .bi::before { content: "\f5a2"; } // bi-sun
+}
+
+// Theme toggle button — always subtle
+#darkToggle {
+    transition: all .2s;
+    &:hover { background: rgba($primary, .12); border-color: $primary; color: $primary; }
+}
+
+// ---- Utility ----
+.cursor-pointer { cursor: pointer; }
+.fw-600 { font-weight: 600; }
+.fw-700 { font-weight: 700; }

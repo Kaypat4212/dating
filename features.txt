@@ -1,0 +1,263 @@
+HeartsConnect — Full Feature List
+===================================
+App URL : https://heartsconnect.site
+Updated : March 14, 2026
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+RECOMMENDED FEATURES TO BUILD NEXT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  1. [ ] Video Calls — in-app WebRTC 1-on-1 video calling for
+             matched users. Requires a STUN/TURN server.
+
+  2. [ ] "Nearby" real-time map — optional map view showing
+             anonymized pins of active users within X km.
+
+  3. [ ] Voice intro on profile — short 30-second voice clip
+             users can record and attach to their profile.
+
+  4. [ ] Smart matchmaking score — ML-based compatibility % shown
+             on swipe cards based on answers, interests, and behaviour.
+
+  5. [ ] Daily Spark — one curated high-compatibility match
+             surfaced each day to drive re-engagement.
+
+  6. [ ] "Coffee Break" speed dating — 5-minute timed chat rooms
+             pairing two users randomly; opt-in, Premium tier.
+
+  7. [ ] Social proof badges — "9 people liked you today",
+             "Your profile was viewed 42 times this week" etc.
+
+  8. [ ] Profile themes / frames — cosmetic profile border styles
+             purchasable with coins or included with Premium.
+
+  9. [ ] In-app coin economy — earn/spend coins for boosts, gifts,
+             super-likes without a full subscription.
+
+  10. [ ] Two-factor authentication (2FA) — TOTP / SMS OTP for
+              login security.
+
+  11. [ ] Google / Apple OAuth login — sign in with social accounts.
+
+  12. [ ] Mood status expiry — mood auto-clears after 24 h to keep
+              profiles fresh.
+
+  13. [ ] Interest-based group chats — non-private chat rooms for
+              users who share a tag (e.g. "Hiking", "Music lovers").
+
+  14. [ ] Read/unread story receipts — see exactly who viewed each
+              story, with timestamp.
+
+  15. [ ] Referral programme — unique share link; both referrer and
+              new user get a free 7-day Premium trial.
+
+  16. [ ] Progressive Web App (PWA) — add-to-homescreen support
+              with push notifications, offline profile caching.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+AUTHENTICATION & ACCOUNTS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  [✓] User registration with email & password
+  [✓] Login / logout
+  [✓] Password reset via email
+  [✓] Welcome email sent on registration
+  [✓] Login alert email (new device / IP detection)
+  [✓] Email address verification
+  [✓] Account settings page
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PROFILE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  [✓] Edit profile — name, bio, headline, age, city, country
+  [✓] Lifestyle fields — height, body type, religion, education,
+      occupation, relationship goal, smoking, drinking, children
+  [✓] Profile photo upload (multiple photos, set primary)
+  [✓] Photo processing job (thumbnail generation)
+  [✓] Profile completion score bar (0–100%, colour-coded)
+  [✓] Verified badge — staff can approve identity verification,
+      green tick shown on profile and swipe cards
+  [✓] Photo privacy toggle (Premium) — photos blurred with lock
+      overlay until a mutual match is made
+  [✓] "Who viewed my profile" page — shows viewers with photo
+      and time, paginated
+  [✓] Public profile page (/profile/{username})
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+DISCOVERY / SWIPING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  [✓] Swipe deck — infinite card stack
+  [✓] Like / Nope swipe gestures (touch + buttons)
+  [✓] Super Like — highlighted like with special indicator
+  [✓] Icebreaker questions — auto-populated on swipe cards
+      ("What's your ideal first date?", "Dog or cat person?" etc.)
+  [✓] Mutual interests shown on swipe cards
+  [✓] Preference editing (age range, distance, gender)
+  [✓] "Adjust Preferences" button links back from swipe page
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+MATCHING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  [✓] Mutual like creates a match (UserMatch)
+  [✓] Match list/index page
+  [✓] New match email notification
+  [✓] Match event broadcast (real-time)
+  [✓] "It's a Match!" modal on swipe
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+MESSAGING & CHAT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  [✓] Real-time chat via Laravel Reverb (WebSockets)
+  [✓] Text messages
+  [✓] Image attachments (jpg/png/gif/webp, max 10 MB)
+  [✓] Audio messages (mp3/ogg/wav/m4a/aac, max 25 MB)
+  [✓] Virtual gift messages — 8 animated gifts (Premium):
+        🌹 Rose | 💝 Heart | 🎁 Gift Box | 🍫 Chocolate
+        ⭐ Star  | 💎 Diamond | 🌺 Flower | 🫶 Love
+  [✓] Read receipts — double-tick (✓✓ blue = seen, ✓✓ grey = delivered)
+  [✓] Typing indicators (real-time "typing…" status)
+  [✓] Message reactions — tap + to react with ❤️ 😂 👍 😮 😢 🔥
+  [✓] New message email notification
+  [✓] Rate limiting (30 messages/minute per user)
+  [✓] Conversations list with unread counts
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STORIES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  [✓] Create story (photo or video, 24-hour expiry)
+  [✓] Story viewer — view stories from matches/connections
+  [✓] Story view count tracking
+  [✓] Stories auto-expire after 24 hours
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+WAVES (Quick Interest)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  [✓] Send a wave to show interest without a full like
+  [✓] Wave notifications
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PREMIUM MEMBERSHIP
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  [✓] Premium plans (multiple durations)
+  [✓] Crypto payment support (CryptoWallet model)
+  [✓] Premium purchased confirmation email
+  [✓] Premium expired notification email
+  [✓] Auto-expire premium accounts job (runs daily)
+  [✓] Premium features accessible to ALL premium tiers:
+        • See who liked your profile
+        • Hide last-seen status
+        • Photo privacy mode
+        • Profile boost
+        • Virtual gifts in chat
+        • Unlimited messaging
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PROFILE BOOST
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  [✓] Activate a boost from account settings (Premium)
+  [✓] Boost timer shown — countdown until boost expires
+  [✓] Boosted profiles appear at the top of the discovery deck
+  [✓] Feature usage notification on boost activation
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PRIVACY & SAFETY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  [✓] Block a user — removes from feed, hides messages
+  [✓] Blocked users management page (/account/blocked)
+      — list of blocked users with one-click unblock
+  [✓] Report a user (categories: spam, fake, harassment, etc.)
+  [✓] Hide last-seen status (Premium)
+  [✓] Photo privacy mode — blur photos until matched (Premium)
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+NOTIFICATIONS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  [✓] In-app notification bell with unread count
+  [✓] Real-time notification updates via broadcast
+  [✓] New match notification (in-app + email)
+  [✓] New message notification (in-app + email)
+  [✓] Profile liked notification (in-app + email)
+  [✓] Wave received notification (in-app)
+  [✓] Login alert notification (email)
+  [✓] Welcome email (on registration)
+  [✓] Premium purchased email
+  [✓] Premium expired email
+  [✓] Identity verification approved/rejected email
+  [✓] Feature usage summary notification
+  [✓] Daily summary email (scheduled, opt-in)
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ADMIN PANEL (Filament)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  [✓] User management — view, edit, ban users
+  [✓] Report review — approve, dismiss, ban reported user
+  [✓] Photo management
+  [✓] Premium payment records
+  [✓] Identity verification review — approve / reject with note
+  [✓] Site settings management
+  [✓] Dashboard widgets (stats overview)
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+TECHNICAL & INFRASTRUCTURE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  [✓] Laravel 12 / PHP 8.2
+  [✓] Laravel Reverb (WebSocket server)
+  [✓] Queue system (database driver) — all emails & notifications
+      are queued, never blocking HTTP requests
+  [✓] Scheduled jobs:
+        • ExpirePremiumAccounts — daily
+        • Daily summary email — daily
+  [✓] Domain: https://heartsconnect.site
+  [✓] Email: noreply@heartsconnect.site (via SMTP/MailHog in dev)
+  [✓] Image processing job (thumbnail generation on upload)
+  [✓] Rate limiting on messaging endpoint
+  [✓] CSRF protection on all forms
+  [✓] Authorization policies on all sensitive routes
+  [✓] File storage with public disk (photos, attachments, stories)
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+EMAIL TEMPLATES (all branded with app name & domain)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  [✓] welcome.blade.php         — registration welcome
+  [✓] new-match.blade.php       — mutual match alert
+  [✓] new-message.blade.php     — new chat message
+  [✓] profile-liked.blade.php   — someone liked your profile
+  [✓] premium.blade.php         — premium purchase confirmation
+  [✓] premium-expired.blade.php — premium expiry notice
+  [✓] login-alert.blade.php     — new login from unknown device
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+DEPLOYMENT CHECKLIST (before going live)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  [ ] Point DNS A record for heartsconnect.site to your server IP
+  [ ] Set up SSL certificate (Let's Encrypt recommended)
+  [ ] Update REVERB_HOST to heartsconnect.site in .env
+  [ ] Set a real SMTP provider (e.g. Mailgun, Resend, SES)
+      and update MAIL_HOST / MAIL_USERNAME / MAIL_PASSWORD
+  [ ] Set APP_ENV=production and APP_DEBUG=false
+  [ ] Run: php artisan config:cache
+  [ ] Run: php artisan route:cache
+  [ ] Run: php artisan view:cache
+  [ ] Run: php artisan migrate --force
+  [ ] Set up supervisor/pm2 to keep the queue worker running:
+        php artisan queue:work --daemon
+  [ ] Set up supervisor to keep Reverb running:
+        php artisan reverb:start
+  [ ] Set up cron job for Laravel scheduler:
+        * * * * * php /path/to/artisan schedule:run >> /dev/null 2>&1
+  [ ] Set FILESYSTEM_DISK=public and run: php artisan storage:link

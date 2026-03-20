@@ -1,0 +1,11 @@
+<IfModule mod_rewrite.c>
+    Options -Indexes +FollowSymLinks
+    RewriteEngine On
+    # Route all requests through Laravel's public/ front controller.
+    # This lets Apache serve the site from the project root without requiring
+    # the document root to be changed to public/ in cPanel.
+    # Skip rewrite if the file already exists directly under public/
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>

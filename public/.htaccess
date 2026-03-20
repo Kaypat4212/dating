@@ -1,0 +1,43 @@
+# Allow Apache to follow the storage/ symlink (public/storage -> storage/app/public).
+# Required for cPanel shared hosting where FollowSymLinks is off by default.
+Options +FollowSymLinks
+
+<IfModule mod_rewrite.c>
+    <IfModule mod_negotiation.c>
+        Options -MultiViews -Indexes
+    </IfModule>
+
+    RewriteEngine On
+
+    # Handle Authorization Header
+    RewriteCond %{HTTP:Authorization} .
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+    # Handle X-XSRF-Token Header
+    RewriteCond %{HTTP:x-xsrf-token} .
+    RewriteRule .* - [E=HTTP_X_XSRF_TOKEN:%{HTTP:X-XSRF-Token}]
+
+    # Redirect Trailing Slashes If Not A Folder...
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_URI} (.+)/$
+    RewriteRule ^ %1 [L,R=301]
+
+    # Send Requests To Front Controller...
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteRule ^ index.php [L]
+</IfModule>
+
+# ---------------------------------------------------------------------------
+# Disable mod_security (WAF) for all requests routed through Laravel.
+# Without this, cPanel's mod_security blocks the first login POST (403)
+# because it trips on the "password" field — Laravel never even sees it.
+# mod_security v1 (older servers)
+<IfModule mod_security.c>
+    SecFilterEngine Off
+    SecFilterScanPOST Off
+</IfModule>
+# mod_security v2 (most current cPanel servers)
+<IfModule mod_security2.c>
+    SecRuleEngine Off
+</IfModule>

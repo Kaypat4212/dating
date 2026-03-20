@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%"   stop-color="#ff6b9d"/>
+      <stop offset="55%"  stop-color="#c44ee0"/>
+      <stop offset="100%" stop-color="#7b2ff7"/>
+    </linearGradient>
+    <filter id="sh" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="1" stdDeviation="1.5" flood-color="#00000033"/>
+    </filter>
+  </defs>
+
+  <!-- Rounded square app-icon background -->
+  <rect width="64" height="64" rx="14" ry="14" fill="url(#bg)" filter="url(#sh)"/>
+
+  <!-- Heart shape, white, centred on the tile -->
+  <path fill="white" opacity="0.96"
+    d="M32,52
+       C28,48 8,37 8,22
+       C8,14.3 14.3,8 22,8
+       C26,8 29.7,9.8 32,12.7
+       C34.3,9.8 38,8 42,8
+       C49.7,8 56,14.3 56,22
+       C56,37 36,48 32,52 Z"/>
+</svg>

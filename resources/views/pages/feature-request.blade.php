@@ -1,0 +1,160 @@
+@extends('layouts.app')
+@section('title', 'Feature Requests & Bug Reports')
+@section('content')
+<div class="container py-5" style="max-width:720px">
+
+    <div class="text-center mb-5">
+        <div class="display-5 mb-2">💡</div>
+        <h1 class="fw-bold h2">Feature Requests &amp; Bug Reports</h1>
+        <p class="text-muted">Got an idea to make the app better? Found a bug? Let us know — we read every submission.</p>
+    </div>
+
+    @if(session('success'))
+    <div class="alert alert-success rounded-3 d-flex align-items-start gap-2 mb-4">
+        <i class="bi bi-check-circle-fill fs-5 mt-1 text-success"></i>
+        <div>{{ session('success') }}</div>
+    </div>
+    @endif
+
+    @if($errors->any())
+    <div class="alert alert-danger rounded-3 mb-4">
+        <ul class="mb-0 ps-3">
+            @foreach($errors->all() as $error)
+            <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+    @endif
+
+    <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5">
+
+        {{-- Type toggle --}}
+        <div class="mb-4">
+            <label class="form-label fw-semibold">What are you submitting?</label>
+            <div class="d-flex gap-2 flex-wrap" id="type-toggle">
+                <input type="hidden" name="type" id="type-value" form="fr-form" value="{{ old('type', 'feature') }}">
+                <button type="button" class="btn pill-btn @if(old('type','feature')==='feature') active @endif" data-value="feature">
+                    <i class="bi bi-lightbulb me-1"></i>Feature Request
+                </button>
+                <button type="button" class="btn pill-btn @if(old('type')==='bug') active @endif" data-value="bug">
+                    <i class="bi bi-bug me-1"></i>Bug Report
+                </button>
+            </div>
+        </div>
+
+        <form method="POST" action="{{ route('pages.feature-request.store') }}" id="fr-form">
+            @csrf
+
+            {{-- Name + Email (only shown for guests) --}}
+            @guest
+            <div class="row g-3 mb-4">
+                <div class="col-sm-6">
+                    <label for="fr-name" class="form-label fw-semibold">Your Name</label>
+                    <input type="text" id="fr-name" name="name" class="form-control @error('name') is-invalid @enderror"
+                           placeholder="Jane Doe" value="{{ old('name') }}" required maxlength="100">
+                    @error('name')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                </div>
+                <div class="col-sm-6">
+                    <label for="fr-email" class="form-label fw-semibold">Email Address</label>
+                    <input type="email" id="fr-email" name="email" class="form-control @error('email') is-invalid @enderror"
+                           placeholder="you@example.com" value="{{ old('email') }}" required maxlength="200">
+                    @error('email')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                </div>
+            </div>
+            @endguest
+
+            @auth
+            {{-- hidden fields auto-filled from auth user --}}
+            <input type="hidden" name="name"  value="{{ auth()->user()->name ?? auth()->user()->username }}">
+            <input type="hidden" name="email" value="{{ auth()->user()->email }}">
+            @endauth
+
+            {{-- Title --}}
+            <div class="mb-3">
+                <label for="fr-title" class="form-label fw-semibold">Title <span class="text-muted fw-normal small">(brief summary)</span></label>
+                <input type="text" id="fr-title" name="title" class="form-control @error('title') is-invalid @enderror"
+                       placeholder="e.g. Add voice messages in chat" value="{{ old('title') }}"
+                       required maxlength="200">
+                @error('title')<div class="invalid-feedback">{{ $message }}</div>@enderror
+            </div>
+
+            {{-- Body --}}
+            <div class="mb-4">
+                <label for="fr-body" class="form-label fw-semibold">Details</label>
+                <textarea id="fr-body" name="body" rows="6"
+                          class="form-control @error('body') is-invalid @enderror"
+                          placeholder="Describe the feature or bug in detail. For bugs: what happened, what you expected, and how to reproduce it."
+                          required maxlength="5000">{{ old('body') }}</textarea>
+                <div class="form-text d-flex justify-content-between">
+                    <span id="fr-type-hint" class="text-muted">Be as specific as possible — it helps us prioritise.</span>
+                    <span id="char-count" class="text-muted">0 / 5000</span>
+                </div>
+                @error('body')<div class="invalid-feedback">{{ $message }}</div>@enderror
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <p class="text-muted small mb-0">
+                    <i class="bi bi-shield-check me-1"></i>We'll reply to your email once we review your submission.
+                </p>
+                <button type="submit" class="btn btn-primary px-4 fw-semibold">
+                    <i class="bi bi-send me-1"></i>Submit
+                </button>
+            </div>
+        </form>
+    </div>
+
+    {{-- Bug bounty note --}}
+    <div class="card border-0 rounded-4 mt-4 p-4" style="background:rgba(var(--bs-primary-rgb),.06)">
+        <div class="d-flex gap-3 align-items-start">
+            <div class="fs-3">🏆</div>
+            <div>
+                <h5 class="fw-bold mb-1">Bug Bounty Program</h5>
+                <p class="text-muted mb-0 small">
+                    Found a security vulnerability? We take security seriously. Submit a detailed bug report using the form above (type: <strong>Bug Report</strong>), and if your report leads to a confirmed security fix, we'll recognise your contribution. Critical vulnerabilities may qualify for a reward at admin discretion.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.pill-btn {
+    border: 2px solid #dee2e6;
+    border-radius: 50px;
+    font-size: .875rem;
+    padding: .35rem 1.1rem;
+    color: #6c757d;
+    background: transparent;
+    transition: all .15s;
+}
+.pill-btn.active, .pill-btn:focus {
+    border-color: var(--bs-primary);
+    background: var(--bs-primary);
+    color: #fff;
+}
+</style>
+
+<script>
+const typeButtons = document.querySelectorAll('#type-toggle .pill-btn');
+const typeValue   = document.getElementById('type-value');
+const hint        = document.getElementById('fr-type-hint');
+const body        = document.getElementById('fr-body');
+const charCount   = document.getElementById('char-count');
+
+typeButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+        typeButtons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        typeValue.value = btn.dataset.value;
+        hint.textContent = btn.dataset.value === 'bug'
+            ? 'For bugs: describe what happened, what you expected, and steps to reproduce.'
+            : 'Be as specific as possible — it helps us prioritise.';
+    });
+});
+
+body.addEventListener('input', () => {
+    charCount.textContent = body.value.length + ' / 5000';
+});
+charCount.textContent = body.value.length + ' / 5000';
+</script>
+@endsection
