@@ -3,8 +3,13 @@
 
 @push('styles')
 <style>
-/* ── Force dark background for this page only ────────────── */
-body, main { background: #0d0118 !important; }
+/* ── Dark page override ──────────────────────────────────── */
+body, main {
+  background: #0d0118 !important;
+  overflow-x: hidden;
+}
+/* Kill main's pb-5 padding so nothing pushes the page taller */
+main { padding-bottom: 0 !important; }
 
 /* ── Root tokens ─────────────────────────────────────────── */
 :root {
@@ -12,30 +17,27 @@ body, main { background: #0d0118 !important; }
   --hc-rose:    #ff6b91;
   --hc-purple:  #7c3aed;
   --hc-gold:    #f59e0b;
-  --hc-pass:    #64748b;
   --hc-dark:    #0f0a1e;
   --hc-dark2:   #1a1133;
   --card-r:     22px;
   --btn-size-lg: 72px;
   --btn-size-md: 56px;
   --btn-size-sm: 46px;
-  --action-h:   100px;   /* height reserved for action buttons */
 }
 
-/* ── Page shell ──────────────────────────────────────────── */
+/* ── Page shell — flex column fills space below navbar ──── */
 .swipe-page {
+  display: flex;
+  flex-direction: column;
   max-width: 460px;
   margin: 0 auto;
-  padding: 0 14px calc(var(--action-h) + 32px);
-  min-height: 100vh;
+  padding: 0 14px;
+  overflow: hidden; /* no scroll on this page */
 }
 
-/* ── Stack wrapper — fills available viewport height ─────── */
+/* ── Stack wrapper — height set precisely by fitDeck() JS ── */
 #swipe-stack {
-  /* Full viewport minus: navbar (~56px) + topbar (~52px) + actions (var) + bottom-nav (~60px) + safety buffer */
-  height: calc(100svh - 56px - 52px - var(--action-h) - 60px - 8px);
-  min-height: 340px;
-  max-height: 580px;
+  height: 460px; /* sensible default, overridden by fitDeck() on load */
   position: relative;
 }
 
@@ -187,18 +189,12 @@ body, main { background: #0d0118 !important; }
 
 /* ── Action buttons ──────────────────────────────────────── */
 .swipe-actions {
-  position: fixed;
-  bottom: 60px; /* above mobile bottom nav */
-  left: 50%; transform: translateX(-50%);
-  width: 100%; max-width: 460px;
-  display: flex; align-items: center; justify-content: center;
-  gap: 18px; padding: 10px 16px 12px;
-  background: linear-gradient(to top, rgba(13,1,24,1) 0%, rgba(13,1,24,.9) 60%, transparent 100%);
-  z-index: 200;
-}
-/* On desktop there's no bottom nav */
-@media (min-width: 992px) {
-  .swipe-actions { bottom: 0; padding-bottom: 16px; }
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  padding: 10px 0 4px;
+  flex-shrink: 0;
 }
 .action-btn {
   border:none; border-radius:50%; display:flex;
@@ -753,6 +749,28 @@ body, main { background: #0d0118 !important; }
 </div>
 
 <script>
+// ── Fit deck height to exact available space ─────────────────────────────────
+function fitDeck() {
+    const stack   = document.getElementById('swipe-stack');
+    if (!stack) return;
+    const navbar  = document.getElementById('mainNav');
+    const bnav    = document.querySelector('.bottom-nav');
+    const topbar  = document.querySelector('.swipe-topbar');
+    const actions = document.querySelector('.swipe-actions');
+
+    const vp      = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+    const navH    = navbar  ? navbar.getBoundingClientRect().height  : 56;
+    const bnavH   = (bnav && getComputedStyle(bnav).display !== 'none') ? bnav.getBoundingClientRect().height : 0;
+    const topbarH = topbar  ? topbar.getBoundingClientRect().height  : 52;
+    const actH    = actions ? actions.getBoundingClientRect().height : 90;
+
+    const h = Math.max(300, Math.min(560, vp - navH - topbarH - actH - bnavH - 16));
+    stack.style.height = h + 'px';
+}
+fitDeck();
+window.addEventListener('resize', fitDeck);
+if (window.visualViewport) window.visualViewport.addEventListener('resize', fitDeck);
+
 const csrf    = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 const likeUrl = '{{ url("like") }}';
 let isAnimating = false;
