@@ -1,7 +1,3 @@
-# Allow Apache to follow the storage/ symlink (public/storage -> storage/app/public).
-# Required for cPanel shared hosting where FollowSymLinks is off by default.
-Options +FollowSymLinks
-
 <IfModule mod_rewrite.c>
     <IfModule mod_negotiation.c>
         Options -MultiViews -Indexes

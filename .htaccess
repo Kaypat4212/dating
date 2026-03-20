@@ -1,12 +1,9 @@
-# Prevent directory listing — MUST be outside IfModule to work on shared hosting
-Options -Indexes
-Options +FollowSymLinks +SymLinksIfOwnerMatch
-
 # Serve index.php by default for any directory request
 DirectoryIndex index.php
 
 <IfModule mod_rewrite.c>
     RewriteEngine On
+    RewriteBase /
 
     # Static assets that physically live inside public/ (build, storage, css, fonts…)
     RewriteCond %{DOCUMENT_ROOT}/public%{REQUEST_URI} -f
