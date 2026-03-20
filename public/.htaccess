@@ -19,17 +19,3 @@
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteRule ^ index.php [L]
 </IfModule>
-
-# ---------------------------------------------------------------------------
-# Disable mod_security (WAF) for all requests routed through Laravel.
-# Without this, cPanel's mod_security blocks the first login POST (403)
-# because it trips on the "password" field — Laravel never even sees it.
-# mod_security v1 (older servers)
-<IfModule mod_security.c>
-    SecFilterEngine Off
-    SecFilterScanPOST Off
-</IfModule>
-# mod_security v2 (most current cPanel servers)
-<IfModule mod_security2.c>
-    SecRuleEngine Off
-</IfModule>
