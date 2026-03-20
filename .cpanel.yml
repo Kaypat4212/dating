@@ -21,7 +21,8 @@ deployment:
     - php artisan optimize
 
     # ── 6. Storage symlink ───────────────────────────────────────────────────
-    - php artisan storage:link --force
+    # The 2>/dev/null suppresses "already exists" errors on re-deploy.
+    - php artisan storage:link --force 2>/dev/null; true
 
     # ── 7. File permissions ──────────────────────────────────────────────────
     # Laravel needs write access to storage/ and bootstrap/cache/.
