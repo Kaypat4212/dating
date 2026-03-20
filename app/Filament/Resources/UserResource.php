@@ -55,6 +55,7 @@ class UserResource extends Resource
             ->columns([
                 Tables\Columns\ImageColumn::make('primaryPhoto.thumbnail_path')
                     ->label('Photo')
+                    ->disk('public')
                     ->defaultImageUrl(fn () => null)
                     ->circular(),
                 Tables\Columns\TextColumn::make('name')->searchable()->sortable(),

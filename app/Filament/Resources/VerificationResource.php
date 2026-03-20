@@ -68,7 +68,7 @@ class VerificationResource extends Resource
                     $statusColors = ['pending' => '#f59e0b', 'approved' => '#10b981', 'rejected' => '#ef4444'];
                     $color = $statusColors[$record->status] ?? '#6b7280';
                     $photo = $u->primaryPhoto
-                        ? '<img src="'.asset('storage/photos/'.($u->primaryPhoto->filename ?? $u->primaryPhoto->path)).'" style="width:56px;height:56px;border-radius:50%;object-fit:cover;border:2px solid #e5e7eb">'
+                        ? '<img src="'.$u->primaryPhoto->thumbnail_url.'" style="width:56px;height:56px;border-radius:50%;object-fit:cover;border:2px solid #e5e7eb">'
                         : '<div style="width:56px;height:56px;border-radius:50%;background:#e5e7eb;display:flex;align-items:center;justify-content:center;font-size:1.5rem">&#x1F464;</div>';
 
                     return new HtmlString('

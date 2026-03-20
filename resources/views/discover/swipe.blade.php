@@ -1,55 +1,702 @@
 @extends('layouts.app')
-@section('title', 'Swipe')
+@section('title', 'Discover')
+
+@push('styles')
+<style>
+/* ── Root tokens ─────────────────────────────────────────── */
+:root {
+  --hc-pink:    #ff3e6c;
+  --hc-rose:    #ff6b91;
+  --hc-purple:  #7c3aed;
+  --hc-gold:    #f59e0b;
+  --hc-pass:    #64748b;
+  --hc-dark:    #0f0a1e;
+  --hc-dark2:   #1a1133;
+  --card-r:     20px;
+  --btn-size-lg: 68px;
+  --btn-size-md: 54px;
+  --btn-size-sm: 44px;
+}
+
+/* ── Page shell ──────────────────────────────────────────── */
+.swipe-page { max-width: 480px; margin: 0 auto; padding: 0 12px 32px; }
+
+/* ── Stack wrapper ───────────────────────────────────────── */
+#swipe-stack { height: 540px; position: relative; }
+
+/* ── Card ────────────────────────────────────────────────── */
+.swipe-card {
+  position: absolute; inset: 0;
+  border-radius: var(--card-r);
+  overflow: hidden;
+  cursor: grab;
+  touch-action: none;
+  will-change: transform;
+  box-shadow: 0 12px 40px rgba(0,0,0,.45), 0 2px 8px rgba(0,0,0,.3);
+  background: var(--hc-dark);
+  transition: box-shadow .2s;
+  user-select: none;
+}
+.swipe-card:active { cursor: grabbing; }
+.swipe-card.is-top { box-shadow: 0 20px 60px rgba(0,0,0,.55), 0 4px 16px rgba(0,0,0,.35); }
+
+/* Photo */
+.swipe-card-img { width:100%; height:100%; object-fit:cover; display:block; pointer-events:none; }
+
+/* Multiple-photo tap zones */
+.photo-tap-prev, .photo-tap-next { position:absolute; top:0; height:100%; z-index:5; }
+.photo-tap-prev { left:0;  width:28%; }
+.photo-tap-next { right:0; width:28%; }
+
+/* Progress dots */
+.photo-dots {
+  position:absolute; top:10px; left:10px; right:10px;
+  display:flex; gap:4px; z-index:6; padding:0 4px;
+}
+.photo-dot {
+  flex:1; height:3px; max-width:48px; border-radius:2px;
+  background: rgba(255,255,255,.35);
+  transition: background .2s, transform .15s;
+  pointer-events: none;
+}
+.photo-dot.active { background: #fff; transform: scaleY(1.4); }
+
+/* Gradient overlays */
+.card-gradient-top {
+  position:absolute; top:0; left:0; right:0; height:120px;
+  background: linear-gradient(to bottom, rgba(0,0,0,.55) 0%, transparent 100%);
+  pointer-events: none; z-index: 4;
+}
+.card-gradient-bottom {
+  position:absolute; bottom:0; left:0; right:0; height:72%;
+  background: linear-gradient(to top, rgba(10,5,25,.97) 0%, rgba(10,5,25,.55) 55%, transparent 100%);
+  pointer-events: none; z-index: 4;
+}
+
+/* Swipe stamps */
+.stamp {
+  position:absolute; top:26px; padding:6px 16px;
+  border-width:3px !important; border-style:solid;
+  border-radius:8px; font-size:1.6rem; font-weight:900;
+  opacity:0; pointer-events:none; z-index:20;
+  letter-spacing:.04em; transition: opacity .05s;
+}
+.stamp-like { left:20px;  border-color:#22c55e; color:#22c55e; transform:rotate(-16deg); }
+.stamp-nope { right:20px; border-color:#ef4444; color:#ef4444; transform:rotate(16deg); }
+.stamp-super { left:50%; transform:translateX(-50%) rotate(0deg); top:22px; border-color:#f59e0b; color:#f59e0b; white-space:nowrap; }
+
+/* Profile info area */
+.card-info {
+  position:absolute; bottom:0; left:0; right:0;
+  padding:0 16px 80px; z-index:10; pointer-events:none;
+  color:#fff;
+}
+.card-name {
+  font-size:1.55rem; font-weight:800; line-height:1.1;
+  text-shadow:0 2px 8px rgba(0,0,0,.6);
+}
+.card-meta { font-size:.82rem; opacity:.78; margin-top:3px; }
+.card-headline { font-size:.9rem; opacity:.88; margin-top:5px; line-height:1.35; }
+.card-tags { margin-top:8px; display:flex; flex-wrap:wrap; gap:5px; }
+.card-tag {
+  font-size:.72rem; padding:3px 10px; border-radius:20px;
+  background:rgba(255,255,255,.13); backdrop-filter:blur(6px);
+  border:1px solid rgba(255,255,255,.15);
+}
+
+/* Compat badge */
+.compat-badge {
+  display:inline-flex; align-items:center; gap:5px;
+  font-size:.75rem; font-weight:700; padding:3px 10px;
+  border-radius:20px; margin-top:7px;
+  background:linear-gradient(135deg,rgba(124,58,237,.8),rgba(236,72,153,.6));
+  backdrop-filter:blur(6px); border:1px solid rgba(255,255,255,.2);
+}
+
+/* Online dot */
+.online-dot {
+  width:10px; height:10px; background:#22c55e; border-radius:50%;
+  border:2px solid #fff; flex-shrink:0;
+  box-shadow:0 0 0 0 rgba(34,197,94,.6);
+  animation: pulse-green 2s infinite;
+}
+@keyframes pulse-green {
+  0%   { box-shadow:0 0 0 0 rgba(34,197,94,.6); }
+  70%  { box-shadow:0 0 0 6px rgba(34,197,94,0); }
+  100% { box-shadow:0 0 0 0 rgba(34,197,94,0); }
+}
+
+/* Verified badge (chip style) */
+.verified-chip {
+  display:inline-flex; align-items:center; gap:3px;
+  font-size:.7rem; font-weight:700; padding:2px 8px;
+  border-radius:20px; background:rgba(29,155,240,.25);
+  border:1px solid rgba(29,155,240,.45); color:#93d5ff;
+}
+
+/* Card top-right mini actions */
+.card-corner-actions {
+  position:absolute; top:14px; right:14px;
+  display:flex; flex-direction:column; gap:7px;
+  z-index:15; pointer-events:all;
+}
+.corner-btn {
+  width:36px; height:36px; border-radius:50%; border:none;
+  background:rgba(255,255,255,.14); backdrop-filter:blur(8px);
+  color:#fff; font-size:.9rem; cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  transition:background .15s, transform .15s;
+  box-shadow:0 2px 8px rgba(0,0,0,.3);
+}
+.corner-btn:hover { background:rgba(255,255,255,.28); transform:scale(1.08); }
+
+/* Expandable info sheet */
+.card-sheet {
+  position:absolute; bottom:0; left:0; right:0;
+  background:rgba(12,6,30,.93); backdrop-filter:blur(14px);
+  border-top:1px solid rgba(255,255,255,.08);
+  border-radius:0 0 var(--card-r) var(--card-r);
+  padding:14px 16px 16px;
+  max-height:0; overflow:hidden;
+  transition:max-height .35s cubic-bezier(.4,0,.2,1);
+  z-index:30; pointer-events:all;
+}
+.card-sheet.open { max-height:220px; overflow-y:auto; }
+.sheet-row { font-size:.82rem; color:rgba(255,255,255,.75); display:flex; gap:6px; align-items:center; }
+.sheet-row + .sheet-row { margin-top:5px; }
+.sheet-row i { color:var(--hc-rose); width:14px; text-align:center; flex-shrink:0; }
+
+/* ── Action buttons ──────────────────────────────────────── */
+.swipe-actions {
+  display:flex; align-items:center; justify-content:center;
+  gap:16px; padding:4px 0 8px;
+}
+.action-btn {
+  border:none; border-radius:50%; display:flex;
+  align-items:center; justify-content:center;
+  cursor:pointer; transition:transform .15s cubic-bezier(.34,1.56,.64,1), box-shadow .2s;
+  position:relative; flex-shrink:0;
+}
+.action-btn:active { transform:scale(.9) !important; }
+
+.btn-pass {
+  width:var(--btn-size-md); height:var(--btn-size-md);
+  background:#1e1836; color:var(--hc-pass);
+  box-shadow:0 4px 16px rgba(0,0,0,.3), 0 0 0 1px rgba(100,116,139,.2);
+  font-size:1.45rem;
+}
+.btn-pass:hover { transform:scale(1.08); box-shadow:0 6px 20px rgba(100,116,139,.35), 0 0 0 1px rgba(100,116,139,.4); }
+.btn-pass.active-glow { box-shadow:0 0 0 3px #ef4444, 0 6px 24px rgba(239,68,68,.45); color:#ef4444; }
+
+.btn-super {
+  width:var(--btn-size-sm); height:var(--btn-size-sm);
+  background:#1e1836; color:var(--hc-gold);
+  box-shadow:0 4px 16px rgba(0,0,0,.3), 0 0 0 1px rgba(245,158,11,.2);
+  font-size:1.2rem;
+}
+.btn-super:hover { transform:scale(1.1); box-shadow:0 6px 22px rgba(245,158,11,.4), 0 0 0 1px rgba(245,158,11,.5); }
+
+.btn-like {
+  width:var(--btn-size-lg); height:var(--btn-size-lg);
+  background:linear-gradient(135deg, var(--hc-pink), var(--hc-rose));
+  color:#fff; font-size:1.9rem;
+  box-shadow:0 6px 24px rgba(255,62,108,.5), 0 2px 8px rgba(255,62,108,.3);
+}
+.btn-like:hover { transform:scale(1.1); box-shadow:0 8px 32px rgba(255,62,108,.65); }
+.btn-like.active-glow { box-shadow:0 0 0 3px #22c55e, 0 8px 32px rgba(34,197,94,.5); }
+
+.btn-browse {
+  width:var(--btn-size-sm); height:var(--btn-size-sm);
+  background:#1e1836; color:rgba(255,255,255,.6);
+  box-shadow:0 4px 16px rgba(0,0,0,.3), 0 0 0 1px rgba(255,255,255,.08);
+  font-size:1.1rem; text-decoration:none;
+}
+.btn-browse:hover { transform:scale(1.08); color:#fff; }
+
+/* Heart burst on like */
+@keyframes heart-burst {
+  0%   { transform:scale(1); opacity:1; }
+  60%  { transform:scale(1.55); opacity:.8; }
+  100% { transform:scale(1); opacity:1; }
+}
+.btn-like.burst { animation:heart-burst .3s cubic-bezier(.34,1.56,.64,1); }
+
+/* ── Top bar ─────────────────────────────────────────────── */
+.swipe-topbar {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:8px 0 14px;
+}
+.swipe-topbar-title { font-size:1.2rem; font-weight:800; color:#fff; display:flex; align-items:center; gap:8px; }
+.swipe-topbar-title .fire { font-size:1.3rem; }
+
+/* Filter chips */
+.filter-chip {
+  font-size:.75rem; font-weight:600; padding:5px 13px;
+  border-radius:20px; border:1.5px solid rgba(255,255,255,.15);
+  background:rgba(255,255,255,.06); color:rgba(255,255,255,.7);
+  cursor:pointer; transition:all .2s; text-decoration:none;
+  display:inline-flex; align-items:center; gap:5px;
+}
+.filter-chip:hover { background:rgba(255,255,255,.12); color:#fff; }
+.filter-chip.active {
+  background:linear-gradient(135deg,var(--hc-purple),var(--hc-pink));
+  border-color:transparent; color:#fff;
+  box-shadow:0 2px 12px rgba(124,58,237,.4);
+}
+
+/* ── Empty state ─────────────────────────────────────────── */
+.empty-state {
+  text-align:center; padding:40px 20px;
+  background:rgba(255,255,255,.03); border-radius:20px;
+  border:1px solid rgba(255,255,255,.06);
+}
+
+/* ── Fallback alert ──────────────────────────────────────── */
+.location-fallback {
+  display:flex; align-items:center; gap:9px;
+  padding:9px 14px; border-radius:12px; margin-bottom:12px;
+  background:rgba(14,165,233,.1); border:1px solid rgba(14,165,233,.2);
+  font-size:.8rem; color:rgba(255,255,255,.75);
+}
+
+/* ── Match modal ─────────────────────────────────────────── */
+#matchModal .modal-content {
+  border:none; border-radius:24px; overflow:hidden;
+}
+.match-bg {
+  background:linear-gradient(160deg, #1a0533 0%, #2d0a4e 40%, #1a0533 100%);
+  position:relative; overflow:hidden;
+}
+.match-bg::before {
+  content:''; position:absolute; inset:0;
+  background:radial-gradient(ellipse at 50% 0%, rgba(255,62,108,.25) 0%, transparent 70%);
+  pointer-events:none;
+}
+.match-avatars { display:flex; align-items:center; justify-content:center; gap:0; margin-bottom:12px; }
+.match-avatar {
+  width:88px; height:88px; border-radius:50%; overflow:hidden;
+  border:3px solid rgba(255,255,255,.3);
+  box-shadow:0 4px 20px rgba(0,0,0,.5);
+  flex-shrink:0;
+}
+.match-avatar:first-child { transform:translateX(14px) rotate(-4deg); z-index:1; border-color:var(--hc-pink); }
+.match-avatar:last-child  { transform:translateX(-14px) rotate(4deg); z-index:1; border-color:var(--hc-rose); }
+.match-heart-icon { font-size:2.2rem; z-index:2; position:relative; margin:0 -4px; }
+.match-title { font-size:2rem; font-weight:900; letter-spacing:-.02em; }
+.match-title span { background:linear-gradient(90deg,#ff6b91,#f59e0b); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+
+.icebreaker-box {
+  background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.12);
+  border-radius:14px; padding:14px 16px; margin-top:16px; text-align:left;
+}
+.icebreaker-label { font-size:.72rem; color:rgba(255,255,255,.5); display:flex; align-items:center; gap:5px; margin-bottom:6px; }
+.icebreaker-text  { font-size:.9rem; color:#fff; font-style:italic; line-height:1.4; }
+
+/* ── Like-with-message modal ─────────────────────────────── */
+#likeMessageModal .modal-content { border:none; border-radius:22px; overflow:hidden; }
+.like-msg-bg {
+  background:linear-gradient(160deg,#0f0a1e,#1a0533);
+  border:1px solid rgba(255,255,255,.07);
+}
+.like-msg-photo {
+  width:72px; height:72px; border-radius:50%; overflow:hidden; margin:0 auto 10px;
+  border:2.5px solid var(--hc-pink);
+  box-shadow:0 0 0 4px rgba(255,62,108,.2);
+}
+
+/* ── Toast ───────────────────────────────────────────────── */
+#swipe-toast {
+  border-radius:14px !important; min-width:180px;
+  box-shadow:0 8px 30px rgba(0,0,0,.4) !important;
+}
+
+/* ── Limit overlay ───────────────────────────────────────── */
+.swipe-overlay {
+  position:fixed; inset:0; z-index:3000;
+  background:rgba(10,5,25,.94); backdrop-filter:blur(8px);
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  text-align:center; padding:2rem;
+}
+.swipe-overlay .overlay-icon { font-size:4.5rem; margin-bottom:16px; }
+.swipe-overlay h4 { color:#fff; font-weight:800; }
+.countdown-display {
+  font-size:3rem; font-weight:900; letter-spacing:.05em;
+  background:linear-gradient(90deg,var(--hc-gold),var(--hc-pink));
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  margin:8px 0 16px;
+}
+
+/* ── Keyboard hint ───────────────────────────────────────── */
+.key-hints {
+  display:flex; justify-content:center; gap:18px;
+  margin-top:8px; opacity:.4; font-size:.72rem; color:rgba(255,255,255,.6);
+}
+.key-hints kbd {
+  background:rgba(255,255,255,.1); border-radius:5px;
+  padding:2px 7px; font-size:.7rem; color:inherit;
+  border:1px solid rgba(255,255,255,.15); margin-right:3px;
+}
+
+/* confetti particle */
+.confetti-particle {
+  position:fixed; width:8px; height:8px; border-radius:2px;
+  pointer-events:none; z-index:9999; animation:confetti-fall linear forwards;
+}
+@keyframes confetti-fall {
+  0%   { transform:translateY(-20px) rotate(0deg); opacity:1; }
+  100% { transform:translateY(100vh) rotate(720deg); opacity:0; }
+}
+</style>
+@endpush
+
 @section('content')
-<div class="container py-4" style="max-width:520px">
+<div class="swipe-page">
 
     @include('partials.safety-banner')
 
-    {{-- Fallback notice: no users found within distance preference --}}
+    {{-- Location fallback notice --}}
     @if(!empty($fallbackToGlobal) && $fallbackToGlobal)
-    <div class="alert alert-info border-0 rounded-3 d-flex align-items-center gap-2 mb-3 py-2 px-3" style="font-size:.85rem;background:#e8f4fd;">
-        <i class="bi bi-geo-alt-fill text-info"></i>
-        <span>No one found within your distance setting — showing profiles from farther away.
-            <a href="{{ route('preferences.edit') }}" class="alert-link ms-1">Expand distance</a></span>
+    <div class="location-fallback">
+        <i class="bi bi-geo-alt-fill" style="color:#38bdf8;flex-shrink:0"></i>
+        <span>No one found within your distance — showing profiles farther away.
+            <a href="{{ route('preferences.edit') }}" style="color:#7dd3fc;font-weight:600" class="ms-1">Expand distance</a>
+        </span>
     </div>
     @endif
 
-    <div class="d-flex align-items-center justify-content-between mb-3">
-        <h5 class="fw-bold mb-0"><i class="bi bi-fire text-danger me-2"></i>Discover</h5>
+    {{-- Top bar --}}
+    <div class="swipe-topbar">
+        <div class="swipe-topbar-title">
+            <span class="fire">🔥</span> Discover
+        </div>
         <div class="d-flex align-items-center gap-2">
-            {{-- Verified-only quick filter (only for verified users) --}}
             @if(auth()->user()->is_verified)
             <a href="{{ route('swipe.deck', array_merge(request()->query(), ['verified_only' => request('verified_only') ? 0 : 1])) }}"
-               class="btn btn-sm rounded-pill d-inline-flex align-items-center gap-1 px-3 fw-semibold
-                      {{ request('verified_only') ? 'btn-primary' : 'btn-outline-secondary' }}"
-               style="font-size:.78rem;transition:all .2s"
-               title="{{ request('verified_only') ? 'Showing verified members only — click to show all' : 'Show verified members only' }}">
-                <i class="bi bi-patch-check-fill" style="color:{{ request('verified_only') ? '#fff' : '#1d9bf0' }};font-size:.85rem"></i>
+               class="filter-chip {{ request('verified_only') ? 'active' : '' }}">
+                <i class="bi bi-patch-check-fill" style="font-size:.8rem"></i>
                 Verified
-                @if(request('verified_only'))
-                <span class="badge bg-white text-primary rounded-pill ms-1" style="font-size:.6rem">ON</span>
-                @endif
             </a>
             @endif
-            <a href="{{ route('discover.index') }}" class="btn btn-sm btn-outline-secondary">
-                <i class="bi bi-grid me-1"></i>Browse All
+            <a href="{{ route('discover.index') }}" class="filter-chip">
+                <i class="bi bi-grid-3x3-gap" style="font-size:.8rem"></i>Browse
             </a>
         </div>
     </div>
 
     @if($profiles->isEmpty())
-        <div class="card border-0 shadow-sm text-center p-5 rounded-4">
-            <div class="display-1 mb-3">🌍</div>
-            <h5 class="fw-bold">You've seen everyone nearby!</h5>
-            <p class="text-muted">Check back later or expand your distance preference.</p>
-            <a href="{{ route('preferences.edit') }}" class="btn btn-primary mx-auto" style="width:fit-content">
-                <i class="bi bi-sliders me-2"></i>Adjust Preferences
-            </a>
-        </div>
+    <div class="empty-state">
+        <div style="font-size:4rem;margin-bottom:14px">🌍</div>
+        <h5 class="fw-bold text-white mb-2">You've seen everyone nearby!</h5>
+        <p style="color:rgba(255,255,255,.5);font-size:.9rem">Check back later or expand your preferences.</p>
+        <a href="{{ route('preferences.edit') }}" class="btn btn-sm fw-semibold mt-2 px-4"
+           style="background:linear-gradient(135deg,var(--hc-purple),var(--hc-pink));color:#fff;border:none;border-radius:20px">
+            <i class="bi bi-sliders me-2"></i>Adjust Preferences
+        </a>
+    </div>
     @else
 
-    {{-- Card stack --}}
-    <div id="swipe-stack" class="position-relative mb-4" style="height:520px">
+    {{-- ══ Card stack ══════════════════════════════════════ --}}
+    <div id="swipe-stack">
+
+        @foreach($profiles->reverse() as $index => $profile)
+        @php
+            $photo     = $profile->primaryPhoto;
+            $prof      = $profile->profile;
+            $age       = $profile->date_of_birth ? \Carbon\Carbon::parse($profile->date_of_birth)->age : null;
+            $interests = $prof?->interests?->take(4) ?? collect();
+            $allPhotos = $profile->photos->where('is_approved', true)->values();
+            $isTop     = $loop->last;
+        @endphp
+
+        <div class="swipe-card {{ $isTop ? 'is-top' : '' }}"
+             data-user-id="{{ $profile->id }}"
+             data-username="{{ $profile->username }}"
+             data-name="{{ $profile->name }}"
+             data-photo="{{ $photo?->url ?? '' }}"
+             data-photos="{{ json_encode($allPhotos->map(fn($p) => $p->url)->values()) }}"
+             style="{{ $isTop
+                 ? 'z-index:100;'
+                 : 'transform:scale('.( 1 - ($loop->remaining * 0.022) ).');top:'.($loop->remaining * 9).'px;z-index:'.$loop->index.';' }}">
+
+            {{-- Photo --}}
+            <div class="position-absolute inset-0 w-100 h-100">
+                @if($photo)
+                <img src="{{ $photo->url }}"
+                     class="swipe-card-img"
+                     data-photos="{{ json_encode($allPhotos->map(fn($p) => $p->url)->values()) }}"
+                     data-idx="0" alt="{{ $profile->name }}">
+                @else
+                <div class="w-100 h-100 d-flex align-items-center justify-content-center"
+                     style="background:linear-gradient(135deg,#2d0a4e,#0f0a1e)">
+                    <i class="bi bi-person-circle text-white" style="font-size:7rem;opacity:.15"></i>
+                </div>
+                @endif
+
+                {{-- Photo navigation tap zones --}}
+                @if($allPhotos->count() > 1)
+                <div class="photo-tap-prev" data-action="prev"></div>
+                <div class="photo-tap-next" data-action="next"></div>
+                {{-- Progress dots --}}
+                <div class="photo-dots">
+                    @foreach($allPhotos as $di => $dp)
+                    <div class="photo-dot {{ $di === 0 ? 'active' : '' }}"></div>
+                    @endforeach
+                </div>
+                @endif
+            </div>
+
+            {{-- Gradient overlays --}}
+            <div class="card-gradient-top"></div>
+            <div class="card-gradient-bottom"></div>
+
+            {{-- Swipe stamps --}}
+            <div class="stamp stamp-like">LIKE ❤</div>
+            <div class="stamp stamp-nope">NOPE ✕</div>
+            <div class="stamp stamp-super">⭐ SUPER</div>
+
+            {{-- Corner actions --}}
+            <div class="card-corner-actions">
+                <button class="corner-btn card-btn-info" data-target="sheet-{{ $profile->id }}" title="More info">
+                    <i class="bi bi-info-lg"></i>
+                </button>
+                @if($profile->username)
+                <a href="{{ route('profile.show', $profile->username) }}"
+                   class="corner-btn" title="Full profile" target="_blank"
+                   style="text-decoration:none">
+                    <i class="bi bi-person-fill" style="font-size:.85rem"></i>
+                </a>
+                @endif
+                @if($allPhotos->count() > 1)
+                <div class="corner-btn" style="font-size:.68rem;gap:2px;cursor:default;pointer-events:none">
+                    <i class="bi bi-images" style="font-size:.7rem"></i>
+                    {{ $allPhotos->count() }}
+                </div>
+                @endif
+            </div>
+
+            {{-- Profile info --}}
+            <div class="card-info">
+                {{-- Name, age, online --}}
+                <div class="d-flex align-items-center gap-8 flex-wrap" style="gap:8px">
+                    <span class="card-name">{{ $profile->name }}{{ $age ? ', '.$age : '' }}</span>
+                    @if($profile->is_verified)
+                    <span class="verified-chip"><i class="bi bi-patch-check-fill" style="font-size:.72rem"></i>ID</span>
+                    @endif
+                    @if(isset($profile->last_active_at) && \Carbon\Carbon::parse($profile->last_active_at)->diffInMinutes() < 15)
+                    <span class="online-dot ms-1"></span>
+                    @endif
+                </div>
+
+                {{-- Location --}}
+                @if($prof?->city || $prof?->country)
+                <div class="card-meta">
+                    <i class="bi bi-geo-alt me-1"></i>{{ implode(', ', array_filter([$prof->city, $prof->country])) }}
+                </div>
+                @endif
+
+                {{-- Headline --}}
+                @if($prof?->headline)
+                <div class="card-headline">{{ Str::limit($prof->headline, 70) }}</div>
+                @endif
+
+                {{-- Tags --}}
+                @if($interests->isNotEmpty())
+                <div class="card-tags">
+                    @foreach($interests as $int)
+                    <span class="card-tag">{{ $int->icon ?? '' }} {{ $int->name }}</span>
+                    @endforeach
+                </div>
+                @endif
+
+                {{-- Compat score --}}
+                @if(($profile->compat_score ?? 0) > 0)
+                <div class="mt-1">
+                    <span class="compat-badge">
+                        <i class="bi bi-magic" style="font-size:.75rem"></i>
+                        {{ $profile->compat_score }}% Match
+                    </span>
+                </div>
+                @endif
+            </div>
+
+            {{-- Expandable info sheet --}}
+            <div id="sheet-{{ $profile->id }}" class="card-sheet">
+                @if($prof?->bio)
+                <p style="font-size:.84rem;color:rgba(255,255,255,.82);margin-bottom:10px;line-height:1.5">{{ $prof->bio }}</p>
+                @endif
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px">
+                    @if($prof?->relationship_goal)<div class="sheet-row"><i class="bi bi-heart-fill"></i><span>{{ ucfirst($prof->relationship_goal) }}</span></div>@endif
+                    @if($prof?->education)<div class="sheet-row"><i class="bi bi-mortarboard-fill"></i><span>{{ ucfirst(str_replace('_',' ',$prof->education)) }}</span></div>@endif
+                    @if($prof?->occupation)<div class="sheet-row"><i class="bi bi-briefcase-fill"></i><span>{{ $prof->occupation }}</span></div>@endif
+                    @if($prof?->body_type)<div class="sheet-row"><i class="bi bi-person-fill"></i><span>{{ ucfirst($prof->body_type) }}</span></div>@endif
+                    @if($prof?->wants_children)<div class="sheet-row"><i class="bi bi-emoji-smile-fill"></i><span>{{ ucfirst(str_replace('_',' ',$prof->wants_children)) }}</span></div>@endif
+                    @if($prof?->religion)<div class="sheet-row"><i class="bi bi-moon-stars-fill"></i><span>{{ ucfirst($prof->religion) }}</span></div>@endif
+                </div>
+            </div>
+
+        </div>
+        @endforeach
+    </div>
+
+    {{-- ══ Action buttons ══════════════════════════════════ --}}
+    <div class="swipe-actions mt-2">
+        {{-- Pass --}}
+        <button id="btn-pass" class="action-btn btn-pass" title="Pass  ←">
+            <i class="bi bi-x-lg"></i>
+        </button>
+        {{-- Super Like --}}
+        <button id="btn-super-like" class="action-btn btn-super" title="Super Like  ↑">
+            <i class="bi bi-star-fill"></i>
+        </button>
+        {{-- Like --}}
+        <button id="btn-like" class="action-btn btn-like" title="Like  →">
+            <i class="bi bi-heart-fill"></i>
+        </button>
+        {{-- Browse --}}
+        <a href="{{ route('discover.index') }}" class="action-btn btn-browse" title="Browse all">
+            <i class="bi bi-grid-3x3-gap-fill"></i>
+        </a>
+    </div>
+
+    {{-- Keyboard hints --}}
+    <div class="key-hints d-none d-md-flex">
+        <span><kbd>←</kbd>Pass</span>
+        <span><kbd>↑</kbd>Super Like</span>
+        <span><kbd>→</kbd>Like</span>
+    </div>
+
+    {{-- ══ Match modal ══════════════════════════════════════ --}}
+    <div class="modal fade" id="matchModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="match-bg p-4 p-sm-5 text-center">
+                    <div class="match-avatars">
+                        <div class="match-avatar">
+                            <img src="{{ auth()->user()->primaryPhoto?->thumbnail_url ?? '' }}"
+                                 class="w-100 h-100" style="object-fit:cover" alt="You">
+                        </div>
+                        <span class="match-heart-icon">💞</span>
+                        <div class="match-avatar" id="matchTheirAvatar">
+                            <img src="" id="matchTheirPhotoImg"
+                                 class="w-100 h-100" style="object-fit:cover;display:none" alt="">
+                            <div id="matchPhotoFallback"
+                                 class="w-100 h-100 d-flex align-items-center justify-content-center"
+                                 style="background:#2d0a4e;font-size:2.5rem">🧡</div>
+                        </div>
+                    </div>
+
+                    <div class="match-title mt-2 mb-1 text-white">It's a <span>Match!</span></div>
+                    <p style="color:rgba(255,255,255,.65);font-size:.9rem">
+                        You and <strong class="text-white" id="match-name"></strong> liked each other 🎉
+                    </p>
+
+                    <div class="icebreaker-box">
+                        <div class="icebreaker-label">
+                            <i class="bi bi-lightbulb-fill" style="color:var(--hc-gold)"></i>
+                            Icebreaker suggestion
+                        </div>
+                        <div class="icebreaker-text" id="icebreaker-prompt"></div>
+                        <button class="btn btn-link p-0 mt-2" id="refreshIcebreaker"
+                                style="font-size:.75rem;color:rgba(255,255,255,.45);text-decoration:none">
+                            <i class="bi bi-arrow-clockwise me-1"></i>Try another
+                        </button>
+                    </div>
+
+                    <div class="d-flex gap-3 mt-4 justify-content-center">
+                        <button class="btn btn-sm px-4 fw-semibold" data-bs-dismiss="modal"
+                                style="background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.2);border-radius:20px">
+                            Keep Swiping
+                        </button>
+                        <a href="{{ route('conversations.index') }}"
+                           class="btn btn-sm px-4 fw-bold" id="matchChatBtn"
+                           style="background:linear-gradient(135deg,var(--hc-pink),var(--hc-rose));color:#fff;border:none;border-radius:20px;box-shadow:0 4px 16px rgba(255,62,108,.4)">
+                            <i class="bi bi-chat-heart-fill me-2"></i>Send a Message
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- ══ Like-with-message modal ══════════════════════════ --}}
+    <div class="modal fade" id="likeMessageModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content">
+                <div class="like-msg-bg p-4">
+                    <div class="like-msg-photo">
+                        <img src="" id="likeModalImg" class="w-100 h-100" style="object-fit:cover" alt="">
+                    </div>
+                    <div class="text-center mb-3">
+                        <h6 class="fw-bold text-white mb-1">Like <span id="likeModalName"></span>?</h6>
+                        <p class="mb-0" style="color:rgba(255,255,255,.45);font-size:.8rem">Add a note to stand out 💌</p>
+                    </div>
+                    <textarea id="likeMessageInput" rows="3" maxlength="200"
+                              class="form-control mb-3"
+                              style="background:rgba(255,255,255,.06);color:#fff;border:1px solid rgba(255,255,255,.12);border-radius:12px;resize:none;font-size:.88rem"
+                              placeholder="Say something nice… (optional)"
+                              oninput="this.classList.remove('is-invalid');document.getElementById('likeNoteError')?.remove()"></textarea>
+                    <div class="d-flex gap-2">
+                        <button id="likeJustBtn" class="btn btn-sm flex-fill fw-semibold"
+                                style="background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.15);border-radius:12px">
+                            ❤️ Just Like
+                        </button>
+                        <button id="likeWithNoteBtn" class="btn btn-sm flex-fill fw-bold"
+                                style="background:linear-gradient(135deg,var(--hc-pink),var(--hc-rose));color:#fff;border:none;border-radius:12px">
+                            💌 Send Note
+                        </button>
+                    </div>
+                    <button class="btn btn-link w-100 mt-2 p-0 text-center"
+                            style="font-size:.78rem;color:rgba(255,255,255,.3);text-decoration:none"
+                            data-bs-dismiss="modal">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- ══ Toast ════════════════════════════════════════════ --}}
+    <div class="position-fixed bottom-0 end-0 p-3" style="z-index:9999">
+        <div id="swipe-toast" class="toast align-items-center border-0" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div id="swipe-toast-body" class="toast-body fw-semibold" style="color:#fff"></div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        </div>
+    </div>
+
+    {{-- ══ Like limit overlay ═══════════════════════════════ --}}
+    <div id="limit-overlay" class="swipe-overlay" style="display:none">
+        <div class="overlay-icon">⏳</div>
+        <h4>Daily Like Limit Reached</h4>
+        <p style="color:rgba(255,255,255,.55);max-width:280px;font-size:.9rem">
+            You've used all your free likes today. Your limit resets in:
+        </p>
+        <div class="countdown-display" id="swipe-countdown">--:--:--</div>
+        <p style="color:rgba(255,255,255,.4);font-size:.78rem;margin-bottom:20px">We'll email you when your likes reset!</p>
+        <a href="{{ route('premium.show') }}"
+           class="btn fw-bold px-5 py-2"
+           style="background:linear-gradient(135deg,var(--hc-gold),#f97316);color:#fff;border:none;border-radius:24px;box-shadow:0 4px 20px rgba(245,158,11,.4)">
+            <i class="bi bi-star-fill me-2"></i>Get Premium — Unlimited Likes
+        </a>
+        <a href="{{ route('discover.index') }}"
+           class="btn btn-sm btn-outline-light mt-3"
+           style="border-radius:20px;font-size:.82rem">Browse Profiles Instead</a>
+    </div>
+
+    {{-- ══ Admin restriction overlay ═══════════════════════ --}}
+    <div id="restriction-overlay" class="swipe-overlay"
+         style="display:{{ ($isSwipeRestricted ?? false) ? 'flex' : 'none' }}">
+        <div class="overlay-icon">🚫</div>
+        <h4>Swipes Restricted</h4>
+        <p style="color:rgba(255,255,255,.55);max-width:280px">
+            Your ability to swipe has been restricted by an administrator.
+        </p>
+        <a href="{{ route('pages.contact') }}"
+           class="btn btn-outline-light mt-3" style="border-radius:20px">Contact Support</a>
+    </div>
+
+    @endif
+</div>
 
         @foreach($profiles->reverse() as $index => $profile)
         @php

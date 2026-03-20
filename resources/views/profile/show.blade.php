@@ -238,6 +238,7 @@ document.querySelectorAll('.wave-btn').forEach(btn => {
 
 // ── Tip modal ─────────────────────────────────────────────────────────────────
 const tipModal = new bootstrap.Modal(document.getElementById('tipModal'));
+let _tipCurrentBalance = 0;
 
 document.querySelectorAll('.tip-btn').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -246,13 +247,44 @@ document.querySelectorAll('.tip-btn').forEach(btn => {
         document.getElementById('tip-alert').className = 'd-none';
         document.getElementById('tip-alert').innerHTML = '';
         document.getElementById('tipForm').reset();
+        // Pre-fill recipient id after reset
+        document.getElementById('tip-recipient-id').value = btn.dataset.user;
         // Show current balance
         fetch('{{ route("wallet.balance") }}')
             .then(r => r.json())
-            .then(d => { document.getElementById('tip-my-balance').textContent = d.balance ?? 0; })
-            .catch(() => { document.getElementById('tip-my-balance').textContent = '?'; });
+            .then(d => {
+                _tipCurrentBalance = parseInt(d.balance ?? 0, 10);
+                const balEl = document.getElementById('tip-my-balance');
+                balEl.textContent = _tipCurrentBalance;
+                if (_tipCurrentBalance <= 0) {
+                    const alertEl = document.getElementById('tip-alert');
+                    alertEl.className = 'alert alert-warning mb-0';
+                    alertEl.innerHTML = '<i class="bi bi-exclamation-triangle me-1"></i>You have no credits. <a href="{{ route("wallet.show") }}" class="alert-link">Fund your wallet</a> first.';
+                    document.getElementById('tip-submit-btn').disabled = true;
+                } else {
+                    document.getElementById('tip-submit-btn').disabled = false;
+                }
+            })
+            .catch(() => {
+                document.getElementById('tip-my-balance').textContent = '?';
+            });
         tipModal.show();
     });
+});
+
+document.getElementById('tip-amount')?.addEventListener('input', function () {
+    const amount = parseInt(this.value, 10);
+    const submitBtn = document.getElementById('tip-submit-btn');
+    const alertEl = document.getElementById('tip-alert');
+    if (amount > 0 && amount > _tipCurrentBalance) {
+        alertEl.className = 'alert alert-warning';
+        alertEl.innerHTML = '<i class="bi bi-exclamation-triangle me-1"></i>Amount exceeds your balance of <strong>'+ _tipCurrentBalance +'</strong> credits.';
+        submitBtn.disabled = true;
+    } else if (_tipCurrentBalance > 0) {
+        alertEl.className = 'd-none';
+        alertEl.innerHTML = '';
+        submitBtn.disabled = false;
+    }
 });
 
 document.getElementById('tipForm').addEventListener('submit', async (e) => {
@@ -260,6 +292,20 @@ document.getElementById('tipForm').addEventListener('submit', async (e) => {
     const btn = document.getElementById('tip-submit-btn');
     const spinner = document.getElementById('tip-spinner');
     const alertEl = document.getElementById('tip-alert');
+    const amount = parseInt(document.getElementById('tip-amount').value, 10);
+
+    // Client-side guard
+    if (isNaN(amount) || amount < 1) {
+        alertEl.className = 'alert alert-danger';
+        alertEl.innerHTML = '<i class="bi bi-exclamation-circle me-1"></i>Please enter a valid amount.';
+        return;
+    }
+    if (amount > _tipCurrentBalance) {
+        alertEl.className = 'alert alert-danger';
+        alertEl.innerHTML = '<i class="bi bi-exclamation-circle me-1"></i>Insufficient balance. You only have <strong>'+ _tipCurrentBalance +'</strong> credits.';
+        return;
+    }
+
     btn.disabled = true;
     spinner.classList.remove('d-none');
     alertEl.className = 'd-none';
@@ -271,14 +317,22 @@ document.getElementById('tipForm').addEventListener('submit', async (e) => {
             headers: { 'X-CSRF-TOKEN': csrf },
             body
         });
-        const data = await res.json();
+        let data = {};
+        try { data = await res.json(); } catch (_) {}
         if (res.ok && data.success) {
             alertEl.className = 'alert alert-success';
-            alertEl.innerHTML = '<i class="bi bi-check-circle me-1"></i>Tip sent successfully!';
-            setTimeout(() => tipModal.hide(), 1500);
+            alertEl.innerHTML = '<i class="bi bi-check-circle me-1"></i>Tip sent successfully! 🎉';
+            _tipCurrentBalance -= amount;
+            document.getElementById('tip-my-balance').textContent = _tipCurrentBalance;
+            setTimeout(() => tipModal.hide(), 1800);
         } else {
             alertEl.className = 'alert alert-danger';
-            alertEl.innerHTML = '<i class="bi bi-exclamation-circle me-1"></i>' + (data.error || 'Something went wrong.');
+            const msg = data.error || (data.message) || 'Something went wrong.';
+            alertEl.innerHTML = '<i class="bi bi-exclamation-circle me-1"></i>' + msg;
+            if (res.status === 422 && data.errors) {
+                const errs = Object.values(data.errors).flat().join(' ');
+                alertEl.innerHTML = '<i class="bi bi-exclamation-circle me-1"></i>' + errs;
+            }
         }
     } catch {
         alertEl.className = 'alert alert-danger';

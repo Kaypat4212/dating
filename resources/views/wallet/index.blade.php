@@ -62,13 +62,18 @@
                     <h5 class="fw-bold mb-3"><i class="bi bi-clock-history me-2 text-secondary"></i>Transaction History</h5>
                     <ul class="nav nav-tabs mb-3" id="tipTabs" role="tablist">
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link active" id="received-tab" data-bs-toggle="tab" data-bs-target="#received" type="button" role="tab">
-                                <i class="bi bi-arrow-down-circle me-1 text-success"></i>Received Tips
+                            <button class="nav-link active" id="all-tab" data-bs-toggle="tab" data-bs-target="#all-activity" type="button" role="tab">
+                                <i class="bi bi-list-ul me-1 text-secondary"></i>All Activity
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="received-tab" data-bs-toggle="tab" data-bs-target="#received" type="button" role="tab">
+                                <i class="bi bi-arrow-down-circle me-1 text-success"></i>Received
                             </button>
                         </li>
                         <li class="nav-item" role="presentation">
                             <button class="nav-link" id="sent-tab" data-bs-toggle="tab" data-bs-target="#sent" type="button" role="tab">
-                                <i class="bi bi-arrow-up-circle me-1 text-danger"></i>Sent Tips
+                                <i class="bi bi-arrow-up-circle me-1 text-danger"></i>Sent
                             </button>
                         </li>
                         <li class="nav-item" role="presentation">
@@ -83,7 +88,12 @@
                         </li>
                     </ul>
                     <div class="tab-content" id="tipTabsContent">
-                        <div class="tab-pane fade show active" id="received" role="tabpanel">
+                        <div class="tab-pane fade show active" id="all-activity" role="tabpanel">
+                            <div id="all-activity-list">
+                                <div class="text-center py-4 text-muted"><div class="spinner-border spinner-border-sm me-2"></div>Loading…</div>
+                            </div>
+                        </div>
+                        <div class="tab-pane fade" id="received" role="tabpanel">
                             <div id="received-tips">
                                 <div class="text-center py-4 text-muted"><div class="spinner-border spinner-border-sm me-2"></div>Loading…</div>
                             </div>
@@ -116,21 +126,28 @@
 
 @push('scripts')
 <script>
-function tipRow(label, name, amount, color, sign, date, message) {
+function fmtDate(iso) {
+    if (!iso) return '—';
+    const d = new Date(iso);
+    return d.toLocaleDateString(undefined, { month:'short', day:'numeric', year:'numeric' })
+        + ' · ' + d.toLocaleTimeString(undefined, { hour:'2-digit', minute:'2-digit' });
+}
+function tipRow(label, name, amount, color, sign, iso, message) {
+    const icon = sign === '+' ? '🎁' : '💸';
     return `<div class="d-flex align-items-start justify-content-between py-2 border-bottom">
         <div>
-            <div class="fw-semibold">${label}: <span class="text-dark">${name}</span></div>
-            ${message ? `<div class="text-muted small">${message}</div>` : ''}
-            <div class="text-muted" style="font-size:.78rem">${date}</div>
+            <div class="fw-semibold">${icon} ${label}: <span class="text-dark">${name}</span></div>
+            ${message ? `<div class="text-muted small fst-italic">"${message}"</div>` : ''}
+            <div class="text-muted" style="font-size:.78rem">${fmtDate(iso)}</div>
         </div>
-        <div class="fw-bold ${color} ms-3 text-nowrap">${sign}${amount}</div>
+        <div class="fw-bold ${color} ms-3 text-nowrap">${sign}${amount} <small class="fw-normal text-muted">cr</small></div>
     </div>`;
 }
 function statusBadge(status) {
     const map = { approved: 'success', rejected: 'danger', pending: 'warning' };
     return `<span class="badge bg-${map[status] ?? 'secondary'} text-capitalize">${status}</span>`;
 }
-function requestRow(icon, title, amount, sign, color, date, status, note) {
+function requestRow(icon, title, amount, sign, color, iso, status, note) {
     const isRejected = status === 'rejected';
     const noteHtml   = note
         ? `<div class="small mt-1 ${isRejected ? 'text-danger' : 'text-muted'}"><i class="bi bi-info-circle me-1"></i>${note}</div>`
@@ -141,7 +158,7 @@ function requestRow(icon, title, amount, sign, color, date, status, note) {
             ${noteHtml}
             <div class="mt-1 d-flex align-items-center gap-2">
                 ${statusBadge(status)}
-                <span class="text-muted" style="font-size:.78rem">${date}</span>
+                <span class="text-muted" style="font-size:.78rem">${fmtDate(iso)}</span>
             </div>
         </div>
         <div class="fw-bold ${color} ms-3 text-nowrap">${sign}${amount} <small class="fw-normal text-muted">cr</small></div>
@@ -150,38 +167,57 @@ function requestRow(icon, title, amount, sign, color, date, status, note) {
 function emptyRow(msg) {
     return `<div class="text-center text-muted py-4"><i class="bi bi-inbox fs-3 d-block mb-2 opacity-50"></i>${msg}</div>`;
 }
-function fetchWallet() {
+
+async function fetchWallet() {
+    // Balance
     fetch('{{ route("wallet.balance") }}').then(r=>r.json()).then(data => {
         document.getElementById('wallet-balance').textContent = data.balance ?? '0';
     }).catch(()=>{ document.getElementById('wallet-balance').textContent = '0'; });
 
-    fetch('{{ route("wallet.received") }}').then(r=>r.json()).then(data => {
-        const html = data.tips && data.tips.length
-            ? data.tips.map(t => tipRow('From', t.sender?.name||'Unknown', t.amount, 'text-success', '+', t.created_at, t.message)).join('')
-            : emptyRow('No tips received yet.');
-        document.getElementById('received-tips').innerHTML = html;
-    }).catch(()=>{ document.getElementById('received-tips').innerHTML = emptyRow('Could not load.'); });
+    // Collect all data for the unified "All Activity" tab
+    let allRows = [];
 
-    fetch('{{ route("wallet.sent") }}').then(r=>r.json()).then(data => {
-        const html = data.tips && data.tips.length
-            ? data.tips.map(t => tipRow('To', t.recipient?.name||'Unknown', t.amount, 'text-danger', '-', t.created_at, t.message)).join('')
-            : emptyRow('No tips sent yet.');
-        document.getElementById('sent-tips').innerHTML = html;
-    }).catch(()=>{ document.getElementById('sent-tips').innerHTML = emptyRow('Could not load.'); });
+    // Received tips
+    const rcvResp = await fetch('{{ route("wallet.received") }}').then(r=>r.json()).catch(()=>({tips:[]}));
+    const receivedRows = (rcvResp.tips || []).map(t =>
+        tipRow('Gift from', t.sender?.name||'Unknown', t.amount, 'text-success', '+', t.created_at, t.message)
+    );
+    document.getElementById('received-tips').innerHTML = receivedRows.length
+        ? receivedRows.join('') : emptyRow('No gifts received yet.');
+    allRows.push(...(rcvResp.tips || []).map(t => ({ html: tipRow('Gift from', t.sender?.name||'Unknown', t.amount, 'text-success', '+', t.created_at, t.message), ts: new Date(t.created_at) })));
 
-    fetch('{{ route("wallet.funding-history") }}').then(r=>r.json()).then(data => {
-        const html = data.requests && data.requests.length
-            ? data.requests.map(r => requestRow('bi-plus-circle', 'Deposit Request', r.amount, '+', 'text-primary', r.created_at, r.status, r.admin_note || null)).join('')
-            : emptyRow('No deposit requests yet.');
-        document.getElementById('deposit-history').innerHTML = html;
-    }).catch(()=>{ document.getElementById('deposit-history').innerHTML = emptyRow('Could not load.'); });
+    // Sent tips
+    const sentResp = await fetch('{{ route("wallet.sent") }}').then(r=>r.json()).catch(()=>({tips:[]}));
+    const sentRows = (sentResp.tips || []).map(t =>
+        tipRow('Gift to', t.recipient?.name||'Unknown', t.amount, 'text-danger', '-', t.created_at, t.message)
+    );
+    document.getElementById('sent-tips').innerHTML = sentRows.length
+        ? sentRows.join('') : emptyRow('No gifts sent yet.');
+    allRows.push(...(sentResp.tips || []).map(t => ({ html: tipRow('Gift to', t.recipient?.name||'Unknown', t.amount, 'text-danger', '-', t.created_at, t.message), ts: new Date(t.created_at) })));
 
-    fetch('{{ route("wallet.withdrawal-history") }}').then(r=>r.json()).then(data => {
-        const html = data.requests && data.requests.length
-            ? data.requests.map(r => requestRow('bi-cash-stack', 'Withdrawal Request', r.amount, '-', 'text-warning', r.created_at, r.status, r.admin_note || null)).join('')
-            : emptyRow('No withdrawals yet.');
-        document.getElementById('withdrawal-history').innerHTML = html;
-    }).catch(()=>{ document.getElementById('withdrawal-history').innerHTML = emptyRow('Could not load.'); });
+    // Deposits
+    const depResp = await fetch('{{ route("wallet.funding-history") }}').then(r=>r.json()).catch(()=>({requests:[]}));
+    const depRows = (depResp.requests || []).map(r =>
+        requestRow('bi-plus-circle', 'Deposit Request', r.amount, '+', 'text-primary', r.created_at, r.status, r.admin_note || null)
+    );
+    document.getElementById('deposit-history').innerHTML = depRows.length
+        ? depRows.join('') : emptyRow('No deposit requests yet.');
+    allRows.push(...(depResp.requests || []).map(r => ({ html: requestRow('bi-plus-circle', 'Deposit Request', r.amount, '+', 'text-primary', r.created_at, r.status, r.admin_note || null), ts: new Date(r.created_at) })));
+
+    // Withdrawals
+    const wdrResp = await fetch('{{ route("wallet.withdrawal-history") }}').then(r=>r.json()).catch(()=>({requests:[]}));
+    const wdrRows = (wdrResp.requests || []).map(r =>
+        requestRow('bi-cash-stack', 'Withdrawal Request', r.amount, '-', 'text-warning', r.created_at, r.status, r.admin_note || null)
+    );
+    document.getElementById('withdrawal-history').innerHTML = wdrRows.length
+        ? wdrRows.join('') : emptyRow('No withdrawals yet.');
+    allRows.push(...(wdrResp.requests || []).map(r => ({ html: requestRow('bi-cash-stack', 'Withdrawal Request', r.amount, '-', 'text-warning', r.created_at, r.status, r.admin_note || null), ts: new Date(r.created_at) })));
+
+    // Render unified activity feed (newest first)
+    allRows.sort((a, b) => b.ts - a.ts);
+    document.getElementById('all-activity-list').innerHTML = allRows.length
+        ? allRows.map(r => r.html).join('')
+        : emptyRow('No transactions yet. Fund your wallet to get started!');
 }
 document.addEventListener('DOMContentLoaded', fetchWallet);
 </script>

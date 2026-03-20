@@ -23,23 +23,35 @@ class TipController extends Controller
         /** @var \App\Models\User $sender */
         $sender = Auth::user();
         $recipient = User::findOrFail($request->recipient_id);
-        $amount = $request->amount;
+        $amount = (int) $request->amount;
 
-        // Assume users have a 'credit_balance' field
-        if ($sender->credit_balance < $amount) {
-            return response()->json(['error' => 'Insufficient balance.'], 422);
+        if ($sender->id === $recipient->id) {
+            return response()->json(['error' => 'You cannot tip yourself.'], 422);
         }
 
-        DB::transaction(function () use ($sender, $recipient, $amount, $request) {
-            $sender->decrement('credit_balance', $amount);
-            $recipient->increment('credit_balance', $amount);
-            Tip::create([
-                'sender_id' => $sender->id,
-                'recipient_id' => $recipient->id,
-                'amount' => $amount,
-                'message' => $request->message,
-            ]);
-        });
+        try {
+            DB::transaction(function () use ($sender, $recipient, $amount, $request) {
+                // Re-fetch with a row-level lock inside the transaction to prevent
+                // concurrent requests from bypassing the balance check.
+                $lockedSender = User::lockForUpdate()->find($sender->id);
+
+                if ((int) ($lockedSender->credit_balance ?? 0) < $amount) {
+                    throw new \DomainException('Insufficient balance.');
+                }
+
+                $lockedSender->decrement('credit_balance', $amount);
+                $recipient->increment('credit_balance', $amount);
+
+                Tip::create([
+                    'sender_id'    => $lockedSender->id,
+                    'recipient_id' => $recipient->id,
+                    'amount'       => $amount,
+                    'message'      => $request->message,
+                ]);
+            });
+        } catch (\DomainException $e) {
+            return response()->json(['error' => $e->getMessage()], 422);
+        }
 
         $recipient->notify(new TipReceivedNotification(
             $sender->name,
