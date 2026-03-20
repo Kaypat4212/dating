@@ -55,8 +55,19 @@ class WalletFundingRequestResource extends Resource
                     ->visible(fn ($record) => $record->status === 'pending')
                     ->action(function ($record) {
                         DB::transaction(function () use ($record) {
+                            $oldBalance = (int) $record->user->credit_balance;
+                            $amount     = (int) $record->amount;
                             $record->update(['status' => 'approved']);
-                            $record->user()->increment('credit_balance', (int) $record->amount);
+                            $record->user()->increment('credit_balance', $amount);
+                            \App\Models\WalletTransaction::create([
+                                'user_id'        => $record->user_id,
+                                'type'           => 'deposit',
+                                'amount'         => $amount,
+                                'balance_after'  => $oldBalance + $amount,
+                                'reference_id'   => $record->id,
+                                'reference_type' => 'funding_request',
+                                'description'    => 'Crypto deposit approved (TXID: ' . ($record->txid ?? '—') . ')',
+                            ]);
                         });
                         $fresh = $record->fresh();
                         try {

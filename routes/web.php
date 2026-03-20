@@ -185,6 +185,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/wallet/sent',                     [\App\Http\Controllers\WalletController::class, 'sentTips'])->name('wallet.sent');
         Route::get('/wallet/funding-history',          [\App\Http\Controllers\WalletController::class, 'fundingHistory'])->name('wallet.funding-history');
         Route::get('/wallet/withdrawal-history',       [\App\Http\Controllers\WalletController::class, 'withdrawalHistory'])->name('wallet.withdrawal-history');
+        Route::get('/wallet/transactions',             [\App\Http\Controllers\WalletController::class, 'transactions'])->name('wallet.transactions');
         Route::post('/wallet/fund',                    [\App\Http\Controllers\WalletController::class, 'fund'])->name('wallet.fund');
         Route::post('/wallet/withdraw',                [\App\Http\Controllers\WalletController::class, 'withdraw'])->name('wallet.withdraw');
         Route::get('/account/export',           [AccountController::class, 'export'])->name('account.export');

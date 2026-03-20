@@ -6,6 +6,7 @@ use App\Models\Tip;
 use App\Models\User;
 use App\Models\SiteSetting;
 use App\Models\WalletFundingRequest;
+use App\Models\WalletTransaction;
 use App\Models\WalletWithdrawalRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -67,7 +68,8 @@ class WalletController extends Controller
         if ($request->amount < 10) {
             return response()->json(['error' => 'Minimum withdrawal is 10 credits.'], 422);
         }
-        WalletWithdrawalRequest::create([
+        $oldBalance = (int) $user->credit_balance;
+        $withdrawalReq = WalletWithdrawalRequest::create([
             'user_id'     => $user->id,
             'amount'      => $request->amount,
             'destination' => $request->destination,
@@ -76,6 +78,15 @@ class WalletController extends Controller
             'status'      => 'pending',
         ]);
         $user->decrement('credit_balance', $request->amount);
+        WalletTransaction::create([
+            'user_id'        => $user->id,
+            'type'           => 'withdrawal',
+            'amount'         => (int) $request->amount,
+            'balance_after'  => max(0, $oldBalance - (int) $request->amount),
+            'reference_id'   => $withdrawalReq->id,
+            'reference_type' => 'withdrawal',
+            'description'    => 'Withdrawal to ' . $request->destination,
+        ]);
         return response()->json(['success' => true, 'message' => 'Withdrawal request submitted! An admin will process it shortly.']);
     }
 
@@ -105,5 +116,15 @@ class WalletController extends Controller
         $user = Auth::user();
         $requests = WalletWithdrawalRequest::where('user_id', $user->id)->latest()->get();
         return response()->json(['requests' => $requests]);
+    }
+
+    public function transactions(): JsonResponse
+    {
+        $user = Auth::user();
+        $txns = WalletTransaction::where('user_id', $user->id)
+            ->latest()
+            ->take(200)
+            ->get();
+        return response()->json(['transactions' => $txns]);
     }
 }

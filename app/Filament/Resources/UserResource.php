@@ -132,17 +132,26 @@ class UserResource extends Resource
                             ->rows(2),
                     ])
                     ->action(function (User $record, array $data) {
-                        $record->increment('credit_balance', (int) $data['amount']);
+                        $amount     = (int) $data['amount'];
+                        $oldBalance = (int) $record->credit_balance;
+                        $record->increment('credit_balance', $amount);
+                        \App\Models\WalletTransaction::create([
+                            'user_id'       => $record->id,
+                            'type'          => 'admin_credit',
+                            'amount'        => $amount,
+                            'balance_after' => $oldBalance + $amount,
+                            'description'   => 'Admin credit: ' . ($data['reason'] ?: 'No reason given'),
+                        ]);
                         try {
                             $record->notify(new \App\Notifications\WalletFundedNotification(
-                                (int) $data['amount'],
+                                $amount,
                                 'Admin adjustment' . ($data['reason'] ? ': ' . $data['reason'] : ''),
                             ));
                         } catch (\Throwable) {
                             // Mail server unavailable — notification skipped, credits already added
                         }
                         FilamentNotification::make()
-                            ->title('+' . $data['amount'] . ' credits added to ' . $record->name . '. New balance: ' . $record->fresh()->credit_balance)
+                            ->title('+' . $amount . ' credits added to ' . $record->name . '. New balance: ' . $record->fresh()->credit_balance)
                             ->success()
                             ->send();
                     }),
@@ -164,8 +173,16 @@ class UserResource extends Resource
                             ->rows(2),
                     ])
                     ->action(function (User $record, array $data) {
-                        $subtract = min((int) $data['amount'], $record->credit_balance);
+                        $subtract   = min((int) $data['amount'], $record->credit_balance);
+                        $oldBalance = (int) $record->credit_balance;
                         $record->decrement('credit_balance', $subtract);
+                        \App\Models\WalletTransaction::create([
+                            'user_id'       => $record->id,
+                            'type'          => 'admin_debit',
+                            'amount'        => $subtract,
+                            'balance_after' => max(0, $oldBalance - $subtract),
+                            'description'   => 'Admin debit: ' . ($data['reason'] ?: 'No reason given'),
+                        ]);
                         FilamentNotification::make()
                             ->title('-' . $subtract . ' credits removed from ' . $record->name . '. New balance: ' . $record->fresh()->credit_balance)
                             ->warning()
