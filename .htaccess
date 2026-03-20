@@ -1,18 +1,22 @@
+# Prevent directory listing — MUST be outside IfModule to work on shared hosting
+Options -Indexes
+Options +FollowSymLinks +SymLinksIfOwnerMatch
+
+# Serve index.php by default for any directory request
+DirectoryIndex index.php
+
 <IfModule mod_rewrite.c>
-    Options -Indexes +FollowSymLinks
     RewriteEngine On
 
-    # Static assets (JS, CSS, images, fonts, build manifest, storage)
-    # are physically inside public/ — rewrite them there directly.
+    # Static assets that physically live inside public/ (build, storage, css, fonts…)
     RewriteCond %{DOCUMENT_ROOT}/public%{REQUEST_URI} -f
     RewriteRule ^(.*)$ public/$1 [L,QSA]
 
-    # Skip rewriting real files/dirs that already exist at the root
-    # (e.g. robots.txt, sw.js, favicon.svg served from public/ above).
+    # Let real root-level files pass through as-is (robots.txt, sw.js, etc.)
     RewriteCond %{REQUEST_FILENAME} -f [OR]
     RewriteCond %{REQUEST_FILENAME} -d
     RewriteRule ^ - [L]
 
-    # Everything else goes to the root index.php front controller.
+    # Everything else goes to the root index.php front controller
     RewriteRule ^ index.php [L,QSA]
 </IfModule>
