@@ -258,36 +258,86 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
+  // ── Shared JSON response helper (handles non-JSON server errors) ──────
+  async function safeJson(r) {
+    const text = await r.text();
+    try { return JSON.parse(text); } catch { return null; }
+  }
+
   // ── Fund form ──
   document.getElementById('fundWalletForm').onsubmit = async function(e) {
     e.preventDefault();
-    const btn = document.getElementById('fund-submit-btn');
+    const btn     = document.getElementById('fund-submit-btn');
     const spinner = document.getElementById('fund-spinner');
     const alertEl = document.getElementById('fund-alert');
     btn.disabled = true;
     spinner.classList.remove('d-none');
     alertEl.className = 'd-none';
 
-    const fd = new FormData(this);
-    try {
-      const r = await fetch('{{ route("wallet.fund") }}', {
-        method: 'POST',
-        headers: { 'X-CSRF-TOKEN': CSRF() },
-        body: fd
-      });
-      const data = await r.json();
-      if (data.success) {
-        alertEl.className = 'alert alert-success';
-        alertEl.innerHTML = '<i class="bi bi-check-circle me-1"></i>' + (data.message || 'Funding request submitted! Awaiting admin review.');
-        this.reset();
-        if (typeof fetchWallet === 'function') fetchWallet();
-      } else {
-        alertEl.className = 'alert alert-danger';
-        alertEl.innerHTML = '<i class="bi bi-exclamation-circle me-1"></i>' + (data.error || 'Failed to submit request.');
-      }
-    } catch (err) {
+    // Client-side file size guard (4 MB max)
+    const proofFile = document.getElementById('fund-proof').files[0];
+    if (proofFile && proofFile.size > 4 * 1024 * 1024) {
       alertEl.className = 'alert alert-danger';
-      alertEl.innerHTML = '<i class="bi bi-exclamation-circle me-1"></i>Network error. Please try again.';
+      alertEl.innerHTML = '<i class="bi bi-exclamation-circle me-1"></i>Screenshot is too large (max 4 MB). Please use a smaller image.';
+      btn.disabled = false;
+      spinner.classList.add('d-none');
+      return;
+    }
+
+    const fd = new FormData(this);
+    let r;
+    try {
+      r = await fetch('{{ route("wallet.fund") }}', {
+        method:  'POST',
+        headers: { 'X-CSRF-TOKEN': CSRF() },
+        body:    fd
+      });
+    } catch (networkErr) {
+      // True network failure (offline, DNS, etc.)
+      alertEl.className = 'alert alert-danger';
+      alertEl.innerHTML = '<i class="bi bi-wifi-off me-1"></i>No internet connection. Please check your network and try again.';
+      btn.disabled = false;
+      spinner.classList.add('d-none');
+      return;
+    }
+
+    // Handle specific HTTP statuses before trying to parse JSON
+    if (r.status === 419) {
+      alertEl.className = 'alert alert-warning';
+      alertEl.innerHTML = '<i class="bi bi-arrow-clockwise me-1"></i>Your session expired. <a href="" onclick="location.reload();return false;" class="alert-link fw-semibold">Refresh the page</a> and try again.';
+      btn.disabled = false;
+      spinner.classList.add('d-none');
+      return;
+    }
+    if (r.status === 413) {
+      alertEl.className = 'alert alert-danger';
+      alertEl.innerHTML = '<i class="bi bi-exclamation-circle me-1"></i>Screenshot file is too large for the server. Please compress or resize the image.';
+      btn.disabled = false;
+      spinner.classList.add('d-none');
+      return;
+    }
+    if (r.status === 422) {
+      const data = await safeJson(r);
+      const errors = data?.errors ? Object.values(data.errors).flat().join('<br>') : (data?.message || 'Validation failed. Please check your inputs.');
+      alertEl.className = 'alert alert-danger';
+      alertEl.innerHTML = '<i class="bi bi-exclamation-circle me-1"></i>' + errors;
+      btn.disabled = false;
+      spinner.classList.add('d-none');
+      return;
+    }
+
+    const data = await safeJson(r);
+    if (!data) {
+      alertEl.className = 'alert alert-danger';
+      alertEl.innerHTML = '<i class="bi bi-exclamation-circle me-1"></i>Unexpected server response (HTTP ' + r.status + '). Please try again or contact support.';
+    } else if (data.success) {
+      alertEl.className = 'alert alert-success';
+      alertEl.innerHTML = '<i class="bi bi-check-circle me-1"></i>' + (data.message || 'Funding request submitted! Awaiting admin review.');
+      this.reset();
+      if (typeof fetchWallet === 'function') fetchWallet();
+    } else {
+      alertEl.className = 'alert alert-danger';
+      alertEl.innerHTML = '<i class="bi bi-exclamation-circle me-1"></i>' + (data.error || 'Failed to submit request.');
     }
     btn.disabled = false;
     spinner.classList.add('d-none');
@@ -313,9 +363,10 @@ document.addEventListener('DOMContentLoaded', function() {
     spinner.classList.remove('d-none');
     alertEl.className = 'd-none';
 
+    let r;
     try {
-      const r = await fetch('{{ route("wallet.withdraw") }}', {
-        method: 'POST',
+      r = await fetch('{{ route("wallet.withdraw") }}', {
+        method:  'POST',
         headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF() },
         body: JSON.stringify({
           amount:      document.getElementById('withdraw-amount').value,
@@ -324,8 +375,25 @@ document.addEventListener('DOMContentLoaded', function() {
           network:     document.getElementById('withdraw-network').value  || null,
         })
       });
-      const data = await r.json();
-      if (data.success) {
+    } catch (networkErr) {
+      alertEl.className = 'alert alert-danger';
+      alertEl.innerHTML = '<i class="bi bi-wifi-off me-1"></i>No internet connection. Please check your network and try again.';
+      btn.disabled = false;
+      spinner.classList.add('d-none');
+      return;
+    }
+    if (r.status === 419) {
+      alertEl.className = 'alert alert-warning';
+      alertEl.innerHTML = '<i class="bi bi-arrow-clockwise me-1"></i>Your session expired. <a href="" onclick="location.reload();return false;" class="alert-link fw-semibold">Refresh the page</a> and try again.';
+      btn.disabled = false;
+      spinner.classList.add('d-none');
+      return;
+    }
+    const data = await safeJson(r);
+    if (!data) {
+      alertEl.className = 'alert alert-danger';
+      alertEl.innerHTML = '<i class="bi bi-exclamation-circle me-1"></i>Unexpected server response. Please try again.';
+    } else if (data.success) {
         alertEl.className = 'alert alert-success';
         alertEl.innerHTML = '<i class="bi bi-check-circle me-1"></i>' + (data.message || 'Withdrawal request submitted! Awaiting admin review.');
         this.reset();
@@ -336,14 +404,10 @@ document.addEventListener('DOMContentLoaded', function() {
           c.classList.add('border');
           c.querySelector('.crypto-check')?.classList.add('d-none');
         });
-        if (typeof fetchWallet === 'function') fetchWallet();
-      } else {
-        alertEl.className = 'alert alert-danger';
-        alertEl.innerHTML = '<i class="bi bi-exclamation-circle me-1"></i>' + (data.error || data.message || 'Failed to submit withdrawal.');
-      }
-    } catch (err) {
+      if (typeof fetchWallet === 'function') fetchWallet();
+    } else {
       alertEl.className = 'alert alert-danger';
-      alertEl.innerHTML = '<i class="bi bi-exclamation-circle me-1"></i>Network error. Please try again.';
+      alertEl.innerHTML = '<i class="bi bi-exclamation-circle me-1"></i>' + (data.error || data.message || 'Failed to submit withdrawal.');
     }
     btn.disabled = false;
     spinner.classList.add('d-none');

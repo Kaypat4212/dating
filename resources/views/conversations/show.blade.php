@@ -819,10 +819,42 @@ main { padding-bottom: 0 !important; }
                 const msgId = bubble.dataset.msgId;
                 if (!msgId) return;
                 picker.classList.add('d-none');
-                await fetch(`${base}/messages/react/${msgId}`, {
+
+                const emoji = choice.dataset.emoji;
+
+                // ── Optimistic UI update ──────────────────────────────────
+                let reactionsDiv = bubble.querySelector('.msg-reactions');
+                if (!reactionsDiv) {
+                    reactionsDiv = document.createElement('div');
+                    reactionsDiv.className = 'msg-reactions';
+                    // Insert before .reaction-picker-trigger
+                    bubble.insertBefore(reactionsDiv, trigger);
+                }
+                const existing = reactionsDiv.querySelector(`[data-emoji="${CSS.escape(emoji)}"]`);
+                if (existing) {
+                    // Bump count
+                    const cur = parseInt(existing.dataset.count ?? '1', 10) + 1;
+                    existing.dataset.count = cur;
+                    existing.textContent = emoji + (cur > 1 ? ' ' + cur : '');
+                    // Restart bounce animation
+                    existing.classList.remove('reaction-bump');
+                    void existing.offsetWidth; // reflow
+                    existing.classList.add('reaction-bump');
+                } else {
+                    const badge = document.createElement('span');
+                    badge.className = 'reaction-badge reaction-new';
+                    badge.dataset.emoji = emoji;
+                    badge.dataset.count = '1';
+                    badge.textContent   = emoji;
+                    reactionsDiv.appendChild(badge);
+                    // Remove animation class after it finishes so it can re-apply
+                    badge.addEventListener('animationend', () => badge.classList.remove('reaction-new'), { once: true });
+                }
+                // ── Fire request async ────────────────────────────────────
+                fetch(`${base}/messages/react/${msgId}`, {
                     method: 'POST',
                     headers: { 'X-CSRF-TOKEN': csrf, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ emoji: choice.dataset.emoji })
+                    body: JSON.stringify({ emoji })
                 }).catch(() => {});
             });
         });

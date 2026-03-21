@@ -45,11 +45,7 @@ class AiAssistantService
         'brave_hello', 'true_connections',
     ];
 
-    private const REPHRASE_TEMPLATES = [
-        "I was just thinking about you — hope your day is going amazing! 😊",
-        "Hey! I wanted to reach out and say I really enjoy our conversations 💬",
-        "I had to say — talking with you is genuinely fun. How's everything going?",
-    ];
+    // Note: rephrase fallback is generated dynamically from the user's draft, not static.
 
     // ────────────────────────────────────────────────────────────────────────
 
@@ -63,12 +59,12 @@ class AiAssistantService
     public function suggest(string $type, array $context = []): array
     {
         if (!SiteSetting::get('ai_enabled', false)) {
-            return $this->fallback($type);
+            return $this->fallback($type, $context);
         }
 
         $apiKey = SiteSetting::get('ai_groq_api_key');
         if (!$apiKey) {
-            return $this->fallback($type);
+            return $this->fallback($type, $context);
         }
 
         $model  = SiteSetting::get('ai_groq_model', 'llama-3.1-8b-instant');
@@ -82,27 +78,35 @@ class AiAssistantService
                     'temperature' => 0.8,
                     'max_tokens'  => 400,
                     'messages'    => [
-                        ['role' => 'system', 'content' => $this->systemPrompt()],
+                        ['role' => 'system', 'content' => $this->systemPrompt($type)],
                         ['role' => 'user',   'content' => $prompt],
                     ],
                 ]);
 
             if ($response->failed()) {
-                return $this->fallback($type);
+                return $this->fallback($type, $context);
             }
 
             $text = $response->json('choices.0.message.content', '');
-            return $this->parseList($text) ?: $this->fallback($type);
+            return $this->parseList($text) ?: $this->fallback($type, $context);
 
         } catch (\Throwable) {
-            return $this->fallback($type);
+            return $this->fallback($type, $context);
         }
     }
 
     // ── Prompt builders ──────────────────────────────────────────────────────
 
-    private function systemPrompt(): string
+    private function systemPrompt(string $type = ''): string
     {
+        if ($type === 'rephrase') {
+            return 'You are a message rewriting assistant. Your ONLY job is to rephrase or rewrite the exact text provided. '
+                 . 'CRITICAL RULES: Do NOT add new topics, new information, new emojis, or new ideas that were not in the original. '
+                 . 'Do NOT reference dating or relationships unless the original text does. '
+                 . 'Preserve the original meaning completely. Only change the wording, tone, or style. '
+                 . 'Return exactly 3 numbered variants (1. ... 2. ... 3. ...). Keep each under 120 words. '
+                 . 'Do not include any explanation or commentary — only the 3 numbered variants.';
+        }
         return 'You are a friendly dating coach helping users craft warm, genuine, and engaging messages. '
              . 'Always respond with exactly 3 numbered suggestions (1. ... 2. ... 3. ...). '
              . 'Keep each suggestion under 100 words. Be natural, warm, and never creepy or pushy. '
@@ -152,9 +156,11 @@ class AiAssistantService
                 $ctx['interests'] ?? 'not specified'
             ),
             'rephrase' => sprintf(
-                "I'm chatting on a dating app. Rewrite this draft message to sound warmer, more engaging, "
-                . "and natural — keep the same meaning but make it feel more genuine and inviting:\n\n\"%s\"\n\n"
-                . "Return exactly 1 rewritten version. No explanation, no quotes, no numbering — just the rewritten message.",
+                "Rephrase the following message into exactly 3 different variants.\n"
+                . "IMPORTANT: Do NOT add any new information, topics, or ideas not present in the original.\n"
+                . "Only change the wording, sentence structure, or emotional tone.\n"
+                . "Original message: \"%s\"\n\n"
+                . "Provide 3 numbered variants (1. 2. 3.) — nothing else.",
                 $ctx['draft'] ?? ''
             ),
             default => 'Give me 3 friendly conversation starters for a dating app.',
@@ -248,15 +254,20 @@ class AiAssistantService
 
     // ── Template fallbacks ───────────────────────────────────────────────────
 
-    private function fallback(string $type): array
+    private function fallback(string $type, array $context = []): array
     {
+        // For rephrase, return the draft text as-is (AI is unavailable to rephrase)
+        if ($type === 'rephrase') {
+            $draft = trim($context['draft'] ?? '');
+            return $draft !== '' ? [$draft] : [];
+        }
+
         $pool = match ($type) {
             'reply'       => self::REPLY_TEMPLATES,
             'topics'      => self::TOPIC_TEMPLATES,
             'icebreaker'  => self::ICEBREAKER_TEMPLATES,
             'bio'         => self::BIO_TEMPLATES,
             'username'    => self::USERNAME_TEMPLATES,
-            'rephrase'    => self::REPHRASE_TEMPLATES,
             default       => self::TOPIC_TEMPLATES,
         };
 

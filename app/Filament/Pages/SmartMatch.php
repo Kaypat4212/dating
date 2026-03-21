@@ -28,6 +28,13 @@ class SmartMatch extends Page
     /** Cached suggestion rows for the focused user */
     public Collection $suggestions;
 
+    // ── Same-sex match confirmation state ────────────────────────────────
+    public bool    $showSameSexModal  = false;
+    public ?int    $pendingMatchA     = null;
+    public ?int    $pendingMatchB     = null;
+    public string  $pendingMatchNames = '';
+    public string  $pendingGender     = '';
+
     public function mount(): void
     {
         $this->suggestions = collect();
@@ -124,6 +131,7 @@ class SmartMatch extends Page
 
     /**
      * Livewire action: manually create a match between two users.
+     * Intercepts same-sex pairs and asks for confirmation before proceeding.
      */
     public function forceMatch(int $userAId, int $userBId): void
     {
@@ -135,6 +143,65 @@ class SmartMatch extends Page
             return;
         }
 
+        // ── Same-sex guard ────────────────────────────────────────────────
+        $gA = strtolower(trim($userA->gender ?? ''));
+        $gB = strtolower(trim($userB->gender ?? ''));
+        $bothGenderKnown = $gA !== '' && $gB !== '';
+
+        if ($bothGenderKnown && $gA === $gB) {
+            // Show modal instead of proceeding
+            $this->pendingMatchA     = $userAId;
+            $this->pendingMatchB     = $userBId;
+            $this->pendingGender     = ucfirst($gA);
+            $this->pendingMatchNames = "{$userA->name} & {$userB->name}";
+            $this->showSameSexModal  = true;
+            return;
+        }
+
+        $this->executeMatch($userAId, $userBId, $userA, $userB);
+    }
+
+    /**
+     * Confirmed by admin: proceed with the same-sex match.
+     */
+    public function confirmSameSexMatch(): void
+    {
+        $uAId = $this->pendingMatchA;
+        $uBId = $this->pendingMatchB;
+        $this->showSameSexModal  = false;
+        $this->pendingMatchA     = null;
+        $this->pendingMatchB     = null;
+        $this->pendingMatchNames = '';
+        $this->pendingGender     = '';
+
+        if (! $uAId || ! $uBId) return;
+
+        $userA = User::find($uAId);
+        $userB = User::find($uBId);
+        if (! $userA || ! $userB) {
+            Notification::make()->title('User not found.')->danger()->send();
+            return;
+        }
+        $this->executeMatch($uAId, $uBId, $userA, $userB);
+    }
+
+    /**
+     * Admin cancelled the same-sex match confirmation.
+     */
+    public function cancelSameSexMatch(): void
+    {
+        $this->showSameSexModal  = false;
+        $this->pendingMatchA     = null;
+        $this->pendingMatchB     = null;
+        $this->pendingMatchNames = '';
+        $this->pendingGender     = '';
+    }
+
+    /**
+     * Internal: actually create the match record, likes, conversation, and notifications.
+     */
+    private function executeMatch(int $userAId, int $userBId, User $userA, User $userB): void
+    {
         [$u1, $u2] = $userAId < $userBId
             ? [$userAId, $userBId]
             : [$userBId, $userAId];
