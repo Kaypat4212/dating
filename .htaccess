@@ -1,6 +1,15 @@
 # Serve index.php by default for any directory request
 DirectoryIndex index.php
 
+# ── cPanel / shared-hosting SSL proxy detection ─────────────────────────────
+# cPanel terminates SSL and passes x-https:1 instead of X-Forwarded-Proto.
+# This sets HTTPS=on so PHP / Laravel URL generator uses https:// for assets.
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteCond %{HTTP:X-Https} 1
+    RewriteRule .* - [E=HTTPS:on]
+</IfModule>
+
 <IfModule mod_rewrite.c>
     RewriteEngine On
     RewriteBase /

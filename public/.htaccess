@@ -2,6 +2,13 @@
 # Required for cPanel shared hosting where FollowSymLinks is off by default.
 Options +FollowSymLinks
 
+# ── cPanel / shared-hosting SSL proxy detection ─────────────────────────────
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteCond %{HTTP:X-Https} 1
+    RewriteRule .* - [E=HTTPS:on]
+</IfModule>
+
 <IfModule mod_rewrite.c>
     <IfModule mod_negotiation.c>
         Options -MultiViews -Indexes
