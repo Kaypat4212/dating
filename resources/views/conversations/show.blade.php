@@ -580,6 +580,18 @@ main { padding-bottom: 0 !important; }
     }
     const giftBtn     = document.getElementById('giftBtn');
     const giftPopover = document.getElementById('giftPopover');
+    function _giftToast(msg, type) {
+        const container = document.getElementById('toastContainer');
+        if (!container) return;
+        const el = document.createElement('div');
+        el.className = 'toast align-items-center text-bg-' + type + ' border-0';
+        el.setAttribute('role', 'alert');
+        el.setAttribute('aria-live', 'assertive');
+        el.innerHTML = '<div class="d-flex"><div class="toast-body fw-semibold">' + msg + '</div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button></div>';
+        container.appendChild(el);
+        new bootstrap.Toast(el, { delay: 5000 }).show();
+        el.addEventListener('hidden.bs.toast', () => el.remove());
+    }
     if (giftBtn && giftPopover) {
         giftBtn.addEventListener('click', e => { e.stopPropagation(); giftPopover.classList.toggle('d-none'); });
         giftPopover.addEventListener('click', async e => {
@@ -589,16 +601,38 @@ main { padding-bottom: 0 !important; }
             const gift  = btn.dataset.gift;
             const price = parseInt(btn.dataset.price, 10) || 0;
             giftPopover.classList.add('d-none');
-            appendBubble(gift, true, new Date().toISOString(), 'gift');
+
+            // Check balance before sending
+            try {
+                const balRes  = await fetch('{{ route("wallet.balance") }}');
+                const balData = await balRes.json();
+                const balance = parseInt(balData.balance ?? 0, 10);
+                if (price > 0 && balance < price) {
+                    _giftToast('Not enough credits to send this gift. <a href="{{ route("wallet.index") }}" class="toast-link text-white fw-semibold">Fund wallet</a>', 'danger');
+                    return;
+                }
+            } catch {
+                _giftToast('Could not verify balance. Please try again.', 'warning');
+                return;
+            }
+
             try {
                 const body = { body: gift, type: 'gift' };
                 if (price > 0) body.gift_price = price;
-                await fetch(`${base}/messages/${convId}`, {
+                const res = await fetch(`${base}/messages/${convId}`, {
                     method: 'POST',
                     headers: { 'X-CSRF-TOKEN': csrf, 'Content-Type': 'application/json' },
                     body: JSON.stringify(body)
                 });
-            } catch (err) { console.error(err); }
+                if (!res.ok) {
+                    const data = await res.json().catch(() => ({}));
+                    _giftToast(data.error ?? 'Could not send gift. Please try again.', 'danger');
+                    return;
+                }
+                appendBubble(gift, true, new Date().toISOString(), 'gift');
+            } catch (err) {
+                _giftToast('Network error. Please try again.', 'danger');
+            }
         });
         document.addEventListener('click', () => giftPopover.classList.add('d-none'));
     }
@@ -927,7 +961,10 @@ main { padding-bottom: 0 !important; }
     // ── Chat Tip ─────────────────────────────────────────────────────────────
     (function () {
         const chatTipBtn    = document.getElementById('chatTipBtn');
-        const chatTipModal  = new bootstrap.Modal(document.getElementById('chatTipModal'));
+        let _chatTipModal   = null;
+        function getChatTipModal() {
+            return _chatTipModal ??= new bootstrap.Modal(document.getElementById('chatTipModal'));
+        }
         const chatTipForm   = document.getElementById('chatTipForm');
         const chatTipAmtEl  = document.getElementById('chatTipAmount');
         const chatTipMsgEl  = document.getElementById('chatTipMessage');
@@ -965,7 +1002,7 @@ main { padding-bottom: 0 !important; }
                 })
                 .catch(() => { _tipBalLoaded = true; chatTipBalEl.textContent = '?'; });
 
-            chatTipModal.show();
+            getChatTipModal().show();
         });
 
         chatTipAmtEl?.addEventListener('input', function () {
@@ -1007,7 +1044,7 @@ main { padding-bottom: 0 !important; }
                     chatTipBalEl.textContent = _tipBal;
                     chatTipAmtEl.value = '';
                     chatTipMsgEl.value = '';
-                    setTimeout(() => chatTipModal.hide(), 1800);
+                    setTimeout(() => getChatTipModal().hide(), 1800);
                 }
             } catch {
                 tipAlert('danger', 'Network error. Please try again.');

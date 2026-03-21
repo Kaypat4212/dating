@@ -39,7 +39,7 @@
                     </div>
                     <div class="card-body p-2">
                         <div class="fw-semibold text-truncate">{{ $blocked->name }}</div>
-                        <div class="text-muted small">@{{ $blocked->username }}</div>
+                        <div class="text-muted small">@<span>{{ $blocked->username }}</span></div>
                     </div>
                     <div class="card-footer bg-transparent border-0 p-2 pt-0">
                         <form method="POST" action="{{ route('block.destroy', $blocked->id) }}"
