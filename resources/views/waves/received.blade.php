@@ -20,6 +20,7 @@
     <div class="row g-3">
         @foreach($waves as $wave)
         @php $sender = $wave->sender; @endphp
+        @if(!$sender) @continue @endif
         <div class="col-6 col-md-4 col-lg-3">
             <div class="card border-0 shadow-sm h-100 {{ !$wave->seen ? 'border-start border-3 border-warning' : '' }}">
                 <div class="ratio ratio-1x1">

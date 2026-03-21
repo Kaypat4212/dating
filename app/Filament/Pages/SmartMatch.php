@@ -14,7 +14,7 @@ use Illuminate\Support\Collection;
 
 class SmartMatch extends Page
 {
-    protected static string $view = 'filament.pages.smart-match';
+    protected string $view = 'filament.pages.smart-match';
 
     public static function getNavigationIcon(): ?string  { return 'heroicon-o-sparkles'; }
     public static function getNavigationGroup(): ?string { return 'Members'; }
