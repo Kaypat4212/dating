@@ -24,7 +24,7 @@ class DailyMatchController extends Controller
         $seed = (int) ($user->id . now()->format('Ymd'));
         mt_srand($seed % PHP_INT_MAX);
 
-        $baseQuery = fn () => User::where('id', '!=', $user->id)
+        $baseQuery = fn () => User::where('users.id', '!=', $user->id)
             ->where('is_banned', false)
             ->where('profile_complete', true)
             ->whereNotNull('email_verified_at')
