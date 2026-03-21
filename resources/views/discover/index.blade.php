@@ -275,6 +275,30 @@
     color: #fff;
     border: 1px solid rgba(255,255,255,.3);
 }
+
+/* Auto-detect location button */
+#detectLocationBtn {
+    flex-shrink: 0;
+    font-size: .78rem;
+    font-weight: 600;
+    transition: all .2s;
+    white-space: nowrap;
+}
+#detectLocationBtn .spinner-border {
+    width: .85em;
+    height: .85em;
+    border-width: .12em;
+}
+#detectLocationBtn.success {
+    background: #16a34a !important;
+    border-color: #16a34a !important;
+    color: #fff !important;
+}
+#detectLocationBtn.error {
+    background: #dc2626 !important;
+    border-color: #dc2626 !important;
+    color: #fff !important;
+}
 </style>
 @endpush
 
@@ -310,15 +334,23 @@
                         </span>
                     @endif
                 </label>
-                <input type="text" name="city" class="form-control form-control-sm"
-                       value="{{ $filterCity }}"
-                       placeholder="e.g. Lagos — leave blank for any city"
-                       autocomplete="off"
-                       @if($locationLimitReached) disabled @endif>
+                <div class="d-flex gap-1 align-items-center">
+                    <input id="cityInput" type="text" name="city" class="form-control form-control-sm flex-grow-1"
+                           value="{{ $filterCity }}"
+                           placeholder="e.g. Lagos"
+                           autocomplete="off"
+                           @if($locationLimitReached) disabled @endif>
+                    <button type="button" id="detectLocationBtn"
+                            class="btn btn-outline-secondary btn-sm rounded-pill px-2"
+                            title="Auto-detect my current location"
+                            @if($locationLimitReached) disabled @endif>
+                        <i class="bi bi-crosshair2 me-1" id="detectIcon"></i><span id="detectLabel">Detect</span>
+                    </button>
+                </div>
             </div>
             <div class="col-12 col-md-4">
                 <label class="form-label small fw-semibold mb-1">Country</label>
-                <input type="text" name="country" class="form-control form-control-sm"
+                <input id="countryInput" type="text" name="country" class="form-control form-control-sm"
                        value="{{ $filterCountry }}"
                        placeholder="e.g. Nigeria — leave blank for any"
                        autocomplete="off"
@@ -633,6 +665,82 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     });
+
+    // ── Auto-detect location ─────────────────────────────────────
+    const detectBtn   = document.getElementById('detectLocationBtn');
+    const cityInput   = document.getElementById('cityInput');
+    const countryInput = document.getElementById('countryInput');
+    const detectIcon  = document.getElementById('detectIcon');
+    const detectLabel = document.getElementById('detectLabel');
+
+    function setDetectState(state, msg) {
+        detectBtn.disabled = (state === 'loading');
+        detectBtn.classList.remove('success', 'error');
+        if (state === 'loading') {
+            detectIcon.className = '';
+            detectLabel.innerHTML = '<span class="spinner-border" role="status"></span> Detecting…';
+        } else if (state === 'success') {
+            detectBtn.classList.add('success');
+            detectIcon.className = 'bi bi-check-lg me-1';
+            detectLabel.textContent = msg || 'Detected!';
+        } else if (state === 'error') {
+            detectBtn.classList.add('error');
+            detectBtn.disabled = false;
+            detectIcon.className = 'bi bi-exclamation-triangle me-1';
+            detectLabel.textContent = msg || 'Failed';
+            setTimeout(() => resetDetectBtn(), 3000);
+        }
+    }
+
+    function resetDetectBtn() {
+        detectBtn.disabled = false;
+        detectBtn.classList.remove('success', 'error');
+        detectIcon.className = 'bi bi-crosshair2 me-1';
+        detectLabel.textContent = 'Detect';
+    }
+
+    if (detectBtn) {
+        detectBtn.addEventListener('click', () => {
+            if (!('geolocation' in navigator)) {
+                setDetectState('error', 'Not supported');
+                return;
+            }
+            setDetectState('loading');
+            navigator.geolocation.getCurrentPosition(
+                async (pos) => {
+                    const { latitude: lat, longitude: lng } = pos.coords;
+                    try {
+                        const resp = await fetch(
+                            `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`,
+                            { headers: { 'Accept-Language': 'en' } }
+                        );
+                        if (!resp.ok) throw new Error('Geocode failed');
+                        const data = await resp.json();
+                        const addr = data.address || {};
+                        // city → town → village → county → suburb fallback
+                        const city = addr.city || addr.town || addr.village || addr.county || addr.suburb || '';
+                        const country = addr.country || '';
+                        if (cityInput)   cityInput.value   = city;
+                        if (countryInput) countryInput.value = country;
+                        setDetectState('success', city || 'Detected!');
+                        // Auto-submit the filter form after short delay
+                        setTimeout(() => detectBtn.closest('form').submit(), 800);
+                    } catch {
+                        setDetectState('error', 'Geocode failed');
+                    }
+                },
+                (err) => {
+                    const msgs = {
+                        1: 'Permission denied',
+                        2: 'Position unavailable',
+                        3: 'Timed out',
+                    };
+                    setDetectState('error', msgs[err.code] || 'Location error');
+                },
+                { timeout: 10000, maximumAge: 300000 }
+            );
+        });
+    }
 
     // Intersection Observer for on-scroll reveal (in addition to CSS stagger)
     if ('IntersectionObserver' in window) {
