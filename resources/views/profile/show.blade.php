@@ -119,12 +119,13 @@
                             <button class="btn btn-outline-warning wave-btn" data-user="{{ $profileUser->id }}" title="Send a wave">👋 Wave</button>
                             {{-- Tip button (only show to other users) --}}
                             <button class="btn btn-outline-success tip-btn" data-user="{{ $profileUser->id }}" data-name="{{ $profileUser->name }}" title="Send a tip"><i class="bi bi-coin me-1"></i>Tip</button>
-                            <form method="POST" action="{{ route('report.store', $profileUser->id) }}" onsubmit="return confirm('Report this user?')">
-                                @csrf
-                                <button type="submit" class="btn btn-outline-secondary" title="Report {{ $profileUser->name }}" aria-label="Report {{ $profileUser->name }}">
-                                    <i class="bi bi-flag"></i><span class="d-none d-sm-inline ms-1">Report</span>
-                                </button>
-                            </form>
+                            <button type="button" class="btn btn-outline-secondary report-btn"
+                                data-user="{{ $profileUser->id }}"
+                                data-name="{{ $profileUser->name }}"
+                                title="Report {{ $profileUser->name }}"
+                                aria-label="Report {{ $profileUser->name }}">
+                                <i class="bi bi-flag"></i><span class="d-none d-sm-inline ms-1">Report</span>
+                            </button>
                             <button type="button" class="btn btn-outline-danger block-btn"
                                 data-user="{{ $profileUser->id }}"
                                 data-name="{{ $profileUser->name }}"
@@ -244,6 +245,45 @@
           <i class="bi bi-slash-circle me-1"></i>Block
         </button>
       </div>
+    </div>
+  </div>
+</div>
+
+{{-- Report User Modal --}}
+<div class="modal fade" id="reportModal" tabindex="-1" aria-hidden="true" aria-labelledby="reportModalLabel">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title text-warning" id="reportModalLabel"><i class="bi bi-flag me-2"></i>Report User</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cancel"></button>
+      </div>
+      <form method="POST" id="reportForm" action="{{ route('report.store', $profileUser->id) }}">
+        @csrf
+        <input type="hidden" name="reported_user_id" value="{{ $profileUser->id }}">
+        <div class="modal-body">
+          <p class="mb-3">Reporting <strong id="report-confirm-name"></strong>. Please select a reason:</p>
+          <div class="mb-3">
+            <select name="reason" id="report-reason" class="form-select" required>
+              <option value="" disabled selected>-- Select a reason --</option>
+              <option value="fake_profile">Fake or scam profile</option>
+              <option value="inappropriate_photos">Inappropriate photos</option>
+              <option value="harassment">Harassment or abuse</option>
+              <option value="spam">Spam or bot</option>
+              <option value="underage">Underage user</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div class="mb-2">
+            <textarea name="description" class="form-control" rows="3" maxlength="1000" placeholder="Additional details (optional)"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer border-0 pt-0">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-warning" id="report-submit-btn">
+            <i class="bi bi-flag me-1"></i>Submit Report
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 </div>
@@ -476,6 +516,17 @@ document.getElementById('block-confirm-btn').addEventListener('click', () => {
         confirmBtn.disabled = false;
         spinner.classList.add('d-none');
         blockToast('Network error — please try again.', 'danger');
+    });
+});
+
+// ── Report user ──────────────────────────────────────────────────────────────
+const reportModal = new bootstrap.Modal(document.getElementById('reportModal'));
+
+document.querySelectorAll('.report-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.getElementById('report-confirm-name').textContent = btn.dataset.name || 'this user';
+        document.getElementById('report-reason').value = '';
+        reportModal.show();
     });
 });
 
