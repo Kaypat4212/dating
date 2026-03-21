@@ -119,8 +119,19 @@
                             <button class="btn btn-outline-warning wave-btn" data-user="{{ $profileUser->id }}" title="Send a wave">👋 Wave</button>
                             {{-- Tip button (only show to other users) --}}
                             <button class="btn btn-outline-success tip-btn" data-user="{{ $profileUser->id }}" data-name="{{ $profileUser->name }}" title="Send a tip"><i class="bi bi-coin me-1"></i>Tip</button>
-                            <form method="POST" action="{{ route('report.store', $profileUser->id) }}" onsubmit="return confirm('Report this user?')">@csrf<button class="btn btn-outline-secondary btn-sm"><i class="bi bi-flag"></i></button></form>
-                            <button type="button" class="btn btn-outline-danger btn-sm block-btn" data-user="{{ $profileUser->id }}" data-name="{{ $profileUser->name }}" title="Block user"><i class="bi bi-slash-circle"></i></button>
+                            <form method="POST" action="{{ route('report.store', $profileUser->id) }}" onsubmit="return confirm('Report this user?')">
+                                @csrf
+                                <button type="submit" class="btn btn-outline-secondary" title="Report {{ $profileUser->name }}" aria-label="Report {{ $profileUser->name }}">
+                                    <i class="bi bi-flag"></i><span class="d-none d-sm-inline ms-1">Report</span>
+                                </button>
+                            </form>
+                            <button type="button" class="btn btn-outline-danger block-btn"
+                                data-user="{{ $profileUser->id }}"
+                                data-name="{{ $profileUser->name }}"
+                                title="Block {{ $profileUser->name }}"
+                                aria-label="Block {{ $profileUser->name }}">
+                                <i class="bi bi-slash-circle"></i><span class="d-none d-sm-inline ms-1">Block</span>
+                            </button>
                         </div>
                         @endif
                     </div>
@@ -214,10 +225,35 @@
     </div>
   </div>
 </div>
+{{-- Block Confirmation Modal --}}
+<div class="modal fade" id="blockConfirmModal" tabindex="-1" aria-hidden="true" aria-labelledby="blockConfirmLabel">
+  <div class="modal-dialog modal-sm modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title text-danger" id="blockConfirmLabel"><i class="bi bi-slash-circle me-2"></i>Block User?</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cancel"></button>
+      </div>
+      <div class="modal-body">
+        <p class="mb-1">Block <strong id="block-confirm-name"></strong>?</p>
+        <p class="text-muted small mb-0">They won't be able to contact you or see your profile. You can unblock them later from your account settings.</p>
+      </div>
+      <div class="modal-footer border-0 pt-0">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-danger" id="block-confirm-btn">
+          <span id="block-spinner" class="spinner-border spinner-border-sm d-none me-1" role="status" aria-hidden="true"></span>
+          <i class="bi bi-slash-circle me-1"></i>Block
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 @endsection
 
 @push('scripts')
 <script>
+document.addEventListener('DOMContentLoaded', function () {
+
 // ── Wave ──────────────────────────────────────────────────────────────────────
 document.querySelectorAll('.wave-btn').forEach(btn => {
     btn.addEventListener('click', async () => {
@@ -244,9 +280,15 @@ document.querySelectorAll('.wave-btn').forEach(btn => {
 });
 
 // ── Tip modal ─────────────────────────────────────────────────────────────────
-const tipModal = new bootstrap.Modal(document.getElementById('tipModal'));
+let _tipModalInstance  = null;
 let _tipCurrentBalance = 0;
 let _tipBalanceLoaded  = false;
+function getTipModal() {
+    if (!_tipModalInstance) {
+        _tipModalInstance = new bootstrap.Modal(document.getElementById('tipModal'));
+    }
+    return _tipModalInstance;
+}
 
 function tipAlert(type, html) {
     const el = document.getElementById('tip-alert');
@@ -291,7 +333,7 @@ document.querySelectorAll('.tip-btn').forEach(btn => {
                 tipAlert('warning', '<i class="bi bi-exclamation-triangle me-1"></i>Could not load balance. Try refreshing.');
             });
 
-        tipModal.show();
+        getTipModal().show();
     });
 });
 
@@ -354,7 +396,7 @@ document.getElementById('tipForm').addEventListener('submit', async (e) => {
                 _tipCurrentBalance = data.new_balance;
                 document.getElementById('tip-my-balance').textContent = _tipCurrentBalance;
             }
-            setTimeout(() => tipModal.hide(), 1800);
+            setTimeout(() => getTipModal().hide(), 1800);
         } else {
             let msg = data.error || data.message || 'Something went wrong.';
             if (res.status === 422 && data.errors) {
@@ -377,7 +419,7 @@ document.getElementById('tipForm').addEventListener('submit', async (e) => {
 function blockToast(msg, type) {
     const icons     = { success: 'bi-slash-circle-fill', danger: 'bi-exclamation-circle' };
     const container = document.getElementById('toastContainer');
-    if (!container) { alert(msg); return; }
+    if (!container) return;
     const el = document.createElement('div');
     el.className = 'toast align-items-center text-bg-' + type + ' border-0';
     el.setAttribute('role', 'alert');
@@ -390,37 +432,53 @@ function blockToast(msg, type) {
     if (window.bootstrap?.Toast) { new bootstrap.Toast(el, { delay: 3500 }).show(); }
 }
 
+const blockConfirmModal = new bootstrap.Modal(document.getElementById('blockConfirmModal'));
+let _blockTargetBtn = null;
+
 document.querySelectorAll('.block-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-        const name = btn.dataset.name || 'this user';
-        if (!confirm('Block ' + name + '?\n\nThey won\'t be able to contact you or see your profile.')) return;
-
-        const csrf = document.querySelector('meta[name="csrf-token"]').content;
-        btn.disabled = true;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
-
-        fetch('{{ route("block.store", ":u") }}'.replace(':u', btn.dataset.user), {
-            method: 'POST',
-            headers: { 'X-CSRF-TOKEN': csrf, 'Content-Type': 'application/json' },
-        })
-        .then(r => r.json())
-        .then(d => {
-            if (d.blocked) {
-                blockToast(name + ' has been blocked.', 'success');
-                // Redirect to discover after a short delay so user sees the toast
-                setTimeout(() => { window.location.href = '{{ route("discover.index") }}'; }, 1800);
-            } else {
-                btn.disabled = false;
-                btn.innerHTML = '<i class="bi bi-slash-circle"></i>';
-                blockToast(d.error || 'Could not block user.', 'danger');
-            }
-        })
-        .catch(() => {
-            btn.disabled = false;
-            btn.innerHTML = '<i class="bi bi-slash-circle"></i>';
-            blockToast('Network error — please try again.', 'danger');
-        });
+        _blockTargetBtn = btn;
+        document.getElementById('block-confirm-name').textContent = btn.dataset.name || 'this user';
+        const confirmBtn = document.getElementById('block-confirm-btn');
+        confirmBtn.disabled = false;
+        document.getElementById('block-spinner').classList.add('d-none');
+        blockConfirmModal.show();
     });
 });
+
+document.getElementById('block-confirm-btn').addEventListener('click', () => {
+    if (!_blockTargetBtn) return;
+    const csrf       = document.querySelector('meta[name="csrf-token"]').content;
+    const confirmBtn = document.getElementById('block-confirm-btn');
+    const spinner    = document.getElementById('block-spinner');
+    const name       = document.getElementById('block-confirm-name').textContent;
+    confirmBtn.disabled = true;
+    spinner.classList.remove('d-none');
+
+    fetch('{{ route("block.store", ":u") }}'.replace(':u', _blockTargetBtn.dataset.user), {
+        method: 'POST',
+        headers: { 'X-CSRF-TOKEN': csrf, 'Content-Type': 'application/json' },
+    })
+    .then(r => r.json())
+    .then(d => {
+        blockConfirmModal.hide();
+        if (d.blocked) {
+            blockToast(name + ' has been blocked.', 'success');
+            setTimeout(() => { window.location.href = '{{ route("discover.index") }}'; }, 1800);
+        } else {
+            confirmBtn.disabled = false;
+            spinner.classList.add('d-none');
+            blockToast(d.error || 'Could not block user.', 'danger');
+        }
+    })
+    .catch(() => {
+        blockConfirmModal.hide();
+        confirmBtn.disabled = false;
+        spinner.classList.add('d-none');
+        blockToast('Network error — please try again.', 'danger');
+    });
+});
+
+}); // end DOMContentLoaded
 </script>
 @endpush
