@@ -56,7 +56,51 @@ main { padding-bottom: 0 !important; }
 .gift-choice:hover { background: #fce4ec; }
 .gift-emoji { font-size: 1.4rem; }
 .gift-label { font-size: .6rem; color: #888; margin-top: 3px; }
-/* ── AI Popover ─────────────────────────────────────────── */
+/* ── Redesigned 2-row chat footer ──────────────────────────── */
+.chat-footer {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0 !important;
+    padding: 0 !important;
+}
+/* Row 1 – action icon strip */
+.chat-actions-bar {
+    display: flex;
+    align-items: center;
+    gap: .2rem;
+    padding: .38rem .8rem;
+    border-bottom: 1px solid var(--bs-border-color);
+}
+.chat-act-btn {
+    width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    padding: 0; border: none;
+    background: transparent; color: var(--bs-secondary-color);
+    font-size: 1rem; cursor: pointer;
+    transition: background .15s, color .15s;
+}
+.chat-act-btn:hover,
+.chat-act-btn:focus { background: var(--bs-secondary-bg); color: var(--bs-body-color); outline: none; }
+.chat-act-tip { color: #f59e0b !important; }
+.chat-act-tip:hover { background: rgba(245,158,11,.12) !important; color: #d97706 !important; }
+/* Row 2 – textarea + send */
+.chat-input-row {
+    display: flex;
+    align-items: flex-end;
+    gap: .45rem;
+    padding: .5rem .75rem .6rem;
+}
+.chat-textarea {
+    min-height: 52px !important;
+    max-height: 160px !important;
+    font-size: .95rem !important;
+    line-height: 1.5 !important;
+}
+.chat-send-btn {
+    width: 44px !important; height: 44px !important;
+    border-radius: 50% !important; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center; padding: 0 !important;
+}
 .chat-ai-popover {
     position: absolute;
     bottom: calc(100% + 8px);
@@ -297,64 +341,119 @@ main { padding-bottom: 0 !important; }
                accept="image/jpeg,image/png,image/gif,image/webp,audio/mpeg,audio/ogg,audio/wav,audio/mp4,audio/aac,audio/x-m4a,audio/webm"
                class="d-none">
 
-        {{-- Attachment picker --}}
-        <button type="button" class="chat-footer-btn flex-shrink-0" id="attachBtn" title="Send image or audio">
-            <i class="bi bi-paperclip"></i>
-        </button>
+        {{-- ── Row 1: action icon strip ─────────────────────────────── --}}
+        <div class="chat-actions-bar">
 
-        @if(auth()->user()->isPremiumActive())
-        {{-- Gift picker (Premium) --}}
-        <div class="position-relative flex-shrink-0">
-            <button type="button" class="chat-footer-btn" id="giftBtn" title="Send a gift (Premium)">
-                <i class="bi bi-gift"></i>
+            {{-- Attachment --}}
+            <button type="button" class="chat-act-btn" id="attachBtn" title="Send image or audio">
+                <i class="bi bi-paperclip"></i>
             </button>
-            <div id="giftPopover" class="chat-gift-popover d-none">
-                <div class="gift-popover-title">Send a gift</div>
-                <div class="gift-grid" id="giftGrid">
-                    {{-- Populated by JS to avoid file-encoding emoji corruption --}}
+
+            @if(auth()->user()->isPremiumActive())
+            {{-- Virtual gift (Premium) --}}
+            <div class="position-relative">
+                <button type="button" class="chat-act-btn" id="giftBtn" title="Send a virtual gift">
+                    <i class="bi bi-gift"></i>
+                </button>
+                <div id="giftPopover" class="chat-gift-popover d-none">
+                    <div class="gift-popover-title">Send a gift</div>
+                    <div class="gift-grid" id="giftGrid"></div>
                 </div>
             </div>
-        </div>
-        @endif
+            @else
+            {{-- Placeholder so layout is consistent for non-premium --}}
+            <div id="giftPopover" class="d-none"><div id="giftGrid"></div></div>
+            @endif
 
-        {{-- Emoji --}}
-        <div class="position-relative flex-shrink-0">
-            <button type="button" class="chat-footer-btn" id="emojiBtn" title="Emoji">
-                <i class="bi bi-emoji-smile"></i>
+            {{-- Tip credits --}}
+            <button type="button" class="chat-act-btn chat-act-tip" id="chatTipBtn" title="Send a credit tip">
+                <i class="bi bi-coin"></i>
             </button>
-            <div id="emojiPopover" class="chat-emoji-popover d-none"></div>
-        </div>
 
-        {{-- AI Assistant ✨ --}}
-        <div class="position-relative flex-shrink-0">
-            <button type="button" class="chat-footer-btn" id="aiBtn" title="AI Writing Helper">
-                ✨
-            </button>
-            <div id="aiPopover" class="chat-ai-popover d-none">
-                <div class="gift-popover-title">AI Writing Helper</div>
-                <button type="button" class="ai-option-btn" data-ai-type="reply">💬 Suggest a reply</button>
-                <button type="button" class="ai-option-btn" data-ai-type="topics">🎯 Topic ideas</button>
-                <button type="button" class="ai-option-btn" data-ai-type="icebreaker">👋 Icebreaker</button>
+            {{-- Emoji --}}
+            <div class="position-relative">
+                <button type="button" class="chat-act-btn" id="emojiBtn" title="Emoji">
+                    <i class="bi bi-emoji-smile"></i>
+                </button>
+                <div id="emojiPopover" class="chat-emoji-popover d-none"></div>
+            </div>
+
+            {{-- AI Assistant ✨ --}}
+            <div class="position-relative">
+                <button type="button" class="chat-act-btn" id="aiBtn" title="AI Writing Helper">✨</button>
+                <div id="aiPopover" class="chat-ai-popover d-none">
+                    <div class="gift-popover-title">AI Writing Helper</div>
+                    <button type="button" class="ai-option-btn" data-ai-type="reply">💬 Suggest a reply</button>
+                    <button type="button" class="ai-option-btn" data-ai-type="topics">🎯 Topic ideas</button>
+                    <button type="button" class="ai-option-btn" data-ai-type="icebreaker">👋 Icebreaker</button>
+                </div>
+            </div>
+
+            {{-- Rephrase with AI --}}
+            <div class="ms-auto">
+                <button id="aiRephraseBtn" class="chat-act-btn" type="button" title="Rewrite with AI">
+                    <span class="d-none spinner-border spinner-border-sm text-danger" id="aiRephraseSpinner" style="width:.8rem;height:.8rem"></span>
+                    <i class="bi bi-pencil-square"></i>
+                </button>
             </div>
         </div>
 
-        {{-- Text area + Rephrase --}}
-        <div class="d-flex align-items-end gap-2 flex-grow-1" style="min-width:0">
+        {{-- ── Row 2: textarea + send ──────────────────────────────────── --}}
+        <div class="chat-input-row">
             <textarea id="msgInput"
                       class="form-control chat-textarea"
                       placeholder="Type a message…"
-                      rows="1"
+                      rows="2"
                       autocomplete="off"
-                      style="resize:none;min-height:38px;"></textarea>
-            <button id="aiRephraseBtn" class="btn btn-outline-secondary px-2 py-1 d-flex align-items-center" type="button" title="Rewrite with AI" style="font-size:1.1rem;min-width:38px">
-                <span class="d-none spinner-border spinner-border-sm text-danger me-1" id="aiRephraseSpinner"></span>
-                <i class="bi bi-pencil-square"></i>
+                      style="resize:none;"></textarea>
+            <button id="btnSend" class="btn btn-primary chat-send-btn" title="Send (Enter)">
+                <i class="bi bi-send-fill"></i>
             </button>
         </div>
-        {{-- Send --}}
-        <button id="btnSend" class="btn btn-primary chat-send-btn" title="Send (Enter)">
-            <i class="bi bi-send-fill"></i>
-        </button>
+    </div>
+
+    {{-- ── Tip Modal ─────────────────────────────────────────────────────── --}}
+    <div class="modal fade" id="chatTipModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title"><i class="bi bi-coin text-warning me-2"></i>Send a Tip to {{ $other->name }}</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <form id="chatTipForm">
+            @csrf
+            <div class="modal-body">
+              <div class="d-flex align-items-center gap-2 mb-3 p-2 rounded-3" style="background:var(--bs-secondary-bg)">
+                @if($other->primaryPhoto)
+                  <img src="{{ $other->primaryPhoto->thumbnail_url }}" class="rounded-circle" style="width:38px;height:38px;object-fit:cover" alt="">
+                @else
+                  <div class="rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width:38px;height:38px;background:linear-gradient(135deg,#7c3aed,#ec4899);color:#fff">{{ strtoupper(mb_substr($other->name,0,1)) }}</div>
+                @endif
+                <div>
+                  <div class="fw-semibold lh-1">{{ $other->name }}</div>
+                  <div class="small text-muted">Your balance: <strong id="chatTipBalance">…</strong> credits</div>
+                </div>
+              </div>
+              <div class="mb-3">
+                <label class="form-label fw-semibold">Amount <span class="text-muted fw-normal">(credits)</span></label>
+                <input type="number" class="form-control" id="chatTipAmount" name="amount" min="1" placeholder="e.g. 5" required>
+              </div>
+              <div class="mb-2">
+                <label class="form-label fw-semibold">Note <span class="text-muted fw-normal">(optional)</span></label>
+                <input type="text" class="form-control" id="chatTipMessage" maxlength="255" placeholder="e.g. You're amazing!">
+              </div>
+              <div id="chatTipAlert" class="d-none"></div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+              <button type="submit" class="btn btn-warning fw-semibold" id="chatTipSubmitBtn" disabled>
+                <span id="chatTipSpinner" class="spinner-border spinner-border-sm d-none me-1"></span>
+                <i class="bi bi-send me-1"></i>Send Tip
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
     </div>
 
     {{-- AI Suggestions Tray --}}
@@ -408,7 +507,7 @@ main { padding-bottom: 0 !important; }
     // -- Auto-grow textarea --------------------------------------------------
     msgInput.addEventListener('input', () => {
         msgInput.style.height = 'auto';
-        msgInput.style.height = Math.min(msgInput.scrollHeight, 130) + 'px';
+        msgInput.style.height = Math.min(msgInput.scrollHeight, 160) + 'px';
     });
 
     // -- Emoji / Reaction definitions (Unicode escapes avoid file‑encoding issues) --
@@ -825,6 +924,98 @@ main { padding-bottom: 0 !important; }
         aiRephraseBtn.disabled = false;
         aiRephraseSpinner.classList.add('d-none');
     });
+    // ── Chat Tip ─────────────────────────────────────────────────────────────
+    (function () {
+        const chatTipBtn    = document.getElementById('chatTipBtn');
+        const chatTipModal  = new bootstrap.Modal(document.getElementById('chatTipModal'));
+        const chatTipForm   = document.getElementById('chatTipForm');
+        const chatTipAmtEl  = document.getElementById('chatTipAmount');
+        const chatTipMsgEl  = document.getElementById('chatTipMessage');
+        const chatTipBalEl  = document.getElementById('chatTipBalance');
+        const chatTipAlert  = document.getElementById('chatTipAlert');
+        const chatTipSubmit = document.getElementById('chatTipSubmitBtn');
+        const chatTipSpinner= document.getElementById('chatTipSpinner');
+        let _tipBal = 0, _tipBalLoaded = false;
+
+        function tipAlert(type, html) {
+            if (!type) { chatTipAlert.className = 'd-none'; chatTipAlert.innerHTML = ''; return; }
+            chatTipAlert.className = 'alert alert-' + type + ' py-2 small mt-2';
+            chatTipAlert.innerHTML = html;
+        }
+
+        chatTipBtn?.addEventListener('click', () => {
+            chatTipForm.reset();
+            chatTipAmtEl.value = '';
+            chatTipMsgEl.value = '';
+            tipAlert(null);
+            chatTipSubmit.disabled = true;
+            _tipBalLoaded = false;
+            chatTipBalEl.innerHTML = '<span class="spinner-border spinner-border-sm" style="width:.8rem;height:.8rem"></span>';
+
+            fetch('{{ route("wallet.balance") }}')
+                .then(r => r.json())
+                .then(d => {
+                    _tipBal = parseInt(d.balance ?? 0, 10);
+                    _tipBalLoaded = true;
+                    chatTipBalEl.textContent = _tipBal;
+                    if (_tipBal <= 0) {
+                        tipAlert('warning', '<i class="bi bi-exclamation-triangle me-1"></i>No credits. <a href="{{ route("wallet.index") }}" class="alert-link fw-semibold">Fund your wallet</a>.');
+                        chatTipSubmit.disabled = true;
+                    }
+                })
+                .catch(() => { _tipBalLoaded = true; chatTipBalEl.textContent = '?'; });
+
+            chatTipModal.show();
+        });
+
+        chatTipAmtEl?.addEventListener('input', function () {
+            if (!_tipBalLoaded) return;
+            const amt = parseInt(this.value, 10);
+            if (isNaN(amt) || amt < 1) { tipAlert(null); chatTipSubmit.disabled = _tipBal <= 0; return; }
+            if (amt > _tipBal) {
+                tipAlert('warning', `<i class="bi bi-exclamation-triangle me-1"></i>Amount (${amt}) exceeds your balance of <strong>${_tipBal}</strong> credits.`);
+                chatTipSubmit.disabled = true;
+            } else {
+                tipAlert(null);
+                chatTipSubmit.disabled = false;
+            }
+        });
+
+        chatTipForm?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const amt = parseInt(chatTipAmtEl.value, 10);
+            if (isNaN(amt) || amt < 1) { tipAlert('danger', 'Enter a valid amount (min 1 credit).'); return; }
+            if (_tipBalLoaded && amt > _tipBal) { tipAlert('danger', 'Insufficient balance.'); return; }
+
+            chatTipSubmit.disabled = true;
+            chatTipSpinner.classList.remove('d-none');
+            tipAlert(null);
+
+            try {
+                const res = await fetch('{{ route("tips.send") }}', {
+                    method: 'POST',
+                    headers: { 'X-CSRF-TOKEN': csrf, 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                    body: JSON.stringify({ recipient_id: {{ $other->id }}, amount: amt, message: chatTipMsgEl.value.trim() || null }),
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    tipAlert('danger', '<i class="bi bi-x-circle me-1"></i>' + (data.error ?? 'Could not send tip.'));
+                    chatTipSubmit.disabled = false;
+                } else {
+                    tipAlert('success', `<i class="bi bi-check-circle me-1"></i>Tip of <strong>${amt}</strong> credits sent to <strong>{{ $other->name }}</strong>!`);
+                    _tipBal -= amt;
+                    chatTipBalEl.textContent = _tipBal;
+                    chatTipAmtEl.value = '';
+                    chatTipMsgEl.value = '';
+                    setTimeout(() => chatTipModal.hide(), 1800);
+                }
+            } catch {
+                tipAlert('danger', 'Network error. Please try again.');
+                chatTipSubmit.disabled = false;
+            }
+            chatTipSpinner.classList.add('d-none');
+        });
+    })();
     // ────────────────────────────────────────────────────────────────────────
 })();
 </script>

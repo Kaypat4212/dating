@@ -102,9 +102,9 @@ class SwipeController extends Controller
             }
             // else: global — $targetCountry stays null
         } else {
-            // Non-passport: must be same country, never global
-            $targetCountry = $myCountry;
-            $strictCountry = true;
+            // Non-passport: prefer same country; if country unknown, show global rather than nothing
+            $targetCountry = $myCountry ?: null;
+            $strictCountry = !empty($myCountry);
         }
 
         // ── Build base query ──────────────────────────────────────────────────
