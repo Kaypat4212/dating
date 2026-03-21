@@ -885,7 +885,9 @@ async function swipe(direction) {
             if (!res.ok) {
                 const err = await res.json().catch(() => ({}));
                 if (res.status === 429) {
-                    showLimitOverlay(err.reset_at ? new Date(err.reset_at) : null);
+                    const resetDate = err.reset_at ? new Date(err.reset_at) : null;
+                    if (resetDate) window._limitResetDate = resetDate;
+                    showLimitOverlay(resetDate);
                 } else if (res.status === 403) {
                     document.getElementById('restriction-overlay').style.display = 'flex';
                 } else {
@@ -933,17 +935,32 @@ async function fetchMoreCards() {
             headers: { 'Accept': 'application/json' }
         });
         const data = await res.json();
+
+        // Admin-restricted — show restriction overlay
+        if (data.restricted) {
+            document.getElementById('restriction-overlay').style.display = 'flex';
+            return;
+        }
+
         if (!data.profiles?.length) {
             document.getElementById('swipe-stack').innerHTML =
                 `<div class="text-center p-5 text-white"><div class="display-1">🌍</div>
                  <h5 class="mt-3 fw-bold">You've seen everyone nearby!</h5>
                  <p class="opacity-75">Check back later or adjust your preferences.</p>
-                 <a href="{{ route('preferences.edit') }}" class="btn btn-primary mt-2">
-                    <i class="bi bi-sliders me-2"></i>Adjust Preferences</a></div>`;
+                 <div class="d-flex gap-3 justify-content-center mt-3 flex-wrap">
+                    <a href="{{ route('preferences.edit') }}" class="btn btn-sm fw-semibold px-4"
+                       style="background:linear-gradient(135deg,var(--hc-purple),var(--hc-pink));color:#fff;border:none;border-radius:20px">
+                       <i class="bi bi-sliders me-2"></i>Adjust Preferences</a>
+                    <a href="{{ route('discover.index') }}" class="btn btn-sm btn-outline-light px-4" style="border-radius:20px">
+                       <i class="bi bi-grid-3x3-gap me-2"></i>Browse Grid</a>
+                 </div></div>`;
         } else {
             location.reload();
         }
-    } catch (e) { /* silent */ }
+    } catch (e) {
+        // Network error — show retry option
+        showToast('⚠️ Could not load more profiles. Check your connection.', '#dc3545');
+    }
 }
 
 document.getElementById('btn-like')?.addEventListener('click', () => {
@@ -1190,7 +1207,24 @@ function startSwipeCountdown(resetDate) {
 
 // ── Auto-show limit overlay if user already hit their limit on page load ─────
 @if(!empty($limitResetAt))
-showLimitOverlay(new Date('{{ $limitResetAt }}'));
+const _serverResetDate = new Date('{{ $limitResetAt }}');
+showLimitOverlay(_serverResetDate);
 @endif
+
+// ── Resync countdown when tab becomes visible again (handles background drift) ──
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState !== 'visible') return;
+    const overlay = document.getElementById('limit-overlay');
+    if (!overlay || overlay.style.display === 'none') return;
+    // Use whichever reset date we have (page-load or mid-swipe 429)
+    const knownDate = (typeof _serverResetDate !== 'undefined' ? _serverResetDate : null)
+                   || window._limitResetDate || null;
+    if (!knownDate) return;
+    if (knownDate <= new Date()) {
+        location.reload();
+    } else {
+        startSwipeCountdown(knownDate);
+    }
+});
 </script>
 @endsection

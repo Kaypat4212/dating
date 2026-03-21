@@ -125,8 +125,8 @@ class PhotoResource extends Resource
                                 $next->update(['is_primary' => true]);
                             }
                         }
-                        Storage::disk('public')->delete($record->path);
-                        Storage::disk('public')->delete($record->thumbnail_path);
+                        if ($record->path) Storage::disk('public')->delete($record->path);
+                        if ($record->thumbnail_path) Storage::disk('public')->delete($record->thumbnail_path);
                         $record->delete();
                         Notification::make()->title('Photo rejected and removed')->danger()->send();
                     }),

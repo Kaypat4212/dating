@@ -362,7 +362,7 @@
                     <i class="bi bi-lock-fill text-warning fs-6"></i>
                     <div>
                         <strong>Free trial used up.</strong><br>
-                        <a href="{{ route('premium.index') }}" class="fw-semibold text-decoration-none"
+                        <a href="{{ route('premium.show') }}" class="fw-semibold text-decoration-none"
                            style="color:#e11d74">Upgrade to Premium</a> to browse any city.
                     </div>
                 </div>
@@ -373,7 +373,7 @@
                         Browse any location freely — Premium benefit.
                     @else
                         {{ max(0, 2 - $locationUses) }} free trial(s) to browse other cities.
-                        <a href="{{ route('premium.index') }}" class="fw-semibold" style="color:#e11d74">Go Premium</a> for unlimited access.
+                        <a href="{{ route('premium.show') }}" class="fw-semibold" style="color:#e11d74">Go Premium</a> for unlimited access.
                     @endif
                 </p>
                 @endif
@@ -385,7 +385,7 @@
         <div class="alert alert-warning alert-dismissible fade show py-2 px-3 mb-2" style="font-size:.85rem" role="alert">
             <i class="bi bi-lock-fill me-2"></i>
             <strong>Location filter trial exhausted.</strong>
-            Your results are showing your home city. <a href="{{ route('premium.index') }}" class="fw-semibold" style="color:#e11d74">Upgrade to Premium</a> to browse any location.
+            Your results are showing your home city. <a href="{{ route('premium.show') }}" class="fw-semibold" style="color:#e11d74">Upgrade to Premium</a> to browse any location.
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
         @endif

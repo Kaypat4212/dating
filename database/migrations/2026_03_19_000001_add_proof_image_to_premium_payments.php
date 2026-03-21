@@ -8,6 +8,9 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasColumn('premium_payments', 'proof_image')) {
+            return; // already exists (added manually on prod)
+        }
         Schema::table('premium_payments', function (Blueprint $table) {
             $table->string('proof_image')->nullable()->after('tx_hash');
         });
@@ -15,8 +18,10 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::table('premium_payments', function (Blueprint $table) {
-            $table->dropColumn('proof_image');
-        });
+        if (Schema::hasColumn('premium_payments', 'proof_image')) {
+            Schema::table('premium_payments', function (Blueprint $table) {
+                $table->dropColumn('proof_image');
+            });
+        }
     }
 };

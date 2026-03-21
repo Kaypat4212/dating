@@ -124,9 +124,36 @@ if ($dbName && $dbUser) {
             [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
         );
 
-        // wallet_transactions
-        $exists = $pdo->query("SHOW TABLES LIKE 'wallet_transactions'")->rowCount() > 0;
-        if (!$exists) {
+        $migrationsExists = $pdo->query("SHOW TABLES LIKE 'migrations'")->rowCount() > 0;
+
+        // Helper: check if a migration is already recorded
+        $isMigrated = function(string $name) use ($pdo, $migrationsExists): bool {
+            if (!$migrationsExists) return false;
+            $st = $pdo->prepare("SELECT 1 FROM `migrations` WHERE `migration` = ? LIMIT 1");
+            $st->execute([$name]);
+            return (bool) $st->fetchColumn();
+        };
+
+        // Helper: mark a migration as done in the next batch
+        $markMigrated = function(string $name) use ($pdo, $migrationsExists): void {
+            if (!$migrationsExists) return;
+            $pdo->prepare(
+                "INSERT IGNORE INTO `migrations` (`migration`, `batch`)
+                 SELECT ?, COALESCE((SELECT MAX(`batch`) FROM `migrations` m2), 0) + 1"
+            )->execute([$name]);
+        };
+
+        // ── wallet_transactions ───────────────────────────────────────────────
+        // If migration was marked done but table is missing, delete the stale record
+        // so we can re-create it properly.
+        $walletExists = $pdo->query("SHOW TABLES LIKE 'wallet_transactions'")->rowCount() > 0;
+        if (!$walletExists) {
+            // Remove stale migration record (if any) before recreating
+            if ($migrationsExists) {
+                $pdo->prepare("DELETE FROM `migrations` WHERE `migration` = ?")->execute([
+                    '2026_03_20_000001_create_wallet_transactions_table',
+                ]);
+            }
             $pdo->exec("CREATE TABLE `wallet_transactions` (
                 `id` bigint unsigned NOT NULL AUTO_INCREMENT,
                 `user_id` bigint unsigned NOT NULL,
@@ -143,12 +170,13 @@ if ($dbName && $dbUser) {
                 CONSTRAINT `wallet_transactions_user_id_foreign`
                     FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
-            $createdTables[] = 'wallet_transactions';
+            $createdTables[] = 'wallet_transactions (CREATED)';
         }
+        $markMigrated('2026_03_20_000001_create_wallet_transactions_table');
 
-        // rooms (for future chatroom feature)
-        $exists = $pdo->query("SHOW TABLES LIKE 'rooms'")->rowCount() > 0;
-        if (!$exists) {
+        // ── rooms ─────────────────────────────────────────────────────────────
+        $roomsExists = $pdo->query("SHOW TABLES LIKE 'rooms'")->rowCount() > 0;
+        if (!$roomsExists) {
             $pdo->exec("CREATE TABLE `rooms` (
                 `id` bigint unsigned NOT NULL AUTO_INCREMENT,
                 `name` varchar(120) NOT NULL,
@@ -165,33 +193,35 @@ if ($dbName && $dbUser) {
                 CONSTRAINT `rooms_owner_id_foreign`
                     FOREIGN KEY (`owner_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
-            $createdTables[] = 'rooms';
+            $createdTables[] = 'rooms (CREATED)';
+        }
+        $markMigrated('2026_03_21_000001_create_rooms_table');
+
+        // ── proof_image column on premium_payments ────────────────────────────
+        // Column already exists in production but migration was never recorded —
+        // just mark it as done so artisan migrate stops trying to add it again.
+        $proofCols = $pdo->query("SHOW COLUMNS FROM `premium_payments` LIKE 'proof_image'")->fetchAll();
+        if (!empty($proofCols)) {
+            $markMigrated('2026_03_19_000001_add_proof_image_to_premium_payments');
+            $createdTables[] = 'premium_payments.proof_image (already exists — migration marked done)';
+        } else {
+            // Column missing: add it and mark migration done
+            $pdo->exec("ALTER TABLE `premium_payments` ADD COLUMN `proof_image` varchar(255) NULL AFTER `tx_hash`");
+            $markMigrated('2026_03_19_000001_add_proof_image_to_premium_payments');
+            $createdTables[] = 'premium_payments.proof_image (ADDED)';
         }
 
-        // location_filter_uses column on users (premium discover feature)
+        // ── location_filter_uses column on users ──────────────────────────────
         $cols = $pdo->query("SHOW COLUMNS FROM `users` LIKE 'location_filter_uses'")->fetchAll();
         if (empty($cols)) {
             $pdo->exec("ALTER TABLE `users` ADD COLUMN `location_filter_uses` tinyint unsigned NOT NULL DEFAULT 0 AFTER `credit_balance`");
-            $createdTables[] = 'users.location_filter_uses (column)';
+            $createdTables[] = 'users.location_filter_uses (ADDED)';
         }
-
-        // migrations table entry — mark these as run so artisan migrate doesn't re-run them
-        $migrationsExists = $pdo->query("SHOW TABLES LIKE 'migrations'")->rowCount() > 0;
-        if ($migrationsExists) {
-            $stmt = $pdo->prepare("INSERT IGNORE INTO `migrations` (`migration`, `batch`)
-                SELECT ?, (SELECT COALESCE(MAX(`batch`),0)+1 FROM `migrations` m2)");
-            foreach ([
-                '2026_03_20_000001_create_wallet_transactions_table',
-                '2026_03_21_000001_create_rooms_table',
-                '2026_03_22_000001_add_location_filter_uses_to_users_table',
-            ] as $m) {
-                $stmt->execute([$m]);
-            }
-        }
+        $markMigrated('2026_03_22_000001_add_location_filter_uses_to_users_table');
 
         $msg = count($createdTables) > 0
-            ? 'Created/altered: ' . implode(', ', $createdTables)
-            : 'All tracked tables/columns already exist — nothing to do';
+            ? 'Done: ' . implode(' | ', $createdTables)
+            : 'All tables/columns already exist and migrations are recorded — nothing to do';
         $results[] = ['ok' => true, 'label' => 'DB migrations', 'msg' => $msg];
 
     } catch (\Throwable $ex) {
