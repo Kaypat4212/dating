@@ -47,6 +47,7 @@
 
     @vite(['resources/scss/app.scss', 'resources/js/app.js'])
     @stack('head')
+    @stack('styles')
     <style>
         /* Mobile: dropdown flows in-place below the button, full width */
         @media (max-width: 991.98px) {

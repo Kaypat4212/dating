@@ -152,62 +152,7 @@ $link-hover-color: darken($primary, 10%);
     margin: 0 auto;
 }
 
-.swipe-card {
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    border-radius: 1.5rem;
-    overflow: hidden;
-    box-shadow: 0 8px 32px rgba(0,0,0,.2);
-    cursor: grab;
-    touch-action: none;
-    user-select: none;
-    transition: box-shadow .15s;
-    background: #fff;
-    height: 520px;
-
-    &:active { cursor: grabbing; }
-
-    img {
-        width: 100%; height: 380px;
-        object-fit: cover;
-        pointer-events: none;
-    }
-
-    .swipe-card-info {
-        padding: 1rem 1.25rem;
-    }
-
-    &.is-like .swipe-stamp-like { opacity: 1; }
-    &.is-nope .swipe-stamp-nope { opacity: 1; }
-}
-
-.swipe-stamp-like,
-.swipe-stamp-nope {
-    position: absolute;
-    top: 1.5rem;
-    font-size: 1.8rem;
-    font-weight: 900;
-    border: 4px solid;
-    padding: .25rem .75rem;
-    border-radius: .5rem;
-    opacity: 0;
-    transition: opacity .15s;
-    pointer-events: none;
-}
-
-.swipe-stamp-like {
-    left: 1.25rem;
-    color: #4caf50;
-    border-color: #4caf50;
-    transform: rotate(-15deg);
-}
-
-.swipe-stamp-nope {
-    right: 1.25rem;
-    color: $danger;
-    border-color: $danger;
-    transform: rotate(15deg);
-}
+/* Legacy swipe-card block removed — styling now lives in discover/swipe.blade.php */
 
 .swipe-actions {
     display: flex;
@@ -620,11 +565,7 @@ body { background-color: #f8f5fc; }
 }
 .typing-bubble { background: #f0e9f9; }
 
-// Swipe card in light mode — white
-.swipe-card {
-    background: #fff;
-    color: #1a1a2e;
-}
+/* swipe-card light-mode override removed — card has its own dark theme CSS */
 
 // Bottom nav — light mode
 .bottom-nav {
@@ -700,11 +641,7 @@ body { background-color: #f8f5fc; }
         .text-muted { color: rgba(255,255,255,.5) !important; }
     }
 
-    // ── Swipe card ───────────────────────────────────────────
-    .swipe-card {
-        background: #1a1030;
-        color: rgba(255,255,255,.9);
-    }
+    /* swipe-card dark-mode override removed — card has its own dark theme CSS */
 
     // ── Chat ─────────────────────────────────────────────────
     .chat-body-scroll, .chat-messages { background: transparent; }
