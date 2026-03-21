@@ -7,15 +7,14 @@
 
 $ErrorActionPreference = "Stop"
 $src     = $PSScriptRoot
-# Write ZIP outside the VS Code workspace to avoid file-watcher lock.
-$zipPath = "$env:USERPROFILE\Desktop\dating-production.zip"
+$zipPath = "$src\..\dating-production.zip"
 
 Write-Host "=== HeartsConnect cPanel Build Script ===" -ForegroundColor Cyan
 
 # 1. Build front-end assets
 Write-Host "`n[1/4] Building front-end assets..." -ForegroundColor Yellow
 Set-Location $src
-$npmLog = "$env:TEMP\dating-npm-build-$(Get-Random).log"
+$npmLog = "$env:TEMP\dating-npm-build.log"
 # Run via cmd.exe to bypass PowerShell's npm.ps1 wrapper which writes to stderr
 # even on success, tripping $ErrorActionPreference = "Stop".
 cmd /c "npm run build > `"$npmLog`" 2>&1"
@@ -106,7 +105,7 @@ try { Add-Type -AssemblyName System.IO.Compression.FileSystem } catch { $null = 
 try {
     [System.IO.Compression.ZipFile]::CreateFromDirectory(
         $tmpDir, $zipPath,
-        [System.IO.Compression.CompressionLevel]::Fastest,
+        [System.IO.Compression.CompressionLevel]::Optimal,
         $false
     )
 } catch {
@@ -119,7 +118,6 @@ Remove-Item $tmpDir -Recurse -Force -ErrorAction SilentlyContinue
 
 $sizeMB = [math]::Round((Get-Item $zipPath).Length / 1MB, 1)
 Write-Host "`n[4/4] Done! ZIP created: $zipPath ($sizeMB MB)" -ForegroundColor Green
-Write-Host "  -> Find it on your Desktop: dating-production.zip" -ForegroundColor Green
 Write-Host ""
 Write-Host "--- cPanel Deployment Steps ---" -ForegroundColor Cyan
 Write-Host "1. Upload dating-production.zip to your cPanel home (e.g. /home/user/)"

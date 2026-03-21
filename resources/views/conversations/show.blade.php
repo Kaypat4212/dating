@@ -574,7 +574,7 @@ main { padding-bottom: 0 !important; }
     });
 
     // -- Build bubble HTML ---------------------------------------------------
-    function appendBubble(body, isMe, createdAt, type = 'text', attachUrl = null, attachName = null) {
+    function appendBubble(body, isMe, createdAt, type = 'text', attachUrl = null, attachName = null, id = null) {
         typingRow.classList.add('d-none');
         const t   = new Date(createdAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
         const chk = isMe ? '<i class="bi bi-check2 text-muted"></i>' : '';
@@ -590,6 +590,7 @@ main { padding-bottom: 0 !important; }
 
         const bubble = document.createElement('div');
         bubble.className = `message-bubble ${isMe ? 'me' : 'them'} position-relative${type !== 'text' ? ' media-bubble' : ''}`;
+        if (id) bubble.dataset.msgId = id;
 
         let content = '';
         if (type === 'image' && attachUrl) {
@@ -650,7 +651,7 @@ main { padding-bottom: 0 !important; }
                 if (e.sender_id !== myId) {
                     typingRow.classList.add('d-none');
                     appendBubble(e.body, false, e.created_at, e.type ?? 'text',
-                                 e.attachment_url ?? null, e.attachment_name ?? null);
+                                 e.attachment_url ?? null, e.attachment_name ?? null, e.id ?? null);
                 }
             })
             .listen('.user.typing', e => {
