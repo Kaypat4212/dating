@@ -9,7 +9,6 @@ use App\Models\SiteSetting;
 use App\Models\User;
 use App\Models\UserMatch;
 use App\Models\UserPreference;
-use App\Notifications\FeatureUsageNotification;
 use App\Services\CompatibilityService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -36,19 +35,9 @@ class DatingProfileController extends Controller
             $profileUser->profile?->increment('views_count');
             Cache::put($cacheKey, true, now()->addHours(24));
 
-            // Dispatch notification to the viewed user
+            // Notify the VIEWED user only (never the viewer), and only if they are premium
             if ($profileUser->isPremiumActive()) {
                 try { $profileUser->notify(new \App\Notifications\ProfileViewedNotification($viewer)); } catch (\Throwable) {}
-            }
-
-            if (SiteSetting::get('email_feature_usage_enabled', true)) {
-                try {
-                    $viewer->notify(new FeatureUsageNotification(
-                        feature: 'Profile View',
-                        summary: "You viewed {$profileUser->name}'s profile.",
-                        url: route('profile.show', $profileUser->username),
-                    ));
-                } catch (\Throwable) {}
             }
         }
 

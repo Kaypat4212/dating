@@ -27,7 +27,7 @@ class ProfileViewedNotification extends Notification implements ShouldQueue
             'viewer_id'     => $this->viewer->id,
             'viewer_name'   => $this->viewer->name,
             'viewer_username' => $this->viewer->username,
-            'message'       => "Someone viewed your profile. Upgrade to premium to see who visited you!",
+            'message'       => "{$this->viewer->name} viewed your profile.",
             'url'           => route('profile.who-viewed'),
         ];
     }

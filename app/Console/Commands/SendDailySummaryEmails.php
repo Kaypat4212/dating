@@ -35,9 +35,12 @@ class SendDailySummaryEmails extends Command
         foreach ($users as $user) {
             /** @var \App\Models\User $user */
             $stats = [
-                'profile_views_today' => ProfileView::where('viewed_id', $user->id)
-                    ->where('created_at', '>=', now()->subDay())
-                    ->count(),
+                // Profile view counts are only meaningful for premium users who can see who visited them
+                'profile_views_today' => $user->isPremiumActive()
+                    ? ProfileView::where('viewed_id', $user->id)
+                        ->where('created_at', '>=', now()->subDay())
+                        ->count()
+                    : 0,
                 'likes_today' => Like::where('receiver_id', $user->id)
                     ->where('created_at', '>=', now()->subDay())
                     ->count(),
