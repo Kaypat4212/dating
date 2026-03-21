@@ -75,6 +75,26 @@ class DiscoverController extends Controller
             $query->where('profiles.relationship_goal', $request->input('relationship_goal'));
         }
 
+        // City / location filter
+        // Default to the logged-in user's city when no explicit filter param is present.
+        // Submitting an empty city field (request has 'city' key) clears the restriction.
+        $filterCity = $request->has('city')
+            ? trim($request->input('city', ''))
+            : ($user->profile?->city ?? '');
+
+        if ($filterCity !== '') {
+            $query->where('profiles.city', $filterCity);
+        }
+
+        // Country filter — similarly defaults to the user's own country
+        $filterCountry = $request->has('country')
+            ? trim($request->input('country', ''))
+            : ($user->profile?->country ?? '');
+
+        if ($filterCountry !== '') {
+            $query->where('profiles.country', $filterCountry);
+        }
+
         // Distance filter (Haversine)
         // If request has explicit value, use it; otherwise use stored pref; if neither → no filter
         $requestKm = $request->filled('max_distance_km') ? (int) $request->input('max_distance_km') : null;
@@ -101,6 +121,6 @@ class DiscoverController extends Controller
 
         $compat = app(CompatibilityService::class);
 
-        return view('discover.index', compact('users', 'prefs', 'compat', 'minAge', 'maxAge', 'maxKm'));
+        return view('discover.index', compact('users', 'prefs', 'compat', 'minAge', 'maxAge', 'maxKm', 'filterCity', 'filterCountry'));
     }
 }

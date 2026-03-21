@@ -285,6 +285,37 @@
 
     {{-- ── Filters ────────────────────────────────────────────────── --}}
     <form method="GET" action="{{ route('discover.index') }}" class="discover-filters">
+
+        {{-- Location row --}}
+        <div class="row g-2 align-items-end mb-2">
+            <div class="col-12 col-md-5">
+                <label class="form-label small fw-semibold mb-1">
+                    <i class="bi bi-geo-alt-fill text-danger me-1"></i>City / Location
+                    @if($filterCity)
+                        <span class="badge bg-primary ms-1" style="font-size:.65rem">Active</span>
+                    @endif
+                </label>
+                <input type="text" name="city" class="form-control form-control-sm"
+                       value="{{ $filterCity }}"
+                       placeholder="e.g. Lagos — leave blank for any city"
+                       autocomplete="off">
+            </div>
+            <div class="col-12 col-md-4">
+                <label class="form-label small fw-semibold mb-1">Country</label>
+                <input type="text" name="country" class="form-control form-control-sm"
+                       value="{{ $filterCountry }}"
+                       placeholder="e.g. Nigeria — leave blank for any"
+                       autocomplete="off">
+            </div>
+            <div class="col-12 col-md-3">
+                <p class="text-muted small mb-0" style="font-size:.78rem;line-height:1.3">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Defaults to your profile location. Clear both to browse worldwide.
+                </p>
+            </div>
+        </div>
+
+        {{-- Other filters row --}}
         <div class="row g-2 align-items-end">
             <div class="col-6 col-md-2">
                 <label class="form-label small fw-semibold mb-1">Min Age</label>
@@ -376,7 +407,14 @@
     <div class="text-center py-5">
         <div style="font-size:4rem;line-height:1;margin-bottom:1rem">🔭</div>
         <h5 class="fw-bold">No profiles found</h5>
-        <p class="text-muted">Try adjusting your filters or expanding the distance.</p>
+        <p class="text-muted">
+            @if($filterCity)
+                No members found in <strong>{{ $filterCity }}</strong>.
+                Try clearing the city filter or search a different location.
+            @else
+                Try adjusting your filters or expanding the distance.
+            @endif
+        </p>
         <a href="{{ route('discover.index') }}" class="btn btn-primary rounded-pill px-4">Clear Filters</a>
     </div>
     @else
