@@ -699,100 +699,7 @@
 })();
 </script>
 
-{{-- ── Same-sex match confirmation modal ─────────────────────────────── --}}
-@if($showSameSexModal)
-<div
-    style="position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(0,0,0,.7);backdrop-filter:blur(4px)"
-    x-data x-init="$el.style.opacity=0; setTimeout(()=>$el.style.transition='opacity .25s',0); setTimeout(()=>$el.style.opacity=1,10)"
->
-    <div style="
-        width:100%;max-width:420px;
-        background:linear-gradient(160deg,#1e0a2e,#2d1050);
-        border:1.5px solid rgba(239,68,68,.45);
-        border-radius:20px;overflow:hidden;
-        box-shadow:0 24px 64px rgba(239,68,68,.25),0 0 0 1px rgba(255,255,255,.05);
-    ">
-        {{-- Top accent bar --}}
-        <div style="height:3px;background:linear-gradient(90deg,#ef4444,#f97316,#ef4444)"></div>
 
-        <div style="padding:24px 24px 20px">
-            {{-- Warning icon --}}
-            <div style="display:flex;justify-content:center;margin-bottom:16px">
-                <div style="
-                    width:56px;height:56px;border-radius:50%;
-                    background:rgba(239,68,68,.15);border:1.5px solid rgba(239,68,68,.35);
-                    display:flex;align-items:center;justify-content:center;font-size:1.75rem
-                ">⚠️</div>
-            </div>
-
-            {{-- Title --}}
-            <h3 style="color:#fff;font-size:1.05rem;font-weight:800;text-align:center;margin:0 0 8px">
-                Same-Gender Match Detected
-            </h3>
-
-            {{-- Body --}}
-            <p style="color:rgba(255,255,255,.55);font-size:.8rem;text-align:center;margin:0 0 6px;line-height:1.6">
-                You are about to force-match two
-                <strong style="color:#fca5a5">{{ $pendingGender }}</strong> users:
-            </p>
-            <div style="
-                background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);
-                border-radius:12px;padding:10px 16px;text-align:center;margin-bottom:16px
-            ">
-                <span style="font-size:.92rem;font-weight:700;color:#fff">{{ $pendingMatchNames }}</span>
-            </div>
-            <p style="color:rgba(255,255,255,.4);font-size:.75rem;text-align:center;margin:0 0 20px;line-height:1.5">
-                This platform is designed for opposite-gender matching. Same-sex matches should only be created if both users have explicitly requested it or your platform intentionally supports it.
-            </p>
-
-            {{-- Actions --}}
-            <div style="display:flex;gap:10px">
-                <button
-                    wire:click="cancelSameSexMatch"
-                    wire:loading.attr="disabled"
-                    style="
-                        flex:1;padding:10px;border-radius:12px;border:1px solid rgba(255,255,255,.12);
-                        background:rgba(255,255,255,.06);color:rgba(255,255,255,.75);
-                        font-size:.82rem;font-weight:600;cursor:pointer;transition:background .15s
-                    "
-                    onmouseover="this.style.background='rgba(255,255,255,.1)'"
-                    onmouseout="this.style.background='rgba(255,255,255,.06)'"
-                >
-                    Cancel
-                </button>
-                <button
-                    wire:click="confirmSameSexMatch"
-                    wire:loading.attr="disabled"
-                    style="
-                        flex:1;padding:10px;border-radius:12px;border:none;
-                        background:linear-gradient(135deg,#ef4444,#f97316);
-                        color:#fff;font-size:.82rem;font-weight:700;cursor:pointer;
-                        box-shadow:0 4px 16px rgba(239,68,68,.4);transition:opacity .15s
-                    "
-                    onmouseover="this.style.opacity='.88'"
-                    onmouseout="this.style.opacity='1'"
-                >
-                    <span wire:loading.remove wire:target="confirmSameSexMatch">
-                        ⚠️ Yes, Force Match Anyway
-                    </span>
-                    <span wire:loading wire:target="confirmSameSexMatch" style="display:flex;align-items:center;justify-content:center;gap:6px">
-                        <svg style="width:12px;height:12px;animation:spin 1s linear infinite" fill="none" viewBox="0 0 24 24">
-                            <circle style="opacity:.25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-                            <path style="opacity:.75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-                        </svg>
-                        Matching…
-                    </span>
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-<style>
-@keyframes spin { to { transform: rotate(360deg); } }
-</style>
-@endif
-
-</x-filament-panels::page>
 
 /* Gradient glow for active user card */
 .sm-user-active {
@@ -1243,5 +1150,50 @@
         @endif
     </div>
 </div>
+
+{{-- ── Same-sex match confirmation modal ─────────────────────────────── --}}
+@if($showSameSexModal)
+<div
+    style="position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(0,0,0,.7);backdrop-filter:blur(4px)"
+    x-data x-init="$el.style.opacity=0; setTimeout(()=>$el.style.transition='opacity .25s',0); setTimeout(()=>$el.style.opacity=1,10)"
+>
+    <div style="
+        width:100%;max-width:420px;
+        background:linear-gradient(160deg,#1e0a2e,#2d1050);
+        border:1.5px solid rgba(239,68,68,.45);
+        border-radius:20px;overflow:hidden;
+        box-shadow:0 24px 64px rgba(239,68,68,.25),0 0 0 1px rgba(255,255,255,.05);
+    ">
+        <div style="height:3px;background:linear-gradient(90deg,#ef4444,#f97316,#ef4444)"></div>
+        <div style="padding:24px 24px 20px">
+            <div style="display:flex;justify-content:center;margin-bottom:16px">
+                <div style="width:56px;height:56px;border-radius:50%;background:rgba(239,68,68,.15);border:1.5px solid rgba(239,68,68,.35);display:flex;align-items:center;justify-content:center;font-size:1.75rem">⚠️</div>
+            </div>
+            <h3 style="color:#fff;font-size:1.05rem;font-weight:800;text-align:center;margin:0 0 8px">Same-Gender Match Detected</h3>
+            <p style="color:rgba(255,255,255,.55);font-size:.8rem;text-align:center;margin:0 0 6px;line-height:1.6">
+                You are about to force-match two <strong style="color:#fca5a5">{{ $pendingGender }}</strong> users:
+            </p>
+            <div style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);border-radius:12px;padding:10px 16px;text-align:center;margin-bottom:16px">
+                <span style="font-size:.92rem;font-weight:700;color:#fff">{{ $pendingMatchNames }}</span>
+            </div>
+            <p style="color:rgba(255,255,255,.4);font-size:.75rem;text-align:center;margin:0 0 20px;line-height:1.5">
+                This platform is designed for opposite-gender matching. Same-sex matches should only be created if both users have explicitly requested it.
+            </p>
+            <div style="display:flex;gap:10px">
+                <button wire:click="cancelSameSexMatch" wire:loading.attr="disabled"
+                    style="flex:1;padding:10px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:rgba(255,255,255,.75);font-size:.82rem;font-weight:600;cursor:pointer"
+                >Cancel</button>
+                <button wire:click="confirmSameSexMatch" wire:loading.attr="disabled"
+                    style="flex:1;padding:10px;border-radius:12px;border:none;background:linear-gradient(135deg,#ef4444,#f97316);color:#fff;font-size:.82rem;font-weight:700;cursor:pointer;box-shadow:0 4px 16px rgba(239,68,68,.4)"
+                >
+                    <span wire:loading.remove wire:target="confirmSameSexMatch">⚠️ Yes, Force Match Anyway</span>
+                    <span wire:loading wire:target="confirmSameSexMatch">Matching…</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+@endif
+
 </x-filament-panels::page>
 
