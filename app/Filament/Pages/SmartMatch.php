@@ -39,17 +39,16 @@ class SmartMatch extends Page
     }
 
     /**
-     * Return the 10 newest users (past 7 days, profile complete) for the sidebar list.
+     * Return the 30 newest complete users for the sidebar list.
      */
     public function getNewUsers(): Collection
     {
         return User::where('profile_complete', true)
             ->whereNotNull('email_verified_at')
             ->where('is_banned', false)
-            ->where('created_at', '>=', now()->subDays(7))
             ->with('primaryPhoto')
             ->orderByDesc('created_at')
-            ->limit(20)
+            ->limit(30)
             ->get();
     }
 
@@ -76,7 +75,7 @@ class SmartMatch extends Page
             ->whereNotNull('email_verified_at')
             ->where('is_banned', false)
             ->whereNotIn('users.id', $existingMatchIds)
-            ->when($user->seeking !== 'everyone', fn ($q) => $q->where('gender', $user->seeking))
+            ->when($user->seeking && $user->seeking !== 'everyone', fn ($q) => $q->where('gender', $user->seeking))
             ->with(['profile.interests', 'primaryPhoto'])
             ->limit(100) // score top 100 then take best 10
             ->get()
