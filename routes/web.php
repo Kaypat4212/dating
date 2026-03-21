@@ -98,7 +98,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/step/{step}',              [ProfileSetupController::class, 'show'])->name('step');
         Route::post('/step/{step}',             [ProfileSetupController::class, 'store'])->name('store');
     });
-
+    // States AJAX — available during setup (before profile.complete)
+    Route::get('/api/states', function (\Illuminate\Http\Request $request) {
+        $country = $request->input('country', '');
+        $states  = \App\Helpers\StateHelper::forCountry($country);
+        return response()->json($states);
+    })->name('api.states');
     // ── All routes that need a completed profile ──────────────────────────────
     Route::middleware('profile.complete')->group(function () {
 
@@ -148,13 +153,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/ai/username-check',        [AiController::class, 'usernameCheck'])->name('ai.username-check');
         Route::get('/ai/status',                [AiController::class, 'status'])->name('ai.status');
         Route::post('/ai/chat',                 [AiController::class, 'chatReply'])->name('ai.chat.reply');
-
-        // States AJAX
-        Route::get('/api/states', function (\Illuminate\Http\Request $request) {
-            $country = $request->input('country', '');
-            $states  = \App\Helpers\StateHelper::forCountry($country);
-            return response()->json($states);
-        })->name('api.states');
 
         // Blocks
         Route::get('/block/{user}',             fn(\App\Models\User $user) => redirect()->route('profile.show', $user->username))->name('block.get');
