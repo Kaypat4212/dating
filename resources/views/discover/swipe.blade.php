@@ -245,6 +245,14 @@ main { padding-bottom: 0 !important; }
 }
 .btn-like.burst { animation:heart-burst .32s cubic-bezier(.34,1.56,.64,1); }
 
+/* Star burst on super like */
+@keyframes star-burst {
+  0%   { transform:scale(1)  rotate(0deg); }
+  40%  { transform:scale(1.55) rotate(-8deg); box-shadow:0 0 0 3px var(--hc-gold), 0 0 22px rgba(245,158,11,.7); }
+  100% { transform:scale(1)  rotate(0deg); }
+}
+.btn-super.burst { animation:star-burst .36s cubic-bezier(.34,1.56,.64,1); }
+
 /* Button labels */
 .action-btn-wrap {
   display:flex; flex-direction:column; align-items:center; gap:5px;
@@ -527,9 +535,12 @@ main { padding-bottom: 0 !important; }
                 </div>
 
                 {{-- Location --}}
-                @if($prof?->city || $prof?->country)
+                @if($prof?->city || $prof?->state || $prof?->country || ($profile->distance_km ?? null) !== null)
                 <div class="card-meta">
-                    <i class="bi bi-geo-alt me-1"></i>{{ implode(', ', array_filter([$prof->city, $prof->country])) }}
+                    <i class="bi bi-geo-alt me-1"></i>{{ implode(', ', array_filter([$prof->city ?? null, $prof->state ?? null, $prof->country ?? null])) }}
+                    @if(($profile->distance_km ?? null) !== null)
+                    <span style="opacity:.65;font-size:.78rem"> · {{ round($profile->distance_km) }} km away</span>
+                    @endif
                 </div>
                 @endif
 
@@ -820,6 +831,12 @@ async function swipe(direction) {
     if (!card) return;
     isAnimating = true;
 
+    // Trigger button burst animation
+    if (direction === 'like') {
+        const btn = document.getElementById('btn-like');
+        btn?.classList.remove('burst'); void btn?.offsetWidth; btn?.classList.add('burst');
+    }
+
     const userId = card.dataset.userId;
     const isSuperLike = direction === 'super_like';
     const isLike      = direction === 'like' || isSuperLike;
@@ -829,10 +846,10 @@ async function swipe(direction) {
 
     // Show stamp
     if (isSuperLike) {
-        const stamp = card.querySelector('.like-stamp');
-        if (stamp) { stamp.style.opacity = '1'; stamp.style.color = '#ffc107'; stamp.style.borderColor = '#ffc107'; stamp.textContent = 'SUPER ⭐'; }
+        const stamp = card.querySelector('.stamp-like');
+        if (stamp) { stamp.style.opacity = '1'; stamp.style.color = '#ffc107'; stamp.style.borderColor = '#ffc107'; stamp.style.transform = 'rotate(-15deg) scale(1.1)'; stamp.textContent = 'SUPER ⭐'; }
     } else {
-        const stamp = card.querySelector(isLike ? '.like-stamp' : '.nope-stamp');
+        const stamp = card.querySelector(isLike ? '.stamp-like' : '.stamp-nope');
         if (stamp) stamp.style.opacity = '1';
     }
 
@@ -889,6 +906,7 @@ async function swipe(direction) {
                         img.style.display = '';
                         document.getElementById('matchPhotoFallback').style.display = 'none';
                     }
+                    launchConfetti(45);
                     setTimeout(() => new bootstrap.Modal(document.getElementById('matchModal')).show(), 420);
                 } else {
                     showToast(isSuperLike ? '⭐ Super Liked!' : '❤️ Liked!', isSuperLike ? '#ffc107' : '#6f42c1');
@@ -974,7 +992,14 @@ document.getElementById('likeWithNoteBtn')?.addEventListener('click', () => {
     swipe('like');
 });
 document.getElementById('btn-pass')?.addEventListener('click', () => swipe('pass'));
-document.getElementById('btn-super-like')?.addEventListener('click', () => swipe('super_like'));
+document.getElementById('btn-super-like')?.addEventListener('click', () => {
+    const btn = document.getElementById('btn-super-like');
+    btn?.classList.remove('burst');
+    void btn?.offsetWidth; // reflow to restart animation
+    btn?.classList.add('burst');
+    btn?.addEventListener('animationend', () => btn.classList.remove('burst'), { once: true });
+    swipe('super_like');
+});
 
 // ── Touch / drag swipe ───────────────────────────────────────────────────────
 (function initDrag() {
@@ -985,8 +1010,8 @@ document.getElementById('btn-super-like')?.addEventListener('click', () => swipe
 
     stack.addEventListener('pointerdown', e => {
         if (isAnimating) return;
-        // Don't start a drag when the user clicks a button, link, or form element
-        if (e.target.closest('button, a, form, input, select')) return;
+        // Don't start a drag when the user clicks a button, link, form element, or photo tap zone
+        if (e.target.closest('button, a, form, input, select, .photo-tap-prev, .photo-tap-next')) return;
         currentCard = getTopCard();
         if (!currentCard) return;
         startX = e.clientX; startY = e.clientY;
@@ -1001,8 +1026,8 @@ document.getElementById('btn-super-like')?.addEventListener('click', () => swipe
         const rot = dx / 18;
         currentCard.style.transform = `translateX(${dx}px) rotate(${rot}deg)`;
 
-        const likeS = currentCard.querySelector('.like-stamp');
-        const nopeS = currentCard.querySelector('.nope-stamp');
+        const likeS = currentCard.querySelector('.stamp-like');
+        const nopeS = currentCard.querySelector('.stamp-nope');
         if (likeS) likeS.style.opacity = dx > 0 ? Math.min(dx / 70, 1) : 0;
         if (nopeS) nopeS.style.opacity = dx < 0 ? Math.min(-dx / 70, 1) : 0;
 
@@ -1034,8 +1059,8 @@ document.getElementById('btn-super-like')?.addEventListener('click', () => swipe
             // Snap back
             currentCard.style.transition = 'transform .3s ease';
             currentCard.style.transform  = '';
-            const likeS = currentCard.querySelector('.like-stamp');
-            const nopeS = currentCard.querySelector('.nope-stamp');
+            const likeS = currentCard.querySelector('.stamp-like');
+            const nopeS = currentCard.querySelector('.stamp-nope');
             if (likeS) likeS.style.opacity = '0';
             if (nopeS) nopeS.style.opacity = '0';
             updateStack(); // restore peeked card
@@ -1044,12 +1069,48 @@ document.getElementById('btn-super-like')?.addEventListener('click', () => swipe
     });
 })();
 
+// ── Photo navigation (tap left / tap right on card) ────────────────────────
+document.getElementById('swipe-stack')?.addEventListener('click', e => {
+    const zone = e.target.closest('.photo-tap-prev, .photo-tap-next');
+    if (!zone) return;
+    const card = zone.closest('.swipe-card');
+    if (!card) return;
+    const img = card.querySelector('.swipe-card-img');
+    if (!img) return;
+    let photos;
+    try { photos = JSON.parse(img.dataset.photos || '[]'); } catch { return; }
+    if (photos.length < 2) return;
+    let idx = parseInt(img.dataset.idx || '0');
+    idx = zone.classList.contains('photo-tap-next')
+        ? (idx + 1) % photos.length
+        : (idx - 1 + photos.length) % photos.length;
+    img.dataset.idx = idx;
+    img.src = photos[idx];
+    card.querySelectorAll('.photo-dot').forEach((dot, i) => dot.classList.toggle('active', i === idx));
+    e.stopPropagation();
+});
+
 // Keyboard shortcuts
 document.addEventListener('keydown', e => {
     if (e.key === 'ArrowRight') swipe('like');
     if (e.key === 'ArrowLeft')  swipe('pass');
     if (e.key === 'ArrowUp')    swipe('super_like');
 });
+
+// ── Confetti ─────────────────────────────────────────────────────────────────
+function launchConfetti(count = 40) {
+    const colors = ['#ff3e6c','#ff6b91','#7c3aed','#f59e0b','#3b82f6','#10b981','#fff','#ffc107'];
+    for (let i = 0; i < count; i++) {
+        const el = document.createElement('div');
+        el.className = 'confetti-particle';
+        el.style.cssText = `left:${Math.random()*100}vw;background:${colors[Math.floor(Math.random()*colors.length)]};`
+            + `width:${5+Math.random()*7}px;height:${6+Math.random()*10}px;`
+            + `animation-duration:${1.1+Math.random()*1.6}s;animation-delay:${Math.random()*.6}s;`
+            + `border-radius:${Math.random()>.5?'50%':'3px'};transform:rotate(${Math.random()*360}deg);`;
+        document.body.appendChild(el);
+        el.addEventListener('animationend', () => el.remove(), { once: true });
+    }
+}
 
 // ── Icebreakers ──────────────────────────────────────────────────────────────
 const icebreakers = [
