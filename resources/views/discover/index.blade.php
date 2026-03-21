@@ -294,26 +294,69 @@
                     @if($filterCity)
                         <span class="badge bg-primary ms-1" style="font-size:.65rem">Active</span>
                     @endif
+                    @if(!$isPremium)
+                        @if($locationLimitReached)
+                            <span class="badge bg-danger ms-1" style="font-size:.65rem">
+                                <i class="bi bi-lock-fill me-1"></i>Limit reached
+                            </span>
+                        @else
+                            <span class="badge bg-secondary ms-1" style="font-size:.65rem">
+                                {{ max(0, 2 - $locationUses) }}/2 trials left
+                            </span>
+                        @endif
+                    @else
+                        <span class="badge ms-1" style="background:linear-gradient(135deg,#e11d74,#f97316);font-size:.65rem">
+                            <i class="bi bi-star-fill me-1"></i>Premium
+                        </span>
+                    @endif
                 </label>
                 <input type="text" name="city" class="form-control form-control-sm"
                        value="{{ $filterCity }}"
                        placeholder="e.g. Lagos — leave blank for any city"
-                       autocomplete="off">
+                       autocomplete="off"
+                       @if($locationLimitReached) disabled @endif>
             </div>
             <div class="col-12 col-md-4">
                 <label class="form-label small fw-semibold mb-1">Country</label>
                 <input type="text" name="country" class="form-control form-control-sm"
                        value="{{ $filterCountry }}"
                        placeholder="e.g. Nigeria — leave blank for any"
-                       autocomplete="off">
+                       autocomplete="off"
+                       @if($locationLimitReached) disabled @endif>
             </div>
             <div class="col-12 col-md-3">
+                @if($locationLimitReached)
+                <div class="alert alert-warning py-2 px-3 mb-0 d-flex align-items-center gap-2" style="font-size:.8rem;border-radius:.5rem">
+                    <i class="bi bi-lock-fill text-warning fs-6"></i>
+                    <div>
+                        <strong>Free trial used up.</strong><br>
+                        <a href="{{ route('premium.index') }}" class="fw-semibold text-decoration-none"
+                           style="color:#e11d74">Upgrade to Premium</a> to browse any city.
+                    </div>
+                </div>
+                @else
                 <p class="text-muted small mb-0" style="font-size:.78rem;line-height:1.3">
                     <i class="bi bi-info-circle me-1"></i>
-                    Defaults to your profile location. Clear both to browse worldwide.
+                    @if($isPremium)
+                        Browse any location freely — Premium benefit.
+                    @else
+                        {{ max(0, 2 - $locationUses) }} free trial(s) to browse other cities.
+                        <a href="{{ route('premium.index') }}" class="fw-semibold" style="color:#e11d74">Go Premium</a> for unlimited access.
+                    @endif
                 </p>
+                @endif
             </div>
         </div>
+
+        {{-- Flash: limit reached silently (already shown above) --}}
+        @if(session('location_limit_reached'))
+        <div class="alert alert-warning alert-dismissible fade show py-2 px-3 mb-2" style="font-size:.85rem" role="alert">
+            <i class="bi bi-lock-fill me-2"></i>
+            <strong>Location filter trial exhausted.</strong>
+            Your results are showing your home city. <a href="{{ route('premium.index') }}" class="fw-semibold" style="color:#e11d74">Upgrade to Premium</a> to browse any location.
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        @endif
 
         {{-- Other filters row --}}
         <div class="row g-2 align-items-end">

@@ -57,6 +57,7 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser, Has
         'secret_word',
         'totp_secret', 'totp_recovery_codes',
         'credit_balance',
+        'location_filter_uses',
     ];
 
     protected $hidden = [
@@ -113,6 +114,7 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser, Has
             'profile_complete'      => 'boolean',
             'passport_mode'         => 'boolean',
             'totp_recovery_codes'   => 'array',
+            'location_filter_uses'  => 'integer',
         ];
     }
 

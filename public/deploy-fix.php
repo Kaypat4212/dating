@@ -168,22 +168,30 @@ if ($dbName && $dbUser) {
             $createdTables[] = 'rooms';
         }
 
+        // location_filter_uses column on users (premium discover feature)
+        $cols = $pdo->query("SHOW COLUMNS FROM `users` LIKE 'location_filter_uses'")->fetchAll();
+        if (empty($cols)) {
+            $pdo->exec("ALTER TABLE `users` ADD COLUMN `location_filter_uses` tinyint unsigned NOT NULL DEFAULT 0 AFTER `credit_balance`");
+            $createdTables[] = 'users.location_filter_uses (column)';
+        }
+
         // migrations table entry — mark these as run so artisan migrate doesn't re-run them
         $migrationsExists = $pdo->query("SHOW TABLES LIKE 'migrations'")->rowCount() > 0;
-        if ($migrationsExists && count($createdTables) > 0) {
+        if ($migrationsExists) {
             $stmt = $pdo->prepare("INSERT IGNORE INTO `migrations` (`migration`, `batch`)
                 SELECT ?, (SELECT COALESCE(MAX(`batch`),0)+1 FROM `migrations` m2)");
             foreach ([
                 '2026_03_20_000001_create_wallet_transactions_table',
                 '2026_03_21_000001_create_rooms_table',
+                '2026_03_22_000001_add_location_filter_uses_to_users_table',
             ] as $m) {
                 $stmt->execute([$m]);
             }
         }
 
         $msg = count($createdTables) > 0
-            ? 'Created: ' . implode(', ', $createdTables)
-            : 'All tracked tables already exist — nothing to do';
+            ? 'Created/altered: ' . implode(', ', $createdTables)
+            : 'All tracked tables/columns already exist — nothing to do';
         $results[] = ['ok' => true, 'label' => 'DB migrations', 'msg' => $msg];
 
     } catch (\Throwable $ex) {

@@ -18,6 +18,12 @@ class DiscoverController extends Controller
         $lat = $user->profile?->latitude  ?? 0;
         $lng = $user->profile?->longitude ?? 0;
 
+        // Premium / trial config
+        $isPremium           = $user->isPremiumActive();
+        $locationUses        = (int) ($user->location_filter_uses ?? 0);
+        const FREE_LOCATION_TRIALS = 2;
+        $locationLimitReached = !$isPremium && $locationUses >= FREE_LOCATION_TRIALS;
+
         // IDs to exclude: self, blocked users, users who blocked me
         $excludeIds = collect([$user->id])
             ->merge($user->blocks->pluck('blocked_id'))
@@ -75,21 +81,41 @@ class DiscoverController extends Controller
             $query->where('profiles.relationship_goal', $request->input('relationship_goal'));
         }
 
-        // City / location filter
-        // Default to the logged-in user's city when no explicit filter param is present.
-        // Submitting an empty city field (request has 'city' key) clears the restriction.
-        $filterCity = $request->has('city')
-            ? trim($request->input('city', ''))
-            : ($user->profile?->city ?? '');
+        // City / location filter — premium-only; free users get FREE_LOCATION_TRIALS total uses.
+        // A "use" is counted when a free user explicitly submits a city that differs from their
+        // own profile city (i.e. they are browsing a different location).
+        $profileCity    = $user->profile?->city    ?? '';
+        $profileCountry = $user->profile?->country ?? '';
+
+        // Requested values (always present in POST from the filter form)
+        $requestedCity    = $request->has('city')    ? trim($request->input('city',    '')) : null;
+        $requestedCountry = $request->has('country') ? trim($request->input('country', '')) : null;
+
+        // Determine whether this submission is a "custom" location (different from home)
+        $isCustomCity    = $requestedCity    !== null && $requestedCity    !== $profileCity;
+        $isCustomCountry = $requestedCountry !== null && $requestedCountry !== $profileCountry;
+        $isCustomLocation = $isCustomCity || $isCustomCountry;
+
+        if (!$isPremium && $isCustomLocation) {
+            if ($locationLimitReached) {
+                // Force back to profile location — free trials exhausted
+                $requestedCity    = $profileCity;
+                $requestedCountry = $profileCountry;
+                session()->flash('location_limit_reached', true);
+            } else {
+                // Count this as a trial use
+                $user->increment('location_filter_uses');
+                $locationUses++;
+            }
+        }
+
+        // Final resolved filter values
+        $filterCity = $requestedCity ?? $profileCity;
+        $filterCountry = $requestedCountry ?? $profileCountry;
 
         if ($filterCity !== '') {
             $query->where('profiles.city', $filterCity);
         }
-
-        // Country filter — similarly defaults to the user's own country
-        $filterCountry = $request->has('country')
-            ? trim($request->input('country', ''))
-            : ($user->profile?->country ?? '');
 
         if ($filterCountry !== '') {
             $query->where('profiles.country', $filterCountry);
@@ -121,6 +147,10 @@ class DiscoverController extends Controller
 
         $compat = app(CompatibilityService::class);
 
-        return view('discover.index', compact('users', 'prefs', 'compat', 'minAge', 'maxAge', 'maxKm', 'filterCity', 'filterCountry'));
+        return view('discover.index', compact(
+            'users', 'prefs', 'compat', 'minAge', 'maxAge', 'maxKm',
+            'filterCity', 'filterCountry',
+            'isPremium', 'locationUses', 'locationLimitReached'
+        ));
     }
 }
