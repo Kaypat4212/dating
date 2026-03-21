@@ -154,23 +154,45 @@ if ($dbName && $dbUser) {
                     '2026_03_20_000001_create_wallet_transactions_table',
                 ]);
             }
-            $pdo->exec("CREATE TABLE `wallet_transactions` (
-                `id` bigint unsigned NOT NULL AUTO_INCREMENT,
-                `user_id` bigint unsigned NOT NULL,
-                `type` enum('tip_sent','tip_received','deposit','withdrawal','admin_credit','admin_debit') NOT NULL,
-                `amount` bigint unsigned NOT NULL,
-                `balance_after` bigint unsigned NOT NULL DEFAULT 0,
-                `reference_id` bigint unsigned DEFAULT NULL,
-                `reference_type` varchar(50) DEFAULT NULL,
-                `description` varchar(255) DEFAULT NULL,
-                `created_at` timestamp NULL DEFAULT NULL,
-                `updated_at` timestamp NULL DEFAULT NULL,
-                PRIMARY KEY (`id`),
-                KEY `wallet_transactions_user_id_created_at_index` (`user_id`,`created_at`),
-                CONSTRAINT `wallet_transactions_user_id_foreign`
-                    FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
-            $createdTables[] = 'wallet_transactions (CREATED)';
+            // Disable FK checks so the constraint doesn't fail on some cPanel MySQL configs
+            $pdo->exec("SET FOREIGN_KEY_CHECKS=0");
+            try {
+                $pdo->exec("CREATE TABLE IF NOT EXISTS `wallet_transactions` (
+                    `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+                    `user_id` bigint unsigned NOT NULL,
+                    `type` enum('tip_sent','tip_received','deposit','withdrawal','admin_credit','admin_debit') NOT NULL,
+                    `amount` bigint unsigned NOT NULL,
+                    `balance_after` bigint unsigned NOT NULL DEFAULT 0,
+                    `reference_id` bigint unsigned DEFAULT NULL,
+                    `reference_type` varchar(50) DEFAULT NULL,
+                    `description` varchar(255) DEFAULT NULL,
+                    `created_at` timestamp NULL DEFAULT NULL,
+                    `updated_at` timestamp NULL DEFAULT NULL,
+                    PRIMARY KEY (`id`),
+                    KEY `wallet_transactions_user_id_created_at_index` (`user_id`,`created_at`),
+                    CONSTRAINT `wallet_transactions_user_id_foreign`
+                        FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+                $createdTables[] = 'wallet_transactions (CREATED)';
+            } catch (\Throwable $e) {
+                // FK constraint failed — create without it as a fallback
+                $pdo->exec("CREATE TABLE IF NOT EXISTS `wallet_transactions` (
+                    `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+                    `user_id` bigint unsigned NOT NULL,
+                    `type` enum('tip_sent','tip_received','deposit','withdrawal','admin_credit','admin_debit') NOT NULL,
+                    `amount` bigint unsigned NOT NULL,
+                    `balance_after` bigint unsigned NOT NULL DEFAULT 0,
+                    `reference_id` bigint unsigned DEFAULT NULL,
+                    `reference_type` varchar(50) DEFAULT NULL,
+                    `description` varchar(255) DEFAULT NULL,
+                    `created_at` timestamp NULL DEFAULT NULL,
+                    `updated_at` timestamp NULL DEFAULT NULL,
+                    PRIMARY KEY (`id`),
+                    KEY `wallet_transactions_user_id_created_at_index` (`user_id`,`created_at`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+                $createdTables[] = 'wallet_transactions (CREATED — no FK, reason: ' . $e->getMessage() . ')';
+            }
+            $pdo->exec("SET FOREIGN_KEY_CHECKS=1");
         }
         $markMigrated('2026_03_20_000001_create_wallet_transactions_table');
 
