@@ -237,6 +237,22 @@ main { padding-bottom: 0 !important; }
 }
 .btn-browse:hover { transform:scale(1.08); color:#fff; }
 
+/* ── Responsive button sizing (320–375 px screens) ───────── */
+@media (max-width: 380px) {
+  :root {
+    --btn-size-lg: 62px;
+    --btn-size-md: 50px;
+    --btn-size-sm: 40px;
+  }
+  .btn-like  { font-size:1.7rem; }
+  .btn-pass  { font-size:1.3rem; }
+  .btn-super { font-size:1.1rem; }
+  .btn-browse{ font-size:1rem; }
+  .swipe-actions { gap: 12px; padding: 8px 0 2px; }
+  .action-btn-label { font-size:.6rem; }
+  .swipe-page { padding: 0 8px; }
+}
+
 /* Heart burst on like */
 @keyframes heart-burst {
   0%   { transform:scale(1); opacity:1; }
@@ -693,18 +709,48 @@ main { padding-bottom: 0 !important; }
                         <p class="mb-0" style="color:rgba(255,255,255,.45);font-size:.8rem">Add a note to stand out 💌</p>
                     </div>
                     <textarea id="likeMessageInput" rows="3" maxlength="200"
-                              class="form-control mb-3"
+                              class="form-control mb-2"
                               style="background:rgba(255,255,255,.06);color:#fff;border:1px solid rgba(255,255,255,.12);border-radius:12px;resize:none;font-size:.88rem"
                               placeholder="Say something nice… (optional)"
                               oninput="this.classList.remove('is-invalid');document.getElementById('likeNoteError')?.remove()"></textarea>
+
+                    {{-- Note quota indicator for free users --}}
+                    @if(!$isPremium)
+                    <div id="noteQuotaBar" class="d-flex align-items-center justify-content-between mb-3"
+                         style="font-size:.76rem;color:rgba(255,255,255,.45)">
+                        <span id="noteQuotaText">
+                            @if($notesRemainingToday > 0)
+                                <i class="bi bi-envelope-heart me-1" style="color:var(--hc-rose)"></i>
+                                <span id="noteCountLeft">{{ $notesRemainingToday }}</span> free note{{ $notesRemainingToday == 1 ? '' : 's' }} left today
+                            @else
+                                <i class="bi bi-lock-fill me-1 text-warning"></i>
+                                Daily note limit reached
+                            @endif
+                        </span>
+                        <a href="{{ route('premium.show') }}"
+                           style="color:var(--hc-gold);font-weight:600;font-size:.72rem;text-decoration:none">
+                            ✨ Upgrade
+                        </a>
+                    </div>
+                    @else
+                    <div class="mb-3" style="font-size:.74rem;color:rgba(255,255,255,.3);text-align:right">
+                        <i class="bi bi-infinity me-1" style="color:var(--hc-gold)"></i>Premium — unlimited notes
+                    </div>
+                    @endif
+
                     <div class="d-flex gap-2">
                         <button id="likeJustBtn" class="btn btn-sm flex-fill fw-semibold"
                                 style="background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.15);border-radius:12px">
                             ❤️ Just Like
                         </button>
                         <button id="likeWithNoteBtn" class="btn btn-sm flex-fill fw-bold"
-                                style="background:linear-gradient(135deg,var(--hc-pink),var(--hc-rose));color:#fff;border:none;border-radius:12px">
-                            💌 Send Note
+                                style="background:linear-gradient(135deg,var(--hc-pink),var(--hc-rose));color:#fff;border:none;border-radius:12px"
+                                @if(!$isPremium && $notesRemainingToday <= 0) disabled @endif>
+                            @if(!$isPremium && $notesRemainingToday <= 0)
+                                <i class="bi bi-lock-fill me-1"></i>Note Locked
+                            @else
+                                💌 Send Note
+                            @endif
                         </button>
                     </div>
                     <button class="btn btn-link w-100 mt-2 p-0 text-center"
@@ -768,14 +814,16 @@ function fitDeck() {
     const bnav    = document.querySelector('.bottom-nav');
     const topbar  = document.querySelector('.swipe-topbar');
     const actions = document.querySelector('.swipe-actions');
+    const keyhints = document.querySelector('.key-hints');
 
     const vp      = window.visualViewport ? window.visualViewport.height : window.innerHeight;
     const navH    = navbar  ? navbar.getBoundingClientRect().height  : 56;
     const bnavH   = (bnav && getComputedStyle(bnav).display !== 'none') ? bnav.getBoundingClientRect().height : 0;
     const topbarH = topbar  ? topbar.getBoundingClientRect().height  : 52;
     const actH    = actions ? actions.getBoundingClientRect().height : 90;
-
-    const h = Math.max(300, Math.min(620, vp - navH - topbarH - actH - bnavH - 16));
+    const keyH    = (keyhints && getComputedStyle(keyhints).display !== 'none') ? keyhints.getBoundingClientRect().height + 8 : 0;
+    // 20px buffer to prevent the deck from being clipped on very small viewports
+    const h = Math.max(260, Math.min(640, vp - navH - topbarH - actH - bnavH - keyH - 20));
     stack.style.height = h + 'px';
 }
 fitDeck();
@@ -873,7 +921,8 @@ async function swipe(direction) {
     const apiCallPromise = isLike ? (async () => {
         try {
             const body = { action: 'like', super_like: isSuperLike };
-            if (window._pendingLikeMessage) {
+            const hasNote = !!(window._pendingLikeMessage);
+            if (hasNote) {
                 body.like_message = window._pendingLikeMessage;
                 window._pendingLikeMessage = null;
             }
@@ -885,9 +934,25 @@ async function swipe(direction) {
             if (!res.ok) {
                 const err = await res.json().catch(() => ({}));
                 if (res.status === 429) {
-                    const resetDate = err.reset_at ? new Date(err.reset_at) : null;
-                    if (resetDate) window._limitResetDate = resetDate;
-                    showLimitOverlay(resetDate);
+                    if (err.note_limit) {
+                        // Note-specific limit hit
+                        showToast('💌 Daily note limit reached. Upgrade to Premium!', '#f59e0b');
+                        // Disable the send note button and refresh the quota display
+                        const noteBtn = document.getElementById('likeWithNoteBtn');
+                        if (noteBtn) {
+                            noteBtn.disabled = true;
+                            noteBtn.innerHTML = '<i class="bi bi-lock-fill me-1"></i>Note Locked';
+                        }
+                        const noteCountEl = document.getElementById('noteCountLeft');
+                        const noteQuotaText = document.getElementById('noteQuotaText');
+                        if (noteQuotaText) {
+                            noteQuotaText.innerHTML = '<i class="bi bi-lock-fill me-1 text-warning"></i>Daily note limit reached';
+                        }
+                    } else {
+                        const resetDate = err.reset_at ? new Date(err.reset_at) : null;
+                        if (resetDate) window._limitResetDate = resetDate;
+                        showLimitOverlay(resetDate);
+                    }
                 } else if (res.status === 403) {
                     document.getElementById('restriction-overlay').style.display = 'flex';
                 } else {
@@ -910,8 +975,31 @@ async function swipe(direction) {
                     }
                     launchConfetti(45);
                     setTimeout(() => new bootstrap.Modal(document.getElementById('matchModal')).show(), 420);
+                } else if (isSuperLike) {
+                    showToast('⭐ Super Liked!', '#f59e0b');
+                } else if (data.note_sent) {
+                    // Decrement the on-screen note counter (free users)
+                    const countEl = document.getElementById('noteCountLeft');
+                    if (countEl) {
+                        const remaining = Math.max(0, parseInt(countEl.textContent, 10) - 1);
+                        if (remaining === 0) {
+                            const noteBtn = document.getElementById('likeWithNoteBtn');
+                            if (noteBtn) {
+                                noteBtn.disabled = true;
+                                noteBtn.innerHTML = '<i class="bi bi-lock-fill me-1"></i>Note Locked';
+                            }
+                            const noteQuotaText = document.getElementById('noteQuotaText');
+                            if (noteQuotaText) {
+                                noteQuotaText.innerHTML = '<i class="bi bi-lock-fill me-1 text-warning"></i>Daily note limit reached';
+                            }
+                        } else {
+                            countEl.textContent = remaining;
+                            countEl.closest('span').lastChild.textContent = ` free note${remaining === 1 ? '' : 's'} left today`;
+                        }
+                    }
+                    showToast('💌 Note sent!', '#e91e8c');
                 } else {
-                    showToast(isSuperLike ? '⭐ Super Liked!' : '❤️ Liked!', isSuperLike ? '#ffc107' : '#6f42c1');
+                    showToast('❤️ Liked!', '#6f42c1');
                 }
             }
         } catch (e) {
@@ -985,8 +1073,15 @@ document.getElementById('likeJustBtn')?.addEventListener('click', () => {
     swipe('like');
 });
 
-// "Send Note" — like with message (requires non-empty note)
+// "Send Note" — like with message (requires non-empty note; blocked when limit hit)
 document.getElementById('likeWithNoteBtn')?.addEventListener('click', () => {
+    const btn = document.getElementById('likeWithNoteBtn');
+    if (btn?.disabled) {
+        // Already locked — nudge towards upgrade
+        showToast('💌 Upgrade to Premium for unlimited notes!', '#f59e0b');
+        bootstrap.Modal.getInstance(document.getElementById('likeMessageModal'))?.hide();
+        return;
+    }
     const input = document.getElementById('likeMessageInput');
     const msg   = input.value.trim().slice(0, 200);
     if (!msg) {

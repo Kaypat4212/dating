@@ -33,13 +33,24 @@ class SwipeController extends Controller
             }
         }
 
+        // Notes remaining for free users (3 per day)
+        $noteLimitPerDay      = 3;
+        $notesRemainingToday  = $noteLimitPerDay;
+        if (!$user->isPremiumActive()) {
+            $noteKey             = "notes:{$user->id}";
+            $notesUsedToday      = RateLimiter::attempts($noteKey);
+            $notesRemainingToday = max(0, $noteLimitPerDay - $notesUsedToday);
+        }
+        $isPremium = $user->isPremiumActive();
+
         $passportEligible = $user->isPassportEligible();
         $passportActive   = $user->isPassportActive();
         $passportCountry  = $user->passport_country;
 
         return view('discover.swipe', compact(
             'profiles', 'isSwipeRestricted', 'fallbackToGlobal', 'limitResetAt',
-            'passportEligible', 'passportActive', 'passportCountry'
+            'passportEligible', 'passportActive', 'passportCountry',
+            'isPremium', 'notesRemainingToday', 'noteLimitPerDay'
         ));
     }
 

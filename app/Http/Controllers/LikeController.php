@@ -98,6 +98,22 @@ class LikeController extends Controller
         if ($likeMessage) {
             $likeMessage = mb_substr(strip_tags($likeMessage), 0, 200);
         }
+
+        // Send Note rate-limit: free users get 3 notes/day; premium is unlimited
+        if ($likeMessage && !$sender->isPremiumActive()) {
+            $noteKey   = "notes:{$sender->id}";
+            $noteLimit = 3;
+            if (RateLimiter::tooManyAttempts($noteKey, $noteLimit)) {
+                if ($request->expectsJson() || $request->ajax()) {
+                    return response()->json([
+                        'error'      => "You've used all {$noteLimit} free notes today. Upgrade to Premium for unlimited notes!",
+                        'note_limit' => true,
+                    ], 429);
+                }
+                return redirect()->back()->with('error', "You've used all {$noteLimit} free notes today. Upgrade to Premium for unlimited notes!");
+            }
+            RateLimiter::hit($noteKey, 86400);
+        }
         Like::firstOrCreate([
             'sender_id'   => $sender->id,
             'receiver_id' => $receiverId,
@@ -161,6 +177,7 @@ class LikeController extends Controller
                 return response()->json([
                     'liked'            => true,
                     'matched'          => true,
+                    'note_sent'        => !empty($likeMessage),
                     'match_name'       => $user->name,
                     'match_photo'      => $user->profile?->photo_url,
                     'match'            => ['id' => $match->id],
@@ -176,7 +193,11 @@ class LikeController extends Controller
         }
 
         if ($request->expectsJson() || $request->ajax()) {
-            return response()->json(['liked' => true, 'matched' => false]);
+            return response()->json([
+                'liked'     => true,
+                'matched'   => false,
+                'note_sent' => !empty($likeMessage),
+            ]);
         }
 
         return redirect()->route('profile.show', $user->username)
