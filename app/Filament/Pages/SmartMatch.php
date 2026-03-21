@@ -58,36 +58,59 @@ class SmartMatch extends Page
     protected function loadSuggestions(int $userId): void
     {
         $user = User::with(['profile.interests', 'primaryPhoto'])->find($userId);
-        if (! $user) { $this->suggestions = collect(); return; }
+        if (! $user) {
+            $this->suggestions = collect();
+            return;
+        }
+
+        $this->suggestions = $this->buildSuggestions($user);
+    }
+
+    /**
+     * Query and rank candidate users for the given user.
+     *
+     * @return Collection<int, array{user: User, score: int}>
+     */
+    private function buildSuggestions(User $user): Collection
+    {
+        $existingMatchIds = $this->getExistingMatchIds($user->id);
 
         $compat = app(CompatibilityService::class);
 
-        // Exclude already-matched users
-        $existingMatchIds = UserMatch::where('user1_id', $userId)
-            ->orWhere('user2_id', $userId)
-            ->get()
-            ->flatMap(fn ($m) => [$m->user1_id, $m->user2_id])
-            ->unique()
-            ->toArray();
-
-        $candidates = User::where('users.id', '!=', $userId)
+        return User::where('users.id', '!=', $user->id)
             ->where('profile_complete', true)
             ->whereNotNull('email_verified_at')
             ->where('is_banned', false)
             ->whereNotIn('users.id', $existingMatchIds)
-            ->when($user->seeking && $user->seeking !== 'everyone', fn ($q) => $q->where('gender', $user->seeking))
+            ->when(
+                $user->seeking && $user->seeking !== 'everyone',
+                fn ($q) => $q->where('gender', $user->seeking)
+            )
             ->with(['profile.interests', 'primaryPhoto'])
-            ->limit(100) // score top 100 then take best 10
+            ->limit(100)
             ->get()
-            ->map(fn ($candidate) => [
+            ->map(fn (User $candidate): array => [
                 'user'  => $candidate,
                 'score' => $compat->score($user, $candidate),
             ])
             ->sortByDesc('score')
             ->take(10)
             ->values();
+    }
 
-        $this->suggestions = $candidates;
+    /**
+     * Return IDs of users already matched with the given user.
+     *
+     * @return int[]
+     */
+    private function getExistingMatchIds(int $userId): array
+    {
+        return UserMatch::where('user1_id', $userId)
+            ->orWhere('user2_id', $userId)
+            ->get()
+            ->flatMap(fn (UserMatch $m): array => [$m->user1_id, $m->user2_id])
+            ->unique()
+            ->toArray();
     }
 
     /**
