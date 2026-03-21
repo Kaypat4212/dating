@@ -93,6 +93,106 @@ $results[] = ['ok' => true, 'label' => 'Application cache', 'msg' => "Deleted {$
 $sessCleared = _rmdir_contents($base . '/storage/framework/sessions');
 $results[] = ['ok' => true, 'label' => 'Sessions', 'msg' => "Deleted {$sessCleared} session file(s)"];
 
+// ── 7. Create missing DB tables via raw PDO ──────────────────────────────────
+// Read .env for DB credentials (no vendor/Laravel available)
+function _env_val(string $key, string $envPath): string {
+    if (!file_exists($envPath)) return '';
+    foreach (file($envPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $line) {
+        $line = trim($line);
+        if ($line === '' || $line[0] === '#') continue;
+        [$k, $v] = array_pad(explode('=', $line, 2), 2, '');
+        if (trim($k) === $key) return trim($v, " \t\"'");
+    }
+    return '';
+}
+$envFile = $base . '/.env';
+$dbHost  = _env_val('DB_HOST',     $envFile) ?: '127.0.0.1';
+$dbPort  = _env_val('DB_PORT',     $envFile) ?: '3306';
+$dbName  = _env_val('DB_DATABASE', $envFile);
+$dbUser  = _env_val('DB_USERNAME', $envFile);
+$dbPass  = _env_val('DB_PASSWORD', $envFile);
+
+$missingTables = [];
+$createdTables = [];
+$tableErrors   = [];
+
+if ($dbName && $dbUser) {
+    try {
+        $pdo = new PDO(
+            "mysql:host={$dbHost};port={$dbPort};dbname={$dbName};charset=utf8mb4",
+            $dbUser, $dbPass,
+            [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
+        );
+
+        // wallet_transactions
+        $exists = $pdo->query("SHOW TABLES LIKE 'wallet_transactions'")->rowCount() > 0;
+        if (!$exists) {
+            $pdo->exec("CREATE TABLE `wallet_transactions` (
+                `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+                `user_id` bigint unsigned NOT NULL,
+                `type` enum('tip_sent','tip_received','deposit','withdrawal','admin_credit','admin_debit') NOT NULL,
+                `amount` bigint unsigned NOT NULL,
+                `balance_after` bigint unsigned NOT NULL DEFAULT 0,
+                `reference_id` bigint unsigned DEFAULT NULL,
+                `reference_type` varchar(50) DEFAULT NULL,
+                `description` varchar(255) DEFAULT NULL,
+                `created_at` timestamp NULL DEFAULT NULL,
+                `updated_at` timestamp NULL DEFAULT NULL,
+                PRIMARY KEY (`id`),
+                KEY `wallet_transactions_user_id_created_at_index` (`user_id`,`created_at`),
+                CONSTRAINT `wallet_transactions_user_id_foreign`
+                    FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+            $createdTables[] = 'wallet_transactions';
+        }
+
+        // rooms (for future chatroom feature)
+        $exists = $pdo->query("SHOW TABLES LIKE 'rooms'")->rowCount() > 0;
+        if (!$exists) {
+            $pdo->exec("CREATE TABLE `rooms` (
+                `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+                `name` varchar(120) NOT NULL,
+                `slug` varchar(130) NOT NULL,
+                `type` enum('public','private') NOT NULL DEFAULT 'public',
+                `owner_id` bigint unsigned NOT NULL,
+                `avatar` varchar(255) DEFAULT NULL,
+                `max_members` smallint unsigned NOT NULL DEFAULT 100,
+                `is_active` tinyint(1) NOT NULL DEFAULT 1,
+                `created_at` timestamp NULL DEFAULT NULL,
+                `updated_at` timestamp NULL DEFAULT NULL,
+                PRIMARY KEY (`id`),
+                UNIQUE KEY `rooms_slug_unique` (`slug`),
+                CONSTRAINT `rooms_owner_id_foreign`
+                    FOREIGN KEY (`owner_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+            $createdTables[] = 'rooms';
+        }
+
+        // migrations table entry — mark these as run so artisan migrate doesn't re-run them
+        $migrationsExists = $pdo->query("SHOW TABLES LIKE 'migrations'")->rowCount() > 0;
+        if ($migrationsExists && count($createdTables) > 0) {
+            $stmt = $pdo->prepare("INSERT IGNORE INTO `migrations` (`migration`, `batch`)
+                SELECT ?, (SELECT COALESCE(MAX(`batch`),0)+1 FROM `migrations` m2)");
+            foreach ([
+                '2026_03_20_000001_create_wallet_transactions_table',
+                '2026_03_21_000001_create_rooms_table',
+            ] as $m) {
+                $stmt->execute([$m]);
+            }
+        }
+
+        $msg = count($createdTables) > 0
+            ? 'Created: ' . implode(', ', $createdTables)
+            : 'All tracked tables already exist — nothing to do';
+        $results[] = ['ok' => true, 'label' => 'DB migrations', 'msg' => $msg];
+
+    } catch (\Throwable $ex) {
+        $results[] = ['ok' => false, 'label' => 'DB migrations', 'msg' => $ex->getMessage()];
+    }
+} else {
+    $results[] = ['ok' => false, 'label' => 'DB migrations', 'msg' => '.env not found or DB_DATABASE/DB_USERNAME missing'];
+}
+
 ?><!DOCTYPE html>
 <html lang="en">
 <head>
