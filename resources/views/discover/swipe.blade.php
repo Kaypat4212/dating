@@ -37,7 +37,7 @@ main { padding-bottom: 0 !important; }
 
 /* ── Stack wrapper — height set precisely by fitDeck() JS ── */
 #swipe-stack {
-  height: 460px; /* sensible default, overridden by fitDeck() on load */
+  height: 500px; /* sensible default, overridden by fitDeck() on load */
   position: relative;
 }
 
@@ -85,7 +85,7 @@ main { padding-bottom: 0 !important; }
   pointer-events: none; z-index: 4;
 }
 .card-gradient-bottom {
-  position:absolute; bottom:0; left:0; right:0; height:72%;
+  position:absolute; bottom:0; left:0; right:0; height:80%;
   background: linear-gradient(to top, rgba(10,5,25,.97) 0%, rgba(10,5,25,.55) 55%, transparent 100%);
   pointer-events: none; z-index: 4;
 }
@@ -105,7 +105,7 @@ main { padding-bottom: 0 !important; }
 /* Profile info area */
 .card-info {
   position:absolute; bottom:0; left:0; right:0;
-  padding:0 18px 18px; z-index:10; pointer-events:none;
+  padding:0 20px 28px; z-index:10; pointer-events:none;
   color:#fff;
 }
 .card-name {
@@ -115,10 +115,10 @@ main { padding-bottom: 0 !important; }
 }
 .card-meta { font-size:.83rem; opacity:.8; margin-top:4px; }
 .card-headline {
-  font-size:.88rem; opacity:.9; margin-top:6px; line-height:1.4;
+  font-size:.88rem; opacity:.9; margin-top:8px; line-height:1.45;
   text-shadow:0 1px 4px rgba(0,0,0,.5);
 }
-.card-tags { margin-top:8px; display:flex; flex-wrap:wrap; gap:5px; }
+.card-tags { margin-top:10px; display:flex; flex-wrap:wrap; gap:6px; }
 .card-tag {
   font-size:.73rem; padding:4px 11px; border-radius:20px;
   background:rgba(255,255,255,.14); backdrop-filter:blur(8px);
@@ -775,7 +775,7 @@ function fitDeck() {
     const topbarH = topbar  ? topbar.getBoundingClientRect().height  : 52;
     const actH    = actions ? actions.getBoundingClientRect().height : 90;
 
-    const h = Math.max(300, Math.min(560, vp - navH - topbarH - actH - bnavH - 16));
+    const h = Math.max(300, Math.min(620, vp - navH - topbarH - actH - bnavH - 16));
     stack.style.height = h + 'px';
 }
 fitDeck();
