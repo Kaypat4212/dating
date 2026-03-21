@@ -21,8 +21,8 @@ class DiscoverController extends Controller
         // Premium / trial config
         $isPremium           = $user->isPremiumActive();
         $locationUses        = (int) ($user->location_filter_uses ?? 0);
-        const FREE_LOCATION_TRIALS = 2;
-        $locationLimitReached = !$isPremium && $locationUses >= FREE_LOCATION_TRIALS;
+        $freeLocationTrials  = 2;
+        $locationLimitReached = !$isPremium && $locationUses >= $freeLocationTrials;
 
         // IDs to exclude: self, blocked users, users who blocked me
         $excludeIds = collect([$user->id])
