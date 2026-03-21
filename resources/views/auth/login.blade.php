@@ -1,5 +1,6 @@
 <x-guest-layout>
     @php
+        /** @var \Illuminate\Support\ViewErrorBag $errors */
         $devAdminEmail = \App\Models\SiteSetting::get('dev_quick_admin_email') ?: 'admin@heartsconnect.com';
         $devDemoEmail  = \App\Models\SiteSetting::get('dev_quick_demo_email')  ?: 'demo@heartsconnect.com';
     @endphp
@@ -31,7 +32,7 @@
                     <i class="bi bi-lock"></i>
                 </span>
                 <x-text-input id="password" type="password" name="password" required autocomplete="current-password"
-                    style="border-left:0;border-radius:0 .85rem .85rem 0" placeholder="••••••••" />
+                    style="border-left:0;border-radius:0 .85rem .85rem 0" placeholder="ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½" />
                 <button type="button" class="input-group-text" id="togglePwd"
                     style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-left:0;color:rgba(255,255,255,0.4);cursor:pointer;border-radius:0 .85rem .85rem 0">
                     <i class="bi bi-eye" id="togglePwdIcon"></i>

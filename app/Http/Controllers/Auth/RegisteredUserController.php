@@ -50,8 +50,8 @@ class RegisteredUserController extends Controller
 
         Auth::login($user);
 
-        // Send a welcome email asynchronously via the queue.
-        $user->notify(new WelcomeNotification());
+        // Send a welcome email — swallow failures so registration always succeeds.
+        try { $user->notify(new WelcomeNotification()); } catch (\Throwable) {}
 
         return redirect(route('setup.step', ['step' => 1]))->with('just_registered', true);
     }

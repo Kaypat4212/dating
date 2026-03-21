@@ -25,10 +25,12 @@ class WaveController extends Controller
 
         // Notify receiver (throttle: only on a new wave, not an update)
         if ($wave->wasRecentlyCreated || !$wave->seen) {
-            $user->notify(new WaveReceivedNotification(
-                sender: $sender,
-                emoji: $wave->emoji,
-            ));
+            try {
+                $user->notify(new WaveReceivedNotification(
+                    sender: $sender,
+                    emoji: $wave->emoji,
+                ));
+            } catch (\Throwable) {}
         }
 
         return response()->json([

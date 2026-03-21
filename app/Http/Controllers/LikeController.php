@@ -108,18 +108,22 @@ class LikeController extends Controller
 
         ActivityLogger::log($sender, 'like_sent', ['target_user_id' => $receiverId], $request);
 
-        // Notify receiver ($user is the route-bound receiver)
-        $user->notify(new \App\Notifications\ProfileLikedNotification($sender));
+        // Notify receiver — swallow mail exceptions so a bad email never breaks the like
+        try {
+            $user->notify(new \App\Notifications\ProfileLikedNotification($sender));
+        } catch (\Throwable) {}
 
         if (SiteSetting::get('email_feature_usage_enabled', true)) {
-            $sender->notify(new FeatureUsageNotification(
-                feature: 'Like Sent',
-                summary: "You liked {$user->name}'s profile.",
-                url: route('profile.show', $user->username),
-            ));
+            try {
+                $sender->notify(new FeatureUsageNotification(
+                    feature: 'Like Sent',
+                    summary: "You liked {$user->name}'s profile.",
+                    url: route('profile.show', $user->username),
+                ));
+            } catch (\Throwable) {}
         }
 
-        // Check for mutual like → create match → create match
+        // Check for mutual like → create match
         $mutualLike = Like::where('sender_id', $receiverId)
             ->where('receiver_id', $sender->id)
             ->exists();
@@ -138,15 +142,17 @@ class LikeController extends Controller
                 $match->conversation()->create();
                 $match->load('conversation');
                 broadcast(new MatchCreated($match))->toOthers();
-                $user->notify(new \App\Notifications\NewMatchNotification($match, $sender));
-                $sender->notify(new \App\Notifications\NewMatchNotification($match, $user));
+                try { $user->notify(new \App\Notifications\NewMatchNotification($match, $sender)); } catch (\Throwable) {}
+                try { $sender->notify(new \App\Notifications\NewMatchNotification($match, $user)); } catch (\Throwable) {}
 
                 if (SiteSetting::get('email_feature_usage_enabled', true)) {
-                    $sender->notify(new FeatureUsageNotification(
-                        feature: 'New Match',
-                        summary: "You matched with {$user->name}.",
-                        url: route('matches.index'),
-                    ));
+                    try {
+                        $sender->notify(new FeatureUsageNotification(
+                            feature: 'New Match',
+                            summary: "You matched with {$user->name}.",
+                            url: route('matches.index'),
+                        ));
+                    } catch (\Throwable) {}
                 }
             }
 

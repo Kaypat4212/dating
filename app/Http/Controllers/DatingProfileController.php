@@ -38,15 +38,17 @@ class DatingProfileController extends Controller
 
             // Dispatch notification to the viewed user
             if ($profileUser->isPremiumActive()) {
-                $profileUser->notify(new \App\Notifications\ProfileViewedNotification($viewer));
+                try { $profileUser->notify(new \App\Notifications\ProfileViewedNotification($viewer)); } catch (\Throwable) {}
             }
 
             if (SiteSetting::get('email_feature_usage_enabled', true)) {
-                $viewer->notify(new FeatureUsageNotification(
-                    feature: 'Profile View',
-                    summary: "You viewed {$profileUser->name}'s profile.",
-                    url: route('profile.show', $profileUser->username),
-                ));
+                try {
+                    $viewer->notify(new FeatureUsageNotification(
+                        feature: 'Profile View',
+                        summary: "You viewed {$profileUser->name}'s profile.",
+                        url: route('profile.show', $profileUser->username),
+                    ));
+                } catch (\Throwable) {}
             }
         }
 

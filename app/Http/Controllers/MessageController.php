@@ -122,14 +122,16 @@ class MessageController extends Controller
         broadcast(new MessageSent($message))->toOthers();
 
         $partner = $match->getOtherUser($user->id);
-        $partner->notify(new \App\Notifications\NewMessageNotification($message, $user));
+        try { $partner->notify(new \App\Notifications\NewMessageNotification($message, $user)); } catch (\Throwable) {}
 
         if (SiteSetting::get('email_feature_usage_enabled', true)) {
-            $user->notify(new FeatureUsageNotification(
-                feature: 'Message Sent',
-                summary: "You sent a message to {$partner->name}.",
-                url: route('conversations.show', $conversation),
-            ));
+            try {
+                $user->notify(new FeatureUsageNotification(
+                    feature: 'Message Sent',
+                    summary: "You sent a message to {$partner->name}.",
+                    url: route('conversations.show', $conversation),
+                ));
+            } catch (\Throwable) {}
         }
 
         return response()->json([
