@@ -266,6 +266,7 @@
 </nav>
 
 {{-- ── Flash Messages ─────────────────────────────────────────────────────── --}}
+@php /** @var \Illuminate\Support\ViewErrorBag $errors */ @endphp
 @if(session('success') || session('error') || $errors->any())
 <div class="container mt-3">
     @if(session('success'))

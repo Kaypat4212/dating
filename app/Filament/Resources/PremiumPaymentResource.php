@@ -97,7 +97,7 @@ class PremiumPaymentResource extends Resource
                 Tables\Columns\ImageColumn::make('proof_image')
                     ->label('Proof')
                     ->disk('public')
-                    ->height(40)
+                    ->imageHeight(40)
                     ->url(fn ($record) => $record->proof_image ? asset('storage/' . $record->proof_image) : null)
                     ->openUrlInNewTab(),
                 Tables\Columns\TextColumn::make('status')

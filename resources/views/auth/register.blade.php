@@ -1,6 +1,7 @@
 <x-guest-layout>
+@php /** @var \Illuminate\Support\ViewErrorBag $errors */ @endphp
     <h4 class="fw-bold mb-1 text-center auth-heading">Create Your Account <i class="bi bi-hearts ms-1" style="color:#f48fb1"></i></h4>
-    <p class="text-center mb-4 auth-subtitle">Free forever — find your match today</p>
+    <p class="text-center mb-4 auth-subtitle">Free forever ï¿½ find your match today</p>
 
     <form method="POST" action="{{ route('register') }}">
         @csrf
@@ -70,7 +71,7 @@
             {{-- Loading state (hidden initially) --}}
             <span id="registerBtnLoading" class="d-none">
                 <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                {{ __('Creating your account…') }}
+                {{ __('Creating your accountï¿½') }}
             </span>
         </button>
 

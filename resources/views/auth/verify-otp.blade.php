@@ -1,4 +1,5 @@
 @extends('layouts.guest')
+@php /** @var \Illuminate\Support\ViewErrorBag $errors */ @endphp
 
 @section('title', 'Verify Your Email')
 

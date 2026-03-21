@@ -1,4 +1,5 @@
 @extends('layouts.app')
+@php /** @var \Illuminate\Support\ViewErrorBag $errors */ @endphp
 @section('title', 'Feature Requests & Bug Reports')
 @section('content')
 <div class="container py-5" style="max-width:720px">
