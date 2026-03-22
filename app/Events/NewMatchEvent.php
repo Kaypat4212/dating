@@ -42,7 +42,6 @@ class NewMatchEvent implements ShouldBroadcast
 
         return [
             'matchId' => $match->id,
-            'score' => $match->compatibility_score,
             'otherUser' => [
                 'id' => $otherUser->id,
                 'name' => $otherUser->name,

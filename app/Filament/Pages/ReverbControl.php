@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Artisan;
 
 class ReverbControl extends Page
 {
-    protected static ?string $navigationIcon = 'heroicon-o-signal';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-signal';
     
     protected static string $view = 'filament.pages.reverb-control';
     
