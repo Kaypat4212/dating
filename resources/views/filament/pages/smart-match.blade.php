@@ -1,12 +1,26 @@
 <x-filament-panels::page>
 
+{{-- ── Custom Header ──────────────────────────────────────────────────────── --}}
+<div class="mb-6">
+    <div class="flex items-center justify-between mb-2">
+        <div>
+            <h1 class="text-2xl font-bold tracking-tight text-white">
+                Smart Match
+            </h1>
+            <p class="mt-1 text-sm text-gray-400">
+                AI-powered compatibility matching for new members
+            </p>
+        </div>
+    </div>
+</div>
+
 {{-- ── Styles ────────────────────────────────────────────────────────────── --}}
 <style>
 /* ── Page shell ──────────────────────────────────────────────────────── */
 .sm-page {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 20px;
 }
 
 /* ── Two-column layout ───────────────────────────────────────────────── */
@@ -55,21 +69,28 @@
 .sm-stat-pill {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 8px 14px;
-    border-radius: 12px;
-    background: rgba(255,255,255,.04);
+    gap: 12px;
+    padding: 16px 20px;
+    border-radius: 16px;
+    background: rgba(255,255,255,.03);
     border: 1px solid rgba(255,255,255,.08);
     flex: 1;
     min-width: 0;
+    transition: all 0.2s ease;
+}
+.sm-stat-pill:hover {
+    background: rgba(255,255,255,.05);
+    border-color: rgba(244,63,94,.3);
+    transform: translateY(-1px);
 }
 
 /* ── Sidebar card ────────────────────────────────────────────────────── */
 .sm-sidebar-card {
-    background: linear-gradient(160deg,#1a0a2e 0%,#2d1050 60%,#1a0a2e 100%);
-    border: 1px solid rgba(244,63,94,.2);
-    border-radius: 16px;
+    background: linear-gradient(160deg, rgba(30,10,46,.9) 0%, rgba(45,16,80,.85) 60%, rgba(26,10,46,.9) 100%);
+    border: 1px solid rgba(244,63,94,.25);
+    border-radius: 20px;
     overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0,0,0,.3);
 }
 
 /* ── Member list scrollable ──────────────────────────────────────────── */
@@ -92,34 +113,37 @@
 .sm-member-row {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 10px 14px;
+    gap: 12px;
+    padding: 12px 16px;
     width: 100%;
     text-align: left;
     border: none;
     background: transparent;
     cursor: pointer;
-    transition: background .15s;
-    border-bottom: 1px solid rgba(255,255,255,.04);
+    transition: all .2s ease;
+    border-bottom: 1px solid rgba(255,255,255,.05);
 }
-.sm-member-row:hover  { background: rgba(255,255,255,.05); }
+.sm-member-row:hover  { 
+    background: rgba(255,255,255,.06); 
+}
 .sm-member-row.active {
-    background: linear-gradient(135deg,rgba(244,63,94,.14),rgba(168,85,247,.08));
-    border-left: 2.5px solid #f43f5e;
-    padding-left: 11.5px;
+    background: linear-gradient(135deg, rgba(244,63,94,.16), rgba(168,85,247,.1));
+    border-left: 3px solid #f43f5e;
+    padding-left: 13px;
+    box-shadow: inset 0 0 20px rgba(244,63,94,.1);
 }
 
 /* ── Candidate cards ─────────────────────────────────────────────────── */
 .sm-card {
     display: flex;
     flex-direction: column;
-    border-radius: 18px;
+    border-radius: 20px;
     overflow: hidden;
-    transition: transform .18s, box-shadow .18s;
+    transition: all .25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .sm-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 20px 48px rgba(0,0,0,.55) !important;
+    transform: translateY(-6px) scale(1.02);
+    box-shadow: 0 24px 56px rgba(0,0,0,.6) !important;
 }
 
 /* ── Score ring ──────────────────────────────────────────────────────── */
@@ -168,21 +192,45 @@
 .sm-match-btn {
     display: block;
     width: 100%;
-    padding: 9px 14px;
+    padding: 11px 16px;
     border-radius: 12px;
     border: none;
-    background: linear-gradient(135deg,#f43f5e,#a855f7);
+    background: linear-gradient(135deg, #f43f5e, #a855f7);
     color: #fff;
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 700;
     text-align: center;
     cursor: pointer;
-    transition: box-shadow .15s, opacity .15s;
-    box-shadow: 0 4px 16px rgba(244,63,94,.3);
+    transition: all .2s ease;
+    box-shadow: 0 6px 20px rgba(244,63,94,.4);
+    position: relative;
+    overflow: hidden;
 }
-.sm-match-btn:hover   { box-shadow: 0 8px 24px rgba(244,63,94,.55); }
-.sm-match-btn:active  { opacity: .88; }
-.sm-match-btn:disabled{ opacity: .5; cursor: not-allowed; }
+.sm-match-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,.2), transparent);
+    transition: left .5s;
+}
+.sm-match-btn:hover {
+    box-shadow: 0 10px 28px rgba(244,63,94,.6);
+    transform: translateY(-2px);
+}
+.sm-match-btn:hover::before {
+    left: 100%;
+}
+.sm-match-btn:active { 
+    opacity: .88; 
+    transform: translateY(0);
+}
+.sm-match-btn:disabled { 
+    opacity: .5; 
+    cursor: not-allowed; 
+}
 
 /* ── Grid ────────────────────────────────────────────────────────────── */
 .sm-grid {
@@ -199,70 +247,73 @@
 <div class="sm-page">
 
     {{-- ── Top stats bar ─────────────────────────────────────────────── --}}
-    <div class="flex flex-wrap gap-3">
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div class="sm-stat-pill">
-            <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
+            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
                  style="background:linear-gradient(135deg,#f43f5e,#a855f7)">
-                <svg class="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                           d="M17 20h5v-2a3 3 0 00-3-3H5a3 3 0 00-3 3v2h5M9 11a4 4 0 110-8 4 4 0 010 8zm6 0a4 4 0 110-8 4 4 0 010 8z"/>
                 </svg>
             </div>
-            <div class="min-w-0">
-                <p class="text-[11px] font-semibold text-white/40 uppercase tracking-wider leading-none mb-0.5">Members</p>
-                <p class="text-sm font-black text-white leading-none">{{ $newUsers->count() }} recent</p>
+            <div class="min-w-0 flex-1">
+                <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide leading-none mb-1">Members</p>
+                <p class="text-lg font-bold text-white leading-none">{{ $newUsers->count() }} recent</p>
             </div>
         </div>
         <div class="sm-stat-pill">
-            <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
+            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
                  style="background:linear-gradient(135deg,#10b981,#0d9488)">
-                <svg class="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                           d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/>
                 </svg>
             </div>
-            <div class="min-w-0">
-                <p class="text-[11px] font-semibold text-white/40 uppercase tracking-wider leading-none mb-0.5">AI Scoring</p>
-                <p class="text-sm font-black text-white leading-none">Top 10 ranked</p>
+            <div class="min-w-0 flex-1">
+                <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide leading-none mb-1">AI Scoring</p>
+                <p class="text-lg font-bold text-white leading-none">Top 10 ranked</p>
             </div>
         </div>
         <div class="sm-stat-pill">
-            <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
+            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
                  style="background:linear-gradient(135deg,#3b82f6,#2563eb)">
-                <svg class="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                           d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
                 </svg>
             </div>
-            <div class="min-w-0">
-                <p class="text-[11px] font-semibold text-white/40 uppercase tracking-wider leading-none mb-0.5">Admin Match</p>
-                <p class="text-sm font-black text-white leading-none">Force &amp; notify</p>
+            <div class="min-w-0 flex-1">
+                <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide leading-none mb-1">Admin Match</p>
+                <p class="text-lg font-bold text-white leading-none">Force &amp; notify</p>
             </div>
         </div>
     </div>
 
     {{-- ── Mobile member toggle ────────────────────────────────────────── --}}
     <button
-        class="sm-mobile-toggle flex w-full items-center justify-between rounded-2xl px-4 py-3"
-        style="background:linear-gradient(135deg,rgba(244,63,94,.12),rgba(168,85,247,.08));border:1px solid rgba(244,63,94,.25);color:#fff"
+        class="sm-mobile-toggle flex w-full items-center justify-between rounded-2xl px-5 py-4"
+        style="background:linear-gradient(135deg,rgba(244,63,94,.15),rgba(168,85,247,.1));border:1px solid rgba(244,63,94,.3);color:#fff;box-shadow:0 4px 12px rgba(244,63,94,.1)"
         onclick="document.getElementById('sm-sidebar-inner').classList.toggle('is-open');
                  this.querySelector('.sm-chevron').style.transform = document.getElementById('sm-sidebar-inner').classList.contains('is-open') ? 'rotate(180deg)' : 'rotate(0deg)'"
     >
         <div class="flex items-center gap-3">
-            <span class="flex h-7 w-7 items-center justify-center rounded-lg"
-                  style="background:linear-gradient(135deg,#f43f5e,#a855f7)">
-                <svg class="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <span class="flex h-10 w-10 items-center justify-center rounded-xl"
+                  style="background:linear-gradient(135deg,#f43f5e,#a855f7);box-shadow:0 2px 8px rgba(244,63,94,.3)">
+                <svg class="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                           d="M17 20h5v-2a3 3 0 00-3-3H5a3 3 0 00-3 3v2h5M9 11a4 4 0 110-8 4 4 0 010 8zm6 0a4 4 0 110-8 4 4 0 010 8z"/>
                 </svg>
             </span>
-            <span class="font-bold text-sm">Recent Members</span>
-            <span class="flex h-5 min-w-[1.25rem] items-center justify-center rounded-full px-1 text-[10px] font-black"
-                  style="background:linear-gradient(135deg,#f43f5e,#a855f7);color:#fff">
+            <div class="text-left">
+                <span class="block font-bold text-sm text-white">Recent Members</span>
+                <span class="block text-xs text-gray-400">Tap to view list</span>
+            </div>
+            <span class="flex h-6 min-w-[1.5rem] items-center justify-center rounded-full px-2 text-xs font-bold ml-2"
+                  style="background:linear-gradient(135deg,#f43f5e,#a855f7);color:#fff;box-shadow:0 2px 6px rgba(244,63,94,.4)">
                 {{ $newUsers->count() }}
             </span>
         </div>
-        <svg class="sm-chevron h-4 w-4 text-white/40 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg class="sm-chevron h-5 w-5 text-white transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
         </svg>
     </button>
@@ -275,23 +326,24 @@
             <div id="sm-sidebar-inner" class="sm-sidebar-inner sm-sidebar-card">
 
                 {{-- Sidebar header --}}
-                <div class="flex items-center justify-between px-4 py-3"
-                     style="border-bottom:1px solid rgba(255,255,255,.07)">
+                <div class="flex items-center justify-between px-5 py-4"
+                     style="border-bottom:1px solid rgba(255,255,255,.1);background:rgba(244,63,94,.05)">
                     <div>
-                        <p class="text-xs font-black text-white/80">New Members</p>
-                        <p class="text-[10px] text-white/30">{{ $newUsers->count() }} most recent complete profiles</p>
+                        <p class="text-sm font-bold text-white">New Members</p>
+                        <p class="text-xs text-gray-400 mt-0.5">Last 7 days</p>
                     </div>
-                    <span class="flex h-5 min-w-[1.25rem] items-center justify-center rounded-full px-1 text-[10px] font-black"
-                          style="background:linear-gradient(135deg,#f43f5e,#a855f7);color:#fff">
+                    <span class="flex h-7 min-w-[1.75rem] items-center justify-center rounded-full px-2 text-xs font-bold"
+                          style="background:linear-gradient(135deg,#f43f5e,#a855f7);color:#fff;box-shadow:0 2px 8px rgba(244,63,94,.3)">
                         {{ $newUsers->count() }}
                     </span>
                 </div>
 
                 {{-- Member list --}}
                 @if($newUsers->isEmpty())
-                    <div class="flex flex-col items-center justify-center px-4 py-10 text-center">
-                        <span class="mb-2 text-3xl">👥</span>
-                        <p class="text-xs text-white/30">No members found.</p>
+                    <div class="flex flex-col items-center justify-center px-6 py-12 text-center">
+                        <span class="mb-3 text-4xl">👥</span>
+                        <p class="text-sm text-gray-400 font-medium">No members found</p>
+                        <p class="text-xs text-gray-500 mt-1">New members will appear here</p>
                     </div>
                 @else
                     <ul class="sm-member-list" role="listbox">
@@ -311,36 +363,36 @@
                                     <div class="relative shrink-0">
                                         @if($photoUrl)
                                             <img src="{{ $photoUrl }}" alt="{{ $nu->name }}"
-                                                 class="h-9 w-9 rounded-full object-cover"
-                                                 style="box-shadow:0 0 0 2px {{ $active ? '#f43f5e' : 'rgba(255,255,255,.1)' }}" />
+                                                 class="h-11 w-11 rounded-full object-cover"
+                                                 style="box-shadow:0 0 0 2px {{ $active ? '#f43f5e' : 'rgba(255,255,255,.12)' }}" />
                                         @else
-                                            <div class="flex h-9 w-9 items-center justify-center rounded-full text-sm font-black text-white"
-                                                 style="background:linear-gradient(135deg,#2d1050,#4a0e6e);box-shadow:0 0 0 2px {{ $active ? '#f43f5e' : 'rgba(255,255,255,.1)' }}">
+                                            <div class="flex h-11 w-11 items-center justify-center rounded-full text-sm font-bold text-white"
+                                                 style="background:linear-gradient(135deg,#2d1050,#4a0e6e);box-shadow:0 0 0 2px {{ $active ? '#f43f5e' : 'rgba(255,255,255,.12)' }}">
                                                 {{ strtoupper(substr($nu->name,0,1)) }}
                                             </div>
                                         @endif
                                         @if(isset($nu->last_active_at) && \Carbon\Carbon::parse($nu->last_active_at)->diffInMinutes() < 30)
-                                            <span class="sm-online absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2"
-                                                  style="background:#22c55e;border-color:#1a0a2e"></span>
+                                            <span class="sm-online absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2"
+                                                  style="background:#22c55e;border-color:#1a0a2e;box-shadow:0 0 8px rgba(34,197,94,.5)"></span>
                                         @endif
                                     </div>
 
                                     {{-- Info --}}
                                     <div class="min-w-0 flex-1">
-                                        <div class="flex items-center gap-1.5">
-                                            <p class="truncate text-xs font-semibold {{ $active ? '' : 'text-white/75' }}"
+                                        <div class="flex items-center gap-1.5 mb-0.5">
+                                            <p class="truncate text-sm font-semibold {{ $active ? '' : 'text-white' }}"
                                                style="{{ $active ? 'color:#fb7185' : '' }}">{{ $nu->name }}</p>
                                             @if($nu->is_premium)
-                                                <span class="shrink-0 rounded px-1 text-[9px] font-black" style="background:#f59e0b;color:#000">★</span>
+                                                <span class="shrink-0 rounded px-1.5 py-0.5 text-[9px] font-black" style="background:#f59e0b;color:#000">★</span>
                                             @endif
                                             @if($nu->is_verified)
                                                 <span class="shrink-0 rounded px-1 text-[9px] font-bold" style="background:#0ea5e9;color:#fff">✓</span>
                                             @endif
                                         </div>
-                                        <p class="text-[10px] text-white/30">
+                                        <p class="text-xs text-gray-400">
                                             {{ ucfirst($nu->gender ?? '—') }}{{ $nu->age ? ' · '.$nu->age.' yrs' : '' }}
                                         </p>
-                                        <p class="text-[10px] text-white/20">{{ $nu->created_at->diffForHumans() }}</p>
+                                        <p class="text-[10px] text-gray-500">{{ $nu->created_at->diffForHumans() }}</p>
                                     </div>
 
                                     @if($active)
@@ -361,31 +413,34 @@
 
             @if(! $focusUserId)
                 {{-- ── Empty / landing state ──────────────────────────── --}}
-                <div class="flex flex-col items-center justify-center rounded-2xl py-16 text-center"
-                     style="background:linear-gradient(160deg,rgba(30,10,46,.6),rgba(45,16,80,.4));border:1.5px dashed rgba(244,63,94,.2);min-height:320px">
-                    <div class="mb-5 flex h-20 w-20 items-center justify-center rounded-full"
-                         style="background:radial-gradient(circle,rgba(244,63,94,.15),rgba(168,85,247,.08));border:1.5px solid rgba(244,63,94,.2)">
-                        <svg class="h-10 w-10" style="color:rgba(244,63,94,.5)" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="flex flex-col items-center justify-center rounded-2xl py-20 text-center"
+                     style="background:linear-gradient(160deg,rgba(30,10,46,.7),rgba(45,16,80,.5));border:2px dashed rgba(244,63,94,.25);min-height:400px">
+                    <div class="mb-6 flex h-24 w-24 items-center justify-center rounded-full"
+                         style="background:radial-gradient(circle,rgba(244,63,94,.2),rgba(168,85,247,.1));border:2px solid rgba(244,63,94,.3);box-shadow:0 8px 24px rgba(244,63,94,.2)">
+                        <svg class="h-12 w-12" style="color:rgba(244,63,94,.6)" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
                                   d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/>
                         </svg>
                     </div>
-                    <h3 class="mb-2 text-base font-bold text-white/70">Select a member to begin</h3>
-                    <p class="text-sm text-white/35 max-w-xs">
-                        Choose any member from the list to see their AI-powered compatibility suggestions ranked by score.
+                    <h3 class="mb-3 text-xl font-bold text-white">Select a member to begin</h3>
+                    <p class="text-sm text-gray-400 max-w-md leading-relaxed">
+                        Pick any new member from the sidebar to see their AI-powered compatibility suggestions.
                     </p>
-                    <div class="mt-8 flex flex-wrap items-center justify-center gap-4 text-[11px] text-white/25">
-                        <span class="flex items-center gap-1.5">
-                            <span class="flex h-5 w-5 items-center justify-center rounded-full text-[9px]"
-                                  style="background:rgba(244,63,94,.15)">🧠</span>AI scoring
+                    <div class="mt-10 flex flex-wrap items-center justify-center gap-6 text-xs text-gray-500">
+                        <span class="flex items-center gap-2">
+                            <span class="flex h-8 w-8 items-center justify-center rounded-lg text-base"
+                                  style="background:rgba(244,63,94,.15)">🧠</span>
+                            <span>AI scoring</span>
                         </span>
-                        <span class="flex items-center gap-1.5">
-                            <span class="flex h-5 w-5 items-center justify-center rounded-full text-[9px]"
-                                  style="background:rgba(168,85,247,.15)">💞</span>Auto-match
+                        <span class="flex items-center gap-2">
+                            <span class="flex h-8 w-8 items-center justify-center rounded-lg text-base"
+                                  style="background:rgba(168,85,247,.15)">💞</span>
+                            <span>Auto-match</span>
                         </span>
-                        <span class="flex items-center gap-1.5">
-                            <span class="flex h-5 w-5 items-center justify-center rounded-full text-[9px]"
-                                  style="background:rgba(16,185,129,.15)">⚡</span>Instant notification
+                        <span class="flex items-center gap-2">
+                            <span class="flex h-8 w-8 items-center justify-center rounded-lg text-base"
+                                  style="background:rgba(16,185,129,.15)">⚡</span>
+                            <span>Instant notifications</span>
                         </span>
                     </div>
                 </div>
@@ -404,87 +459,92 @@
                 @else
 
                     {{-- ── Focus user hero ─────────────────────────────── --}}
-                    <div class="mb-5 overflow-hidden rounded-2xl"
-                         style="background:linear-gradient(140deg,#1e0a2e,#2d1050,#1a0a2e);border:1px solid rgba(244,63,94,.3);box-shadow:0 8px 32px rgba(244,63,94,.1)">
-                        <div class="h-0.5 w-full" style="background:linear-gradient(90deg,#f43f5e,#a855f7,#3b82f6)"></div>
-                        <div class="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:gap-5 sm:p-5">
+                    <div class="mb-6 overflow-hidden rounded-2xl"
+                         style="background:linear-gradient(140deg,rgba(30,10,46,.95),rgba(45,16,80,.9),rgba(26,10,46,.95));border:1px solid rgba(244,63,94,.35);box-shadow:0 10px 40px rgba(244,63,94,.15)">
+                        <div class="h-1 w-full" style="background:linear-gradient(90deg,#f43f5e,#a855f7,#3b82f6)"></div>
+                        <div class="flex flex-col gap-5 p-6 sm:flex-row sm:items-center sm:gap-6">
 
                             {{-- Avatar --}}
                             <div class="relative shrink-0 self-start sm:self-center">
                                 @if($focusPhoto)
                                     <img src="{{ $focusPhoto->thumbnail_url }}" alt="{{ $focusUser->name }}"
-                                         class="h-16 w-16 rounded-2xl object-cover"
-                                         style="box-shadow:0 0 0 3px #f43f5e,0 8px 24px rgba(244,63,94,.35)" />
+                                         class="h-20 w-20 rounded-2xl object-cover"
+                                         style="box-shadow:0 0 0 3px #f43f5e,0 10px 30px rgba(244,63,94,.4)" />
                                 @else
-                                    <div class="flex h-16 w-16 items-center justify-center rounded-2xl text-2xl font-black text-white"
-                                         style="background:linear-gradient(135deg,#f43f5e,#a855f7);box-shadow:0 8px 24px rgba(244,63,94,.35)">
+                                    <div class="flex h-20 w-20 items-center justify-center rounded-2xl text-3xl font-black text-white"
+                                         style="background:linear-gradient(135deg,#f43f5e,#a855f7);box-shadow:0 10px 30px rgba(244,63,94,.4)">
                                         {{ strtoupper(substr($focusUser->name,0,1)) }}
                                     </div>
                                 @endif
-                                <span class="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full text-[10px]"
-                                      style="background:linear-gradient(135deg,#f43f5e,#a855f7);box-shadow:0 2px 8px rgba(244,63,94,.5)">✦</span>
+                                <span class="absolute -bottom-1.5 -right-1.5 flex h-6 w-6 items-center justify-center rounded-full text-xs"
+                                      style="background:linear-gradient(135deg,#f43f5e,#a855f7);box-shadow:0 3px 10px rgba(244,63,94,.6)">✦</span>
                             </div>
 
                             {{-- Details --}}
                             <div class="flex-1 min-w-0">
-                                <div class="mb-1.5 flex flex-wrap items-center gap-2">
-                                    <h2 class="text-lg font-black text-white leading-none">{{ $focusUser->name }}</h2>
+                                <div class="mb-2 flex flex-wrap items-center gap-2">
+                                    <h2 class="text-xl font-black text-white leading-none">{{ $focusUser->name }}</h2>
                                     @if($focusUser->is_premium)
-                                        <span class="rounded-full px-2 py-0.5 text-[10px] font-black"
-                                              style="background:linear-gradient(90deg,#f59e0b,#f97316);color:#fff">★ PREMIUM</span>
+                                        <span class="rounded-full px-2.5 py-1 text-[10px] font-bold"
+                                              style="background:linear-gradient(90deg,#f59e0b,#f97316);color:#fff;box-shadow:0 2px 8px rgba(245,158,11,.3)">★ PREMIUM</span>
                                     @endif
                                     @if($focusUser->is_verified)
-                                        <span class="rounded-full px-2 py-0.5 text-[10px] font-bold"
+                                        <span class="rounded-full px-2.5 py-1 text-[10px] font-bold"
                                               style="background:rgba(14,165,233,.2);border:1px solid rgba(14,165,233,.4);color:#7dd3fc">✓ VERIFIED</span>
                                     @endif
                                 </div>
-                                <div class="flex flex-wrap gap-x-3 gap-y-1 text-xs text-white/45">
-                                    <span>{{ ucfirst($focusUser->gender ?? 'Unknown') }}</span>
-                                    @if($focusUser->age)<span>· {{ $focusUser->age }} yrs</span>@endif
-                                    <span>· Seeking <strong class="text-white/65">{{ ucfirst($focusUser->seeking ?? 'everyone') }}</strong></span>
+                                <div class="flex flex-wrap gap-x-4 gap-y-2 text-sm text-gray-400">
+                                    <span class="font-medium">{{ ucfirst($focusUser->gender ?? 'Unknown') }}</span>
+                                    @if($focusUser->age)<span>· {{ $focusUser->age }} years old</span>@endif
+                                    <span>· Seeking <strong class="text-white">{{ ucfirst($focusUser->seeking ?? 'everyone') }}</strong></span>
                                     @if($focusUser->profile?->city)
                                         <span>· 📍 {{ $focusUser->profile->city }}{{ $focusUser->profile->country ? ', '.$focusUser->profile->country : '' }}</span>
                                     @endif
                                 </div>
                                 @if($focusUser->profile?->headline)
-                                    <p class="mt-1.5 text-xs italic text-white/30">"{{ Str::limit($focusUser->profile->headline,80) }}"</p>
+                                    <p class="mt-2 text-sm italic text-gray-500">"{{ Str::limit($focusUser->profile->headline,100) }}"</p>
                                 @endif
                             </div>
 
                             {{-- Joined --}}
                             <div class="shrink-0 sm:text-right">
-                                <p class="text-[10px] font-semibold uppercase tracking-widest text-white/25">Joined</p>
-                                <p class="text-sm font-bold text-white/60">{{ $focusUser->created_at->format('d M Y') }}</p>
-                                <p class="text-[10px] text-white/25">{{ $focusUser->created_at->diffForHumans() }}</p>
+                                <p class="text-[10px] font-semibold uppercase tracking-widest text-gray-500">Joined</p>
+                                <p class="text-base font-bold text-white mt-1">{{ $focusUser->created_at->format('M d, Y') }}</p>
+                                <p class="text-xs text-gray-500 mt-0.5">{{ $focusUser->created_at->diffForHumans() }}</p>
                             </div>
                         </div>
                     </div>
 
                     {{-- ── Suggestions ─────────────────────────────────── --}}
                     @if($suggestions->isEmpty())
-                        <div class="flex flex-col items-center justify-center rounded-2xl py-14 text-center"
-                             style="background:rgba(255,255,255,.02);border:1.5px dashed rgba(255,255,255,.08)">
-                            <span class="mb-3 text-4xl">🤷</span>
-                            <p class="text-sm font-semibold text-white/45">No compatible candidates found</p>
-                            <p class="mt-1 text-xs text-white/25">All suitable users may already be matched, or this user's profile lacks preference data.</p>
+                        <div class="flex flex-col items-center justify-center rounded-2xl py-16 text-center"
+                             style="background:rgba(255,255,255,.03);border:2px dashed rgba(255,255,255,.1)">
+                            <span class="mb-4 text-5xl">🤷</span>
+                            <p class="text-base font-semibold text-white mb-2">No compatible candidates found</p>
+                            <p class="text-sm text-gray-400 max-w-md leading-relaxed">
+                                All suitable users may already be matched, or this user's profile needs more preference data.
+                            </p>
                         </div>
                     @else
 
                         {{-- Count + legend header --}}
-                        <div class="mb-4 flex flex-wrap items-center gap-2">
-                            <p class="text-sm font-semibold text-white/55">
-                                <span class="font-black text-white">{{ $suggestions->count() }}</span> compatibility {{ Str::plural('match', $suggestions->count()) }} found
+                        <div class="mb-5 flex flex-wrap items-center gap-3">
+                            <p class="text-base font-semibold text-gray-300">
+                                <span class="font-bold text-white text-lg">{{ $suggestions->count() }}</span> compatibility {{ Str::plural('match', $suggestions->count()) }} found
                             </p>
-                            <div class="h-px flex-1" style="background:linear-gradient(90deg,rgba(244,63,94,.25),transparent);min-width:20px"></div>
-                            <div class="flex flex-wrap items-center gap-3 text-[10px] text-white/30">
-                                <span class="flex items-center gap-1">
-                                    <span class="h-2 w-2 rounded-full bg-emerald-400 inline-block"></span>≥70% good
+                            <div class="h-px flex-1" style="background:linear-gradient(90deg,rgba(244,63,94,.3),transparent);min-width:40px"></div>
+                            <div class="flex flex-wrap items-center gap-4 text-xs text-gray-400">
+                                <span class="flex items-center gap-1.5">
+                                    <span class="h-2.5 w-2.5 rounded-full bg-emerald-400 inline-block"></span>
+                                    <span>≥70% excellent</span>
                                 </span>
-                                <span class="flex items-center gap-1">
-                                    <span class="h-2 w-2 rounded-full bg-amber-400 inline-block"></span>≥40% fair
+                                <span class="flex items-center gap-1.5">
+                                    <span class="h-2.5 w-2.5 rounded-full bg-amber-400 inline-block"></span>
+                                    <span>≥40% good</span>
                                 </span>
-                                <span class="flex items-center gap-1">
-                                    <span class="h-2 w-2 rounded-full inline-block" style="background:#6b7280"></span>&lt;40% low
+                                <span class="flex items-center gap-1.5">
+                                    <span class="h-2.5 w-2.5 rounded-full inline-block" style="background:#6b7280"></span>
+                                    <span>&lt;40% fair</span>
                                 </span>
                             </div>
                         </div>
