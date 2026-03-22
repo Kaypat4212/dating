@@ -1,734 +1,636 @@
 <x-filament-panels::page>
 
-{{-- ── Custom Header ──────────────────────────────────────────────────────── --}}
-<div class="mb-6">
-    <div class="flex items-center justify-between mb-2">
-        <div>
-            <h1 class="text-2xl font-bold tracking-tight text-white">
-                Smart Match
-            </h1>
-            <p class="mt-1 text-sm text-gray-400">
-                AI-powered compatibility matching for new members
-            </p>
-        </div>
-    </div>
-</div>
+{{-- Include Bootstrap CSS --}}
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
 
-{{-- ── Styles ────────────────────────────────────────────────────────────── --}}
 <style>
-/* ── Page shell ──────────────────────────────────────────────────────── */
-.sm-page {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
+:root {
+    --primary-gradient: linear-gradient(135deg, #f43f5e 0%, #a855f7 100%);
+    --card-bg: #1a1625;
+    --card-border: rgba(244, 63, 94, 0.2);
+    --hover-bg: rgba(255, 255, 255, 0.05);
 }
 
-/* ── Two-column layout ───────────────────────────────────────────────── */
-.sm-layout {
-    display: flex;
-    gap: 20px;
-    align-items: flex-start;
+body {
+    background: #0f0a1a;
 }
 
-/* ── Sidebar ─────────────────────────────────────────────────────────── */
-.sm-sidebar {
-    width: 280px;
-    flex-shrink: 0;
-    position: sticky;
-    top: 20px;
+/* Real-time Online Status Indicator */
+.online-status {
+    width: 12px;
+    height: 12px;
+    background: #22c55e;
+    border-radius: 50%;
+    border: 2px solid #1a1625;
+    animation: pulse-glow 2s infinite;
 }
 
-/* ── Main panel ──────────────────────────────────────────────────────── */
-.sm-main {
-    flex: 1;
-    min-width: 0;
+@keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
+    50% { box-shadow: 0 0 0 6px rgba(34, 197, 94, 0); }
 }
 
-/* Mobile: sidebar collapses */
-.sm-sidebar-inner {
-    display: none;
-}
-.sm-sidebar-inner.is-open {
-    display: block;
-}
-
-/* On desktop-and-up: always show sidebar, hide toggle */
-@media (min-width: 1024px) {
-    .sm-sidebar-inner  { display: block !important; }
-    .sm-mobile-toggle  { display: none !important; }
-    .sm-layout         { flex-direction: row !important; }
-}
-
-/* On tablet and below: stack vertically, sidebar full width */
-@media (max-width: 1023px) {
-    .sm-sidebar { width: 100%; position: static; }
-    .sm-layout  { flex-direction: column; }
-}
-
-/* ── Stat pills ──────────────────────────────────────────────────────── */
-.sm-stat-pill {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 16px 20px;
-    border-radius: 16px;
-    background: rgba(255,255,255,.03);
-    border: 1px solid rgba(255,255,255,.08);
-    flex: 1;
-    min-width: 0;
-    transition: all 0.2s ease;
-}
-.sm-stat-pill:hover {
-    background: rgba(255,255,255,.05);
-    border-color: rgba(244,63,94,.3);
-    transform: translateY(-1px);
-}
-
-/* ── Sidebar card ────────────────────────────────────────────────────── */
-.sm-sidebar-card {
-    background: linear-gradient(160deg, rgba(30,10,46,.9) 0%, rgba(45,16,80,.85) 60%, rgba(26,10,46,.9) 100%);
-    border: 1px solid rgba(244,63,94,.25);
-    border-radius: 20px;
-    overflow: hidden;
-    box-shadow: 0 8px 32px rgba(0,0,0,.3);
-}
-
-/* ── Member list scrollable ──────────────────────────────────────────── */
-.sm-member-list {
-    max-height: 60vh;
-    overflow-y: auto;
-    scrollbar-width: thin;
-    scrollbar-color: rgba(244,63,94,.3) transparent;
-}
-@media (min-width: 1024px) {
-    .sm-member-list {
-        max-height: calc(100vh - 260px);
-    }
-}
-.sm-member-list::-webkit-scrollbar { width: 4px; }
-.sm-member-list::-webkit-scrollbar-track { background: transparent; }
-.sm-member-list::-webkit-scrollbar-thumb { background: rgba(244,63,94,.3); border-radius: 4px; }
-
-/* ── Member row ──────────────────────────────────────────────────────── */
-.sm-member-row {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 12px 16px;
-    width: 100%;
-    text-align: left;
-    border: none;
-    background: transparent;
-    cursor: pointer;
-    transition: all .2s ease;
-    border-bottom: 1px solid rgba(255,255,255,.05);
-}
-.sm-member-row:hover  { 
-    background: rgba(255,255,255,.06); 
-}
-.sm-member-row.active {
-    background: linear-gradient(135deg, rgba(244,63,94,.16), rgba(168,85,247,.1));
-    border-left: 3px solid #f43f5e;
-    padding-left: 13px;
-    box-shadow: inset 0 0 20px rgba(244,63,94,.1);
-}
-
-/* ── Candidate cards ─────────────────────────────────────────────────── */
-.sm-card {
-    display: flex;
-    flex-direction: column;
-    border-radius: 20px;
-    overflow: hidden;
-    transition: all .25s cubic-bezier(0.4, 0, 0.2, 1);
-}
-.sm-card:hover {
-    transform: translateY(-6px) scale(1.02);
-    box-shadow: 0 24px 56px rgba(0,0,0,.6) !important;
-}
-
-/* ── Score ring ──────────────────────────────────────────────────────── */
-@keyframes ring-draw { from { stroke-dashoffset: 113; } }
-.sm-ring-arc { animation: ring-draw .8s ease forwards; }
-
-/* ── Animations ──────────────────────────────────────────────────────── */
-@keyframes pulse-dot {
-    0%,100% { opacity:1; box-shadow: 0 0 0 0 rgba(34,197,94,.5); }
-    50%      { opacity:.7; box-shadow: 0 0 0 4px rgba(34,197,94,0); }
-}
-.sm-online { animation: pulse-dot 2s infinite; }
-
-@keyframes shimmer {
-    0%   { background-position:-400px 0 }
-    100% { background-position: 400px 0 }
-}
-.sm-skeleton {
-    background: linear-gradient(90deg,rgba(255,255,255,.04) 25%,rgba(255,255,255,.09) 50%,rgba(255,255,255,.04) 75%);
-    background-size: 400px 100%;
-    animation: shimmer 1.4s infinite;
-    border-radius: 6px;
-}
-
-/* ── Tag chip ────────────────────────────────────────────────────────── */
-.sm-chip {
+/* Typing Indicator */
+.typing-indicator {
     display: inline-flex;
     align-items: center;
-    padding: 2px 9px;
-    border-radius: 20px;
-    font-size: 10px;
-    font-weight: 500;
-}
-.sm-chip-purple {
-    background: rgba(168,85,247,.14);
-    border: 1px solid rgba(168,85,247,.25);
-    color: #c4b5fd;
-}
-.sm-chip-teal {
-    background: rgba(20,184,166,.14);
-    border: 1px solid rgba(20,184,166,.25);
-    color: #5eead4;
+    gap: 3px;
 }
 
-/* ── Match button ────────────────────────────────────────────────────── */
-.sm-match-btn {
-    display: block;
-    width: 100%;
-    padding: 11px 16px;
-    border-radius: 12px;
+.typing-dot {
+    width: 6px;
+    height: 6px;
+    background: #a855f7;
+    border-radius: 50%;
+    animation: typing-bounce 1.4s infinite;
+}
+
+.typing-dot:nth-child(2) { animation-delay: 0.2s; }
+.typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes typing-bounce {
+    0%, 60%, 100% { transform: translate Y(0); }
+    30% { transform: translateY(-10px); }
+}
+
+/* Stat Cards */
+.stat-card {
+    background: linear-gradient(135deg, rgba(30, 10, 46, 0.9), rgba(45, 16, 80, 0.7));
+    border: 1px solid rgba(244, 63, 94, 0.15);
+    border-radius: 16px;
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-4px);
+    border-color: rgba(244, 63, 94, 0.4);
+    box-shadow: 0 8px 24px rgba(244, 63, 94, 0.15);
+}
+
+/* Member Sidebar */
+.member-list {
+    max-height: calc(100vh - 300px);
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(244, 63, 94, 0.3) transparent;
+}
+
+.member-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.member-list::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.member-list::-webkit-scrollbar-thumb {
+    background: rgba(244, 63, 94, 0.3);
+    border-radius: 10px;
+}
+
+.member-item {
+    background: transparent;
     border: none;
-    background: linear-gradient(135deg, #f43f5e, #a855f7);
-    color: #fff;
-    font-size: 13px;
-    font-weight: 700;
-    text-align: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 1rem;
+    transition: all 0.2s ease;
     cursor: pointer;
-    transition: all .2s ease;
-    box-shadow: 0 6px 20px rgba(244,63,94,.4);
+    width: 100%;
+    text-align: left;
+}
+
+.member-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.member-item.active {
+    background: linear-gradient(135deg, rgba(244, 63, 94, 0.15), rgba(168, 85, 247, 0.1));
+    border-left: 4px solid #f43f5e;
+}
+
+/* Match Cards */
+.match-card {
+    background: linear-gradient(145deg, rgba(30, 10, 46, 0.95), rgba(45, 16, 80, 0.85));
+    border: 1px solid rgba(244, 63, 94, 0.2);
+    border-radius: 20px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.match-card:hover {
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 0 20px 40px rgba(244, 63, 94, 0.3);
+    border-color: rgba(244, 63, 94, 0.5);
+}
+
+/* Score Ring */
+.score-ring {
+    stroke-dasharray: 283;
+    stroke-linecap: round;
+    transform: rotate(-90deg);
+    transform-origin: center;
+    transition: stroke-dashoffset 1s ease;
+}
+
+/* Match Button */
+.match-btn {
+    background: linear-gradient(135deg, #f43f5e, #a855f7);
+    border: none;
+    padding: 12px 24px;
+    border-radius: 12px;
+    color: white;
+    font-weight: 600;
+    transition: all 0.3s ease;
     position: relative;
     overflow: hidden;
 }
-.sm-match-btn::before {
+
+.match-btn::before {
     content: '';
     position: absolute;
     top: 0;
     left: -100%;
     width: 100%;
     height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,.2), transparent);
-    transition: left .5s;
-}
-.sm-match-btn:hover {
-    box-shadow: 0 10px 28px rgba(244,63,94,.6);
-    transform: translateY(-2px);
-}
-.sm-match-btn:hover::before {
-    left: 100%;
-}
-.sm-match-btn:active { 
-    opacity: .88; 
-    transform: translateY(0);
-}
-.sm-match-btn:disabled { 
-    opacity: .5; 
-    cursor: not-allowed; 
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    transition: left 0.5s;
 }
 
-/* ── Grid ────────────────────────────────────────────────────────────── */
-.sm-grid {
-    display: grid;
-    gap: 16px;
-    grid-template-columns: 1fr;
+.match-btn:hover::before {
+    left: 100%;
 }
-@media (min-width: 580px)  { .sm-grid { grid-template-columns: repeat(2,1fr); } }
-@media (min-width: 1280px) { .sm-grid { grid-template-columns: repeat(3,1fr); } }
+
+.match-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(244, 63, 94, 0.5);
+}
+
+/* Toast Notifications */
+.toast-notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+    min-width: 300px;
+    animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+    from { transform: translateX(400px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+/* Empty State */
+.empty-state {
+    background: linear-gradient(135deg, rgba(30, 10, 46, 0.6), rgba(45, 16, 80, 0.4));
+    border: 2px dashed rgba(244, 63, 94, 0.3);
+    border-radius: 20px;
+    padding: 4rem 2rem;
+    text-align: center;
+}
+
+/* Badge Styles */
+.badge-premium {
+    background: linear-gradient(90deg, #f59e0b, #f97316);
+    color: white;
+    font-weight: 700;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+}
+
+.badge-verified {
+    background: rgba(14, 165, 233, 0.2);
+    border: 1px solid rgba(14, 165, 233, 0.4);
+    color: #7dd3fc;
+    font-weight: 600;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+}
 </style>
 
 @php $newUsers = $this->getNewUsers(); @endphp
 
-<div class="sm-page">
+{{-- Real-time Toast Container --}}
+<div id="toast-container" class="position-fixed top-0 end-0 p-3" style="z-index: 9999;"></div>
 
-    {{-- ── Top stats bar ─────────────────────────────────────────────── --}}
-    <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div class="sm-stat-pill">
-            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
-                 style="background:linear-gradient(135deg,#f43f5e,#a855f7)">
-                <svg class="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                          d="M17 20h5v-2a3 3 0 00-3-3H5a3 3 0 00-3 3v2h5M9 11a4 4 0 110-8 4 4 0 010 8zm6 0a4 4 0 110-8 4 4 0 010 8z"/>
-                </svg>
-            </div>
-            <div class="min-w-0 flex-1">
-                <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide leading-none mb-1">Members</p>
-                <p class="text-lg font-bold text-white leading-none">{{ $newUsers->count() }} recent</p>
-            </div>
-        </div>
-        <div class="sm-stat-pill">
-            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
-                 style="background:linear-gradient(135deg,#10b981,#0d9488)">
-                <svg class="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                          d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/>
-                </svg>
-            </div>
-            <div class="min-w-0 flex-1">
-                <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide leading-none mb-1">AI Scoring</p>
-                <p class="text-lg font-bold text-white leading-none">Top 10 ranked</p>
-            </div>
-        </div>
-        <div class="sm-stat-pill">
-            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
-                 style="background:linear-gradient(135deg,#3b82f6,#2563eb)">
-                <svg class="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                          d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
-                </svg>
-            </div>
-            <div class="min-w-0 flex-1">
-                <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide leading-none mb-1">Admin Match</p>
-                <p class="text-lg font-bold text-white leading-none">Force &amp; notify</p>
+<div class="container-fluid px-4 py-4">
+    
+    {{-- Page Header --}}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="display-6 fw-bold text-white mb-2">
+                        <i class="bi bi-stars me-2" style="color: #f43f5e;"></i>
+                        Smart Match
+                    </h1>
+                    <p class="text-white-50 mb-0">AI-powered compatibility matching for new members</p>
+                </div>
+                <div class="badge bg-success px-3 py-2">
+                    <i class="bi bi-broadcast"></i> Real-time Enabled
+                </div>
             </div>
         </div>
     </div>
 
-    {{-- ── Mobile member toggle ────────────────────────────────────────── --}}
-    <button
-        class="sm-mobile-toggle flex w-full items-center justify-between rounded-2xl px-5 py-4"
-        style="background:linear-gradient(135deg,rgba(244,63,94,.15),rgba(168,85,247,.1));border:1px solid rgba(244,63,94,.3);color:#fff;box-shadow:0 4px 12px rgba(244,63,94,.1)"
-        onclick="document.getElementById('sm-sidebar-inner').classList.toggle('is-open');
-                 this.querySelector('.sm-chevron').style.transform = document.getElementById('sm-sidebar-inner').classList.contains('is-open') ? 'rotate(180deg)' : 'rotate(0deg)'"
-    >
-        <div class="flex items-center gap-3">
-            <span class="flex h-10 w-10 items-center justify-center rounded-xl"
-                  style="background:linear-gradient(135deg,#f43f5e,#a855f7);box-shadow:0 2px 8px rgba(244,63,94,.3)">
-                <svg class="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                          d="M17 20h5v-2a3 3 0 00-3-3H5a3 3 0 00-3 3v2h5M9 11a4 4 0 110-8 4 4 0 010 8zm6 0a4 4 0 110-8 4 4 0 010 8z"/>
-                </svg>
-            </span>
-            <div class="text-left">
-                <span class="block font-bold text-sm text-white">Recent Members</span>
-                <span class="block text-xs text-gray-400">Tap to view list</span>
+    {{-- Stats Bar --}}
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="stat-card">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <div class="rounded-circle d-flex align-items-center justify-content-center" 
+                             style="width: 60px; height: 60px; background: linear-gradient(135deg, #f43f5e, #a855f7);">
+                            <i class="bi bi-people-fill text-white fs-4"></i>
+                        </div>
+                    </div>
+                    <div class="ms-3">
+                        <p class="text-white-50 text-uppercase small mb-1 fw-semibold">New Members</p>
+                        <h3 class="text-white fw-bold mb-0">{{ $newUsers->count() }}</h3>
+                    </div>
+                </div>
             </div>
-            <span class="flex h-6 min-w-[1.5rem] items-center justify-center rounded-full px-2 text-xs font-bold ml-2"
-                  style="background:linear-gradient(135deg,#f43f5e,#a855f7);color:#fff;box-shadow:0 2px 6px rgba(244,63,94,.4)">
-                {{ $newUsers->count() }}
-            </span>
         </div>
-        <svg class="sm-chevron h-5 w-5 text-white transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-        </svg>
-    </button>
-
-    {{-- ── Main two-column layout ──────────────────────────────────────── --}}
-    <div class="sm-layout">
-
-        {{-- ──────────────────────── SIDEBAR ──────────────────────────── --}}
-        <aside class="sm-sidebar">
-            <div id="sm-sidebar-inner" class="sm-sidebar-inner sm-sidebar-card">
-
-                {{-- Sidebar header --}}
-                <div class="flex items-center justify-between px-5 py-4"
-                     style="border-bottom:1px solid rgba(255,255,255,.1);background:rgba(244,63,94,.05)">
-                    <div>
-                        <p class="text-sm font-bold text-white">New Members</p>
-                        <p class="text-xs text-gray-400 mt-0.5">Last 7 days</p>
+        
+        <div class="col-md-4">
+            <div class="stat-card">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <div class="rounded-circle d-flex align-items-center justify-content-center" 
+                             style="width: 60px; height: 60px; background: linear-gradient(135deg, #10b981, #0d9488);">
+                            <i class="bi bi-stars text-white fs-4"></i>
+                        </div>
                     </div>
-                    <span class="flex h-7 min-w-[1.75rem] items-center justify-center rounded-full px-2 text-xs font-bold"
-                          style="background:linear-gradient(135deg,#f43f5e,#a855f7);color:#fff;box-shadow:0 2px 8px rgba(244,63,94,.3)">
-                        {{ $newUsers->count() }}
-                    </span>
+                    <div class="ms-3">
+                        <p class="text-white-50 text-uppercase small mb-1 fw-semibold">AI Scoring</p>
+                        <h3 class="text-white fw-bold mb-0">Top 10</h3>
+                    </div>
                 </div>
-
-                {{-- Member list --}}
-                @if($newUsers->isEmpty())
-                    <div class="flex flex-col items-center justify-center px-6 py-12 text-center">
-                        <span class="mb-3 text-4xl">👥</span>
-                        <p class="text-sm text-gray-400 font-medium">No members found</p>
-                        <p class="text-xs text-gray-500 mt-1">New members will appear here</p>
-                    </div>
-                @else
-                    <ul class="sm-member-list" role="listbox">
-                        @foreach($newUsers as $nu)
-                            @php
-                                $photoUrl = $nu->primaryPhoto?->thumbnail_url;
-                                $active   = $focusUserId === $nu->id;
-                            @endphp
-                            <li role="option" aria-selected="{{ $active ? 'true' : 'false' }}">
-                                <button
-                                    wire:click="selectUser({{ $nu->id }})"
-                                    wire:loading.class="opacity-50 pointer-events-none"
-                                    wire:target="selectUser({{ $nu->id }})"
-                                    class="sm-member-row {{ $active ? 'active' : '' }}"
-                                >
-                                    {{-- Avatar --}}
-                                    <div class="relative shrink-0">
-                                        @if($photoUrl)
-                                            <img src="{{ $photoUrl }}" alt="{{ $nu->name }}"
-                                                 class="h-11 w-11 rounded-full object-cover"
-                                                 style="box-shadow:0 0 0 2px {{ $active ? '#f43f5e' : 'rgba(255,255,255,.12)' }}" />
-                                        @else
-                                            <div class="flex h-11 w-11 items-center justify-center rounded-full text-sm font-bold text-white"
-                                                 style="background:linear-gradient(135deg,#2d1050,#4a0e6e);box-shadow:0 0 0 2px {{ $active ? '#f43f5e' : 'rgba(255,255,255,.12)' }}">
-                                                {{ strtoupper(substr($nu->name,0,1)) }}
-                                            </div>
-                                        @endif
-                                        @if(isset($nu->last_active_at) && \Carbon\Carbon::parse($nu->last_active_at)->diffInMinutes() < 30)
-                                            <span class="sm-online absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2"
-                                                  style="background:#22c55e;border-color:#1a0a2e;box-shadow:0 0 8px rgba(34,197,94,.5)"></span>
-                                        @endif
-                                    </div>
-
-                                    {{-- Info --}}
-                                    <div class="min-w-0 flex-1">
-                                        <div class="flex items-center gap-1.5 mb-0.5">
-                                            <p class="truncate text-sm font-semibold {{ $active ? '' : 'text-white' }}"
-                                               style="{{ $active ? 'color:#fb7185' : '' }}">{{ $nu->name }}</p>
-                                            @if($nu->is_premium)
-                                                <span class="shrink-0 rounded px-1.5 py-0.5 text-[9px] font-black" style="background:#f59e0b;color:#000">★</span>
-                                            @endif
-                                            @if($nu->is_verified)
-                                                <span class="shrink-0 rounded px-1 text-[9px] font-bold" style="background:#0ea5e9;color:#fff">✓</span>
-                                            @endif
-                                        </div>
-                                        <p class="text-xs text-gray-400">
-                                            {{ ucfirst($nu->gender ?? '—') }}{{ $nu->age ? ' · '.$nu->age.' yrs' : '' }}
-                                        </p>
-                                        <p class="text-[10px] text-gray-500">{{ $nu->created_at->diffForHumans() }}</p>
-                                    </div>
-
-                                    @if($active)
-                                        <svg class="h-4 w-4 shrink-0 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                                        </svg>
-                                    @endif
-                                </button>
-                            </li>
-                        @endforeach
-                    </ul>
-                @endif
             </div>
-        </aside>
-
-        {{-- ────────────────────────── MAIN PANEL ─────────────────────── --}}
-        <div class="sm-main">
-
-            @if(! $focusUserId)
-                {{-- ── Empty / landing state ──────────────────────────── --}}
-                <div class="flex flex-col items-center justify-center rounded-2xl py-20 text-center"
-                     style="background:linear-gradient(160deg,rgba(30,10,46,.7),rgba(45,16,80,.5));border:2px dashed rgba(244,63,94,.25);min-height:400px">
-                    <div class="mb-6 flex h-24 w-24 items-center justify-center rounded-full"
-                         style="background:radial-gradient(circle,rgba(244,63,94,.2),rgba(168,85,247,.1));border:2px solid rgba(244,63,94,.3);box-shadow:0 8px 24px rgba(244,63,94,.2)">
-                        <svg class="h-12 w-12" style="color:rgba(244,63,94,.6)" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                                  d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/>
-                        </svg>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="stat-card">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <div class="rounded-circle d-flex align-items-center justify-content-center" 
+                             style="width: 60px; height: 60px; background: linear-gradient(135deg, #3b82f6, #2563eb);">
+                            <i class="bi bi-heart-fill text-white fs-4"></i>
+                        </div>
                     </div>
-                    <h3 class="mb-3 text-xl font-bold text-white">Select a member to begin</h3>
-                    <p class="text-sm text-gray-400 max-w-md leading-relaxed">
-                        Pick any new member from the sidebar to see their AI-powered compatibility suggestions.
-                    </p>
-                    <div class="mt-10 flex flex-wrap items-center justify-center gap-6 text-xs text-gray-500">
-                        <span class="flex items-center gap-2">
-                            <span class="flex h-8 w-8 items-center justify-center rounded-lg text-base"
-                                  style="background:rgba(244,63,94,.15)">🧠</span>
-                            <span>AI scoring</span>
-                        </span>
-                        <span class="flex items-center gap-2">
-                            <span class="flex h-8 w-8 items-center justify-center rounded-lg text-base"
-                                  style="background:rgba(168,85,247,.15)">💞</span>
-                            <span>Auto-match</span>
-                        </span>
-                        <span class="flex items-center gap-2">
-                            <span class="flex h-8 w-8 items-center justify-center rounded-lg text-base"
-                                  style="background:rgba(16,185,129,.15)">⚡</span>
-                            <span>Instant notifications</span>
+                    <div class="ms-3">
+                        <p class="text-white-50 text-uppercase small mb-1 fw-semibold">Admin Match</p>
+                        <h3 class="text-white fw-bold mb-0">Force & Notify</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Main Content Area --}}
+    <div class="row g-4">
+        
+        {{-- Left Sidebar: Member List --}}
+        <div class="col-lg-3">
+            <div class="card border-0" style="background: linear-gradient(145deg, rgba(30, 10, 46, 0.95), rgba(45, 16, 80, 0.85)); border: 1px solid rgba(244, 63, 94, 0.25) !important; border-radius: 20px;">
+                <div class="card-header border-0 py-3" style="background: rgba(244, 63, 94, 0.1); border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-white fw-bold mb-0">New Members</h6>
+                            <small class="text-white-50">Last 7 days</small>
+                        </div>
+                        <span class="badge rounded-pill" style="background: linear-gradient(135deg, #f43f5e, #a855f7);">
+                            {{ $newUsers->count() }}
                         </span>
                     </div>
                 </div>
+                
+                <div class="member-list">
+                    @forelse($newUsers as $nu)
+                        @php
+                            $photoUrl = $nu->primaryPhoto?->thumbnail_url;
+                            $active = $focusUserId === $nu->id;
+                            $isOnline = isset($nu->last_active_at) && \Carbon\Carbon::parse($nu->last_active_at)->diffInMinutes() < 30;
+                        @endphp
+                        
+                        <button
+                            wire:click="selectUser({{ $nu->id }})"
+                            wire:loading.class="opacity-50"
+                            class="member-item {{ $active ? 'active' : '' }}"
+                            data-user-id="{{ $nu->id }}"
+                        >
+                            <div class="d-flex align-items-center">
+                                <div class="position-relative flex-shrink-0">
+                                    @if($photoUrl)
+                                        <img src="{{ $photoUrl }}" alt="{{ $nu->name }}" 
+                                             class="rounded-circle" 
+                                             style="width: 48px; height: 48px; object-fit: cover; border: 2px solid {{ $active ? '#f43f5e' : 'rgba(255,255,255,0.2)' }};">
+                                    @else
+                                        <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold"
+                                             style="width: 48px; height: 48px; background: linear-gradient(135deg, #2d1050, #4a0e6e); border: 2px solid {{ $active ? '#f43f5e' : 'rgba(255,255,255,0.2)' }};">
+                                            {{ strtoupper(substr($nu->name, 0, 1)) }}
+                                        </div>
+                                    @endif
+                                    @if($isOnline)
+                                        <span class="online-status position-absolute bottom-0 end-0"></span>
+                                    @endif
+                                </div>
+                                
+                                <div class="ms-3 flex-grow-1 text-start">
+                                    <div class="d-flex align-items-center gap-2 mb-1">
+                                        <span class="text-white fw-semibold" style="font-size: 0.9rem; {{ $active ? 'color: #fb7185 !important;' : '' }}">
+                                            {{ $nu->name }}
+                                        </span>
+                                        @if($nu->is_premium)
+                                            <span class="badge badge-premium" style="font-size: 0.65rem;">★</span>
+                                        @endif
+                                        @if($nu->is_verified)
+                                            <span class="badge-verified" style="font-size: 0.65rem;">✓</span>
+                                        @endif
+                                    </div>
+                                    <small class="text-white-50">
+                                        {{ ucfirst($nu->gender ?? '—') }}{{ $nu->age ? ' · ' . $nu->age . ' yrs' : '' }}
+                                    </small>
+                                    <br>
+                                    <small class="text-white-50" style="font-size: 0.75rem;">
+                                        {{ $nu->created_at->diffForHumans() }}
+                                    </small>
+                                </div>
+                                
+                                @if($active)
+                                    <i class="bi bi-chevron-right text-danger"></i>
+                                @endif
+                            </div>
+                        </button>
+                    @empty
+                        <div class="text-center py-5">
+                            <i class="bi bi-people fs-1 text-white-50 mb-3"></i>
+                            <p class="text-white-50 mb-0">No members found</p>
+                        </div>
+                    @endforelse
+                </div>
+            </div>
+        </div>
 
+        {{-- Right Content: Selected User & Matches --}}
+        <div class="col-lg-9">
+            @if(!$focusUserId)
+                {{-- Empty State --}}
+                <div class="empty-state">
+                    <div class="mb-4">
+                        <div class="rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                             style="width: 100px; height: 100px; background: radial-gradient(circle, rgba(244, 63, 94, 0.2), rgba(168, 85, 247, 0.1)); border: 2px solid rgba(244, 63, 94, 0.3);">
+                            <i class="bi bi-stars" style="font-size: 3rem; color: rgba(244, 63, 94, 0.6);"></i>
+                        </div>
+                    </div>
+                    <h3 class="text-white fw-bold mb-3">Select a member to begin</h3>
+                    <p class="text-white-50 mb-4">Pick any new member from the sidebar to see their AI-powered compatibility suggestions.</p>
+                    <div class="d-flex justify-content-center gap-4 mt-4">
+                        <div class="text-center">
+                            <div class="rounded-circle d-inline-flex align-items-center justify-content-center mb-2"
+                                 style="width: 50px; height: 50px; background: rgba(244, 63, 94, 0.15);">
+                                <span style="font-size: 1.5rem;">🧠</span>
+                            </div>
+                            <p class="text-white-50 small mb-0">AI Scoring</p>
+                        </div>
+                        <div class="text-center">
+                            <div class="rounded-circle d-inline-flex align-items-center justify-content-center mb-2"
+                                 style="width: 50px; height: 50px; background: rgba(168, 85, 247, 0.15);">
+                                <span style="font-size: 1.5rem;">💞</span>
+                            </div>
+                            <p class="text-white-50 small mb-0">Auto-match</p>
+                        </div>
+                        <div class="text-center">
+                            <div class="rounded-circle d-inline-flex align-items-center justify-content-center mb-2"
+                                 style="width: 50px; height: 50px; background: rgba(16, 185, 129, 0.15);">
+                                <span style="font-size: 1.5rem;">⚡</span>
+                            </div>
+                            <p class="text-white-50 small mb-0">Instant notifications</p>
+                        </div>
+                    </div>
+                </div>
             @else
                 @php
-                    $focusUser  = \App\Models\User::with(['profile.interests','primaryPhoto'])->find($focusUserId);
+                    $focusUser = \App\Models\User::with(['profile.interests', 'primaryPhoto'])->find($focusUserId);
                     $focusPhoto = $focusUser?->primaryPhoto;
                 @endphp
 
-                @if(! $focusUser)
-                    <div class="rounded-xl px-4 py-5 text-center text-sm"
-                         style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:#fca5a5">
-                        ⚠ User not found.
-                    </div>
-                @else
-
-                    {{-- ── Focus user hero ─────────────────────────────── --}}
-                    <div class="mb-6 overflow-hidden rounded-2xl"
-                         style="background:linear-gradient(140deg,rgba(30,10,46,.95),rgba(45,16,80,.9),rgba(26,10,46,.95));border:1px solid rgba(244,63,94,.35);box-shadow:0 10px 40px rgba(244,63,94,.15)">
-                        <div class="h-1 w-full" style="background:linear-gradient(90deg,#f43f5e,#a855f7,#3b82f6)"></div>
-                        <div class="flex flex-col gap-5 p-6 sm:flex-row sm:items-center sm:gap-6">
-
-                            {{-- Avatar --}}
-                            <div class="relative shrink-0 self-start sm:self-center">
-                                @if($focusPhoto)
-                                    <img src="{{ $focusPhoto->thumbnail_url }}" alt="{{ $focusUser->name }}"
-                                         class="h-20 w-20 rounded-2xl object-cover"
-                                         style="box-shadow:0 0 0 3px #f43f5e,0 10px 30px rgba(244,63,94,.4)" />
-                                @else
-                                    <div class="flex h-20 w-20 items-center justify-center rounded-2xl text-3xl font-black text-white"
-                                         style="background:linear-gradient(135deg,#f43f5e,#a855f7);box-shadow:0 10px 30px rgba(244,63,94,.4)">
-                                        {{ strtoupper(substr($focusUser->name,0,1)) }}
+                @if($focusUser)
+                    {{-- Focus User Hero Card --}}
+                    <div class="card border-0 mb-4" style="background: linear-gradient(145deg, rgba(30, 10, 46, 0.98), rgba(45, 16, 80, 0.95)); border: 1px solid rgba(244, 63, 94, 0.4) !important; border-radius: 20px; box-shadow: 0 10px 40px rgba(244, 63, 94, 0.2);">
+                        <div style="height: 4px; background: linear-gradient(90deg, #f43f5e, #a855f7, #3b82f6);"></div>
+                        <div class="card-body p-4">
+                            <div class="row align-items-center">
+                                <div class="col-auto">
+                                    @if($focusPhoto)
+                                        <img src="{{ $focusPhoto->thumbnail_url }}" alt="{{ $focusUser->name }}"
+                                             class="rounded-3"
+                                             style="width: 100px; height: 100px; object-fit: cover; border: 3px solid #f43f5e; box-shadow: 0 8px 24px rgba(244, 63, 94, 0.4);">
+                                    @else
+                                        <div class="rounded-3 d-flex align-items-center justify-content-center text-white fw-bold"
+                                             style="width: 100px; height: 100px; font-size: 2.5rem; background: linear-gradient(135deg, #f43f5e, #a855f7); box-shadow: 0 8px 24px rgba(244, 63, 94, 0.4);">
+                                            {{ strtoupper(substr($focusUser->name, 0, 1)) }}
+                                        </div>
+                                    @endif
+                                </div>
+                                
+                                <div class="col">
+                                    <div class="d-flex align-items-center gap-2 mb-2">
+                                        <h2 class="text-white fw-bold mb-0">{{ $focusUser->name }}</h2>
+                                        @if($focusUser->is_premium)
+                                            <span class="badge-premium">★ PREMIUM</span>
+                                        @endif
+                                        @if($focusUser->is_verified)
+                                            <span class="badge-verified">✓ VERIFIED</span>
+                                        @endif
                                     </div>
-                                @endif
-                                <span class="absolute -bottom-1.5 -right-1.5 flex h-6 w-6 items-center justify-center rounded-full text-xs"
-                                      style="background:linear-gradient(135deg,#f43f5e,#a855f7);box-shadow:0 3px 10px rgba(244,63,94,.6)">✦</span>
-                            </div>
-
-                            {{-- Details --}}
-                            <div class="flex-1 min-w-0">
-                                <div class="mb-2 flex flex-wrap items-center gap-2">
-                                    <h2 class="text-xl font-black text-white leading-none">{{ $focusUser->name }}</h2>
-                                    @if($focusUser->is_premium)
-                                        <span class="rounded-full px-2.5 py-1 text-[10px] font-bold"
-                                              style="background:linear-gradient(90deg,#f59e0b,#f97316);color:#fff;box-shadow:0 2px 8px rgba(245,158,11,.3)">★ PREMIUM</span>
-                                    @endif
-                                    @if($focusUser->is_verified)
-                                        <span class="rounded-full px-2.5 py-1 text-[10px] font-bold"
-                                              style="background:rgba(14,165,233,.2);border:1px solid rgba(14,165,233,.4);color:#7dd3fc">✓ VERIFIED</span>
+                                    <div class="text-white-50 mb-2">
+                                        <span>{{ ucfirst($focusUser->gender ?? 'Unknown') }}</span>
+                                        @if($focusUser->age)<span> · {{ $focusUser->age }} years old</span>@endif
+                                        <span> · Seeking <strong class="text-white">{{ ucfirst($focusUser->seeking ?? 'everyone') }}</strong></span>
+                                        @if($focusUser->profile?->city)
+                                            <span> · <i class="bi bi-geo-alt"></i> {{ $focusUser->profile->city }}{{ $focusUser->profile->country ? ', ' . $focusUser->profile->country : '' }}</span>
+                                        @endif
+                                    </div>
+                                    @if($focusUser->profile?->headline)
+                                        <p class="text-white-50 fst-italic mb-0 small">"{{ Str::limit($focusUser->profile->headline, 100) }}"</p>
                                     @endif
                                 </div>
-                                <div class="flex flex-wrap gap-x-4 gap-y-2 text-sm text-gray-400">
-                                    <span class="font-medium">{{ ucfirst($focusUser->gender ?? 'Unknown') }}</span>
-                                    @if($focusUser->age)<span>· {{ $focusUser->age }} years old</span>@endif
-                                    <span>· Seeking <strong class="text-white">{{ ucfirst($focusUser->seeking ?? 'everyone') }}</strong></span>
-                                    @if($focusUser->profile?->city)
-                                        <span>· 📍 {{ $focusUser->profile->city }}{{ $focusUser->profile->country ? ', '.$focusUser->profile->country : '' }}</span>
-                                    @endif
+                                
+                                <div class="col-auto text-end">
+                                    <p class="text-white-50 text-uppercase small fw-semibold mb-1" style="font-size: 0.7rem;">Joined</p>
+                                    <p class="text-white fw-bold mb-1">{{ $focusUser->created_at->format('M d, Y') }}</p>
+                                    <p class="text-white-50 small mb-0">{{ $focusUser->created_at->diffForHumans() }}</p>
                                 </div>
-                                @if($focusUser->profile?->headline)
-                                    <p class="mt-2 text-sm italic text-gray-500">"{{ Str::limit($focusUser->profile->headline,100) }}"</p>
-                                @endif
-                            </div>
-
-                            {{-- Joined --}}
-                            <div class="shrink-0 sm:text-right">
-                                <p class="text-[10px] font-semibold uppercase tracking-widest text-gray-500">Joined</p>
-                                <p class="text-base font-bold text-white mt-1">{{ $focusUser->created_at->format('M d, Y') }}</p>
-                                <p class="text-xs text-gray-500 mt-0.5">{{ $focusUser->created_at->diffForHumans() }}</p>
                             </div>
                         </div>
                     </div>
 
-                    {{-- ── Suggestions ─────────────────────────────────── --}}
+                    {{-- Compatibility Matches --}}
                     @if($suggestions->isEmpty())
-                        <div class="flex flex-col items-center justify-center rounded-2xl py-16 text-center"
-                             style="background:rgba(255,255,255,.03);border:2px dashed rgba(255,255,255,.1)">
-                            <span class="mb-4 text-5xl">🤷</span>
-                            <p class="text-base font-semibold text-white mb-2">No compatible candidates found</p>
-                            <p class="text-sm text-gray-400 max-w-md leading-relaxed">
-                                All suitable users may already be matched, or this user's profile needs more preference data.
-                            </p>
+                        <div class="empty-state">
+                            <span style="font-size: 4rem;">🤷</span>
+                            <h4 class="text-white fw-bold mt-3 mb-2">No compatible candidates found</h4>
+                            <p class="text-white-50 mb-0">All suitable users may already be matched, or this user's profile needs more data.</p>
                         </div>
                     @else
-
-                        {{-- Count + legend header --}}
-                        <div class="mb-5 flex flex-wrap items-center gap-3">
-                            <p class="text-base font-semibold text-gray-300">
-                                <span class="font-bold text-white text-lg">{{ $suggestions->count() }}</span> compatibility {{ Str::plural('match', $suggestions->count()) }} found
-                            </p>
-                            <div class="h-px flex-1" style="background:linear-gradient(90deg,rgba(244,63,94,.3),transparent);min-width:40px"></div>
-                            <div class="flex flex-wrap items-center gap-4 text-xs text-gray-400">
-                                <span class="flex items-center gap-1.5">
-                                    <span class="h-2.5 w-2.5 rounded-full bg-emerald-400 inline-block"></span>
-                                    <span>≥70% excellent</span>
-                                </span>
-                                <span class="flex items-center gap-1.5">
-                                    <span class="h-2.5 w-2.5 rounded-full bg-amber-400 inline-block"></span>
-                                    <span>≥40% good</span>
-                                </span>
-                                <span class="flex items-center gap-1.5">
-                                    <span class="h-2.5 w-2.5 rounded-full inline-block" style="background:#6b7280"></span>
-                                    <span>&lt;40% fair</span>
-                                </span>
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <div>
+                                <h5 class="text-white fw-bold mb-0">
+                                    <span class="fs-4">{{ $suggestions->count() }}</span> compatibility {{ Str::plural('match', $suggestions->count()) }} found
+                                </h5>
+                            </div>
+                            <div class="d-flex gap-3 small text-white-50">
+                                <span><span class="badge bg-success"></span> ≥70% excellent</span>
+                                <span><span class="badge bg-warning"></span> ≥40% good</span>
+                                <span><span class="badge bg-secondary"></span> <40% fair</span>
                             </div>
                         </div>
 
-                        {{-- Cards grid --}}
-                        <div class="sm-grid">
+                        <div class="row g-4">
                             @foreach($suggestions as $rank => $item)
                                 @php
                                     $candidate = $item['user'];
-                                    $score     = $item['score'];
+                                    $score = $item['score'];
                                     $candPhoto = $candidate->primaryPhoto;
                                     $interests = $candidate->profile?->interests ?? collect();
-
-                                    [$barColor, $cardBg, $scoreColor] = match(true) {
-                                        $score >= 70 => [
-                                            '#10b981',
-                                            'background:linear-gradient(160deg,rgba(16,185,129,.06),rgba(5,150,105,.03));border:1px solid rgba(16,185,129,.22)',
-                                            '#34d399',
-                                        ],
-                                        $score >= 40 => [
-                                            '#f59e0b',
-                                            'background:linear-gradient(160deg,rgba(245,158,11,.06),rgba(217,119,6,.03));border:1px solid rgba(245,158,11,.18)',
-                                            '#fbbf24',
-                                        ],
-                                        default => [
-                                            '#6b7280',
-                                            'background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.07)',
-                                            '#9ca3af',
-                                        ],
+                                    
+                                    [$barColor, $badgeBg] = match(true) {
+                                        $score >= 70 => ['#10b981', 'success'],
+                                        $score >= 40 => ['#f59e0b', 'warning'],
+                                        default => ['#6b7280', 'secondary'],
                                     };
-
+                                    
                                     $sharedInterests = array_intersect(
                                         $focusUser->profile?->interests->pluck('name')->toArray() ?? [],
                                         $interests->pluck('name')->toArray()
                                     );
-                                    $tags = array_values(array_filter([
-                                        $candidate->profile?->relationship_goal ?? null,
-                                        $candidate->profile?->religion ?? null,
-                                        $candidate->profile?->education ?? null,
-                                    ]));
                                 @endphp
 
-                                <div class="sm-card" style="{{ $cardBg }};box-shadow:0 4px 20px rgba(0,0,0,.3)">
-
-                                    {{-- Photo banner --}}
-                                    @if($candPhoto)
-                                        <div class="relative overflow-hidden" style="height:130px">
-                                            <img src="{{ $candPhoto->thumbnail_url }}" alt="{{ $candidate->name }}"
-                                                 class="h-full w-full object-cover"
-                                                 style="filter:brightness(.72)" />
-                                            <div class="absolute inset-0"
-                                                 style="background:linear-gradient(to top,rgba(0,0,0,.88) 0%,rgba(0,0,0,.1) 55%,transparent 100%)"></div>
-                                            {{-- Rank badge --}}
-                                            <span class="absolute left-3 top-3 flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-black text-white"
-                                                  style="background:rgba(0,0,0,.55);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.18)">#{{ $rank + 1 }}</span>
-                                            {{-- Score ring --}}
-                                            <div class="absolute right-3 top-2.5">
-                                                <svg width="46" height="46" viewBox="0 0 46 46">
-                                                    <circle cx="23" cy="23" r="18" fill="rgba(0,0,0,.4)" stroke="rgba(255,255,255,.1)" stroke-width="3"/>
-                                                    <circle cx="23" cy="23" r="18" fill="none" stroke="{{ $barColor }}" stroke-width="3"
-                                                            stroke-dasharray="113" stroke-dashoffset="{{ max(0, 113 - ($score / 100 * 113)) }}"
-                                                            stroke-linecap="round" transform="rotate(-90 23 23)"
-                                                            class="sm-ring-arc"/>
-                                                    <text x="23" y="27.5" text-anchor="middle" font-size="9" font-weight="900" fill="{{ $barColor }}">{{ $score }}%</text>
-                                                </svg>
-                                            </div>
-                                            {{-- Name over photo --}}
-                                            <div class="absolute bottom-2.5 left-3 right-3">
-                                                <p class="truncate text-sm font-bold text-white leading-tight">{{ $candidate->name }}</p>
-                                                <p class="truncate text-[10px] text-white/50">
-                                                    {{ ucfirst($candidate->gender ?? '?') }}{{ $candidate->age ? ' · '.$candidate->age.' yrs' : '' }}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    @else
-                                        {{-- Gradient placeholder banner --}}
-                                        <div class="relative flex items-center justify-center overflow-hidden" style="height:90px;background:linear-gradient(135deg,#2d1050,#4a0e6e)">
-                                            <span class="select-none text-[3.5rem] font-black text-white/10">{{ strtoupper(substr($candidate->name,0,1)) }}</span>
-                                            <span class="absolute left-3 top-2.5 flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-black text-white"
-                                                  style="background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.18)">#{{ $rank + 1 }}</span>
-                                            <div class="absolute right-3 top-2">
-                                                <svg width="46" height="46" viewBox="0 0 46 46">
-                                                    <circle cx="23" cy="23" r="18" fill="rgba(0,0,0,.3)" stroke="rgba(255,255,255,.1)" stroke-width="3"/>
-                                                    <circle cx="23" cy="23" r="18" fill="none" stroke="{{ $barColor }}" stroke-width="3"
-                                                            stroke-dasharray="113" stroke-dashoffset="{{ max(0, 113 - ($score / 100 * 113)) }}"
-                                                            stroke-linecap="round" transform="rotate(-90 23 23)"
-                                                            class="sm-ring-arc"/>
-                                                    <text x="23" y="27.5" text-anchor="middle" font-size="9" font-weight="900" fill="{{ $barColor }}">{{ $score }}%</text>
-                                                </svg>
-                                            </div>
-                                        </div>
-                                    @endif
-
-                                    {{-- Card body --}}
-                                    <div class="flex flex-1 flex-col gap-2.5 px-3.5 pt-3 pb-2">
-
-                                        {{-- Name (only when no photo) + meta --}}
-                                        @if(! $candPhoto)
-                                            <div>
-                                                <p class="text-sm font-bold text-white">{{ $candidate->name }}</p>
-                                                <p class="text-[10px] text-white/40">
-                                                    {{ ucfirst($candidate->gender ?? '?') }}{{ $candidate->age ? ' · '.$candidate->age.' yrs' : '' }}
-                                                    @if($candidate->is_premium)
-                                                        <span class="ml-1 rounded px-1 text-[9px] font-black" style="background:#f59e0b;color:#000">★</span>
-                                                    @endif
-                                                </p>
-                                            </div>
-                                        @else
-                                            @if($candidate->is_premium)
-                                                <span class="self-start rounded px-1.5 py-0.5 text-[9px] font-black" style="background:#f59e0b;color:#000">★ PREMIUM</span>
-                                            @endif
-                                        @endif
-
-                                        {{-- Location --}}
-                                        @if($candidate->profile?->city)
-                                            <p class="truncate text-[10px] text-white/30">
-                                                📍 {{ $candidate->profile->city }}{{ $candidate->profile->country ? ', '.$candidate->profile->country : '' }}
-                                            </p>
-                                        @endif
-
-                                        {{-- Headline --}}
-                                        @if($candidate->profile?->headline)
-                                            <p class="text-[10px] italic text-white/28 leading-relaxed">"{{ Str::limit($candidate->profile->headline,60) }}"</p>
-                                        @endif
-
-                                        {{-- Profile tags --}}
-                                        @if(count($tags))
-                                            <div class="flex flex-wrap gap-1">
-                                                @foreach(array_slice($tags, 0, 3) as $tag)
-                                                    <span class="sm-chip sm-chip-purple capitalize">{{ $tag }}</span>
-                                                @endforeach
-                                            </div>
-                                        @endif
-
-                                        {{-- Shared interests --}}
-                                        @if(count($sharedInterests) > 0)
-                                            <div>
-                                                <p class="mb-1.5 text-[9px] font-semibold uppercase tracking-wider text-white/20">Shared interests</p>
-                                                <div class="flex flex-wrap gap-1">
-                                                    @foreach(array_slice($sharedInterests, 0, 4) as $int)
-                                                        <span class="sm-chip sm-chip-teal">{{ $int }}</span>
-                                                    @endforeach
-                                                    @if(count($sharedInterests) > 4)
-                                                        <span class="sm-chip" style="background:rgba(255,255,255,.06);color:rgba(255,255,255,.3)">
-                                                            +{{ count($sharedInterests) - 4 }}
-                                                        </span>
-                                                    @endif
+                                <div class="col-md-6 col-xl-4">
+                                    <div class="match-card h-100 d-flex flex-column">
+                                        {{-- Card Image/Header --}}
+                                        @if($candPhoto)
+                                            <div class="position-relative" style="height: 200px;">
+                                                <img src="{{ $candPhoto->thumbnail_url }}" alt="{{ $candidate->name }}"
+                                                     class="w-100 h-100" style="object-fit: cover; filter: brightness(0.7);">
+                                                <div class="position-absolute w-100 h-100 top-0 start-0"
+                                                     style="background: linear-gradient(to top, rgba(0, 0, 0, 0.9) 0%, transparent 60%);"></div>
+                                                
+                                                {{-- Rank Badge --}}
+                                                <span class="position-absolute top-0 start-0 m-3 badge rounded-pill bg-dark fw-bold">
+                                                    #{{ $rank + 1 }}
+                                                </span>
+                                                
+                                                {{-- Score Ring --}}
+                                                <div class="position-absolute top-0 end-0 m-3">
+                                                    <svg width="60" height="60" class="position-relative" style="transform: rotate(-90deg);">
+                                                        <circle cx="30" cy="30" r="26" fill="rgba(0, 0, 0, 0.5)" stroke="rgba(255, 255, 255, 0.2)" stroke-width="4"/>
+                                                        <circle cx="30" cy="30" r="26" fill="none" stroke="{{ $barColor }}" stroke-width="4"
+                                                                stroke-dasharray="163" stroke-dashoffset="{{ 163 - ($score / 100 * 163) }}"
+                                                                stroke-linecap="round" class="score-ring"/>
+                                                        <text x="30" y="35" text-anchor="middle" font-size="14" font-weight="900" fill="{{ $barColor }}"
+                                                              style="transform: rotate(90deg); transform-origin: 30px 30px;">{{ $score }}%</text>
+                                                    </svg>
+                                                </div>
+                                                
+                                                {{-- Name Overlay --}}
+                                                <div class="position-absolute bottom-0 start-0 p-3 w-100">
+                                                    <h5 class="text-white fw-bold mb-1">{{ $candidate->name }}</h5>
+                                                    <p class="text-white-50 mb-0 small">
+                                                        {{ ucfirst($candidate->gender ?? '?') }}{{ $candidate->age ? ' · ' . $candidate->age . ' yrs' : '' }}
+                                                    </p>
                                                 </div>
                                             </div>
-                                        @endif
-                                    </div>
-
-                                    {{-- Footer: progress bar + action --}}
-                                    <div class="px-3.5 pb-3.5 pt-1">
-                                        {{-- Compat bar --}}
-                                        <div class="mb-3">
-                                            <div class="mb-1.5 flex items-center justify-between text-[10px] text-white/30">
-                                                <span>Compatibility score</span>
-                                                <span class="font-bold" style="color:{{ $scoreColor }}">{{ $score }}%</span>
+                                        @else
+                                            <div class="position-relative d-flex align-items-center justify-content-center" 
+                                                 style="height: 150px; background: linear-gradient(135deg, #2d1050, #4a0e6e);">
+                                                <span class="display-1 text-white opacity-25 fw-bold">{{ strtoupper(substr($candidate->name, 0, 1)) }}</span>
+                                                <span class="position-absolute top-0 start-0 m-3 badge rounded-pill bg-dark fw-bold">#{{ $rank + 1 }}</span>
                                             </div>
-                                            <div class="h-1.5 w-full overflow-hidden rounded-full" style="background:rgba(255,255,255,.07)">
-                                                <div class="h-full rounded-full transition-all duration-700"
-                                                     style="width:{{ $score }}%;background:{{ $barColor }}"></div>
+                                        @endif
+
+                                        {{-- Card Body --}}
+                                        <div class="card-body flex-grow-1 d-flex flex-column">
+                                            @if(!$candPhoto)
+                                                <div class="mb-2">
+                                                    <div class="d-flex align-items-center gap-2">
+                                                        <h5 class="text-white fw-bold mb-0">{{ $candidate->name }}</h5>
+                                                        @if($candidate->is_premium)
+                                                            <span class="badge-premium">★</span>
+                                                        @endif
+                                                    </div>
+                                                    <small class="text-white-50">
+                                                        {{ ucfirst($candidate->gender ?? '?') }}{{ $candidate->age ? ' · ' . $candidate->age . ' yrs' : '' }}
+                                                    </small>
+                                                </div>
+                                            @else
+                                                @if($candidate->is_premium)
+                                                    <span class="badge-premium align-self-start mb-2">★ PREMIUM</span>
+                                                @endif
+                                            @endif
+
+                                            @if($candidate->profile?->city)
+                                                <p class="text-white-50 small mb-2">
+                                                    <i class="bi bi-geo-alt"></i> {{ $candidate->profile->city }}{{ $candidate->profile->country ? ', ' . $candidate->profile->country : '' }}
+                                                </p>
+                                            @endif
+
+                                            @if($candidate->profile?->headline)
+                                                <p class="text-white-50 fst-italic small mb-3">"{{ Str::limit($candidate->profile->headline, 60) }}"</p>
+                                            @endif
+
+                                            @if(count($sharedInterests) > 0)
+                                                <div class="mb-3">
+                                                    <p class="text-white-50 text-uppercase fw-semibold mb-2" style="font-size: 0.7rem;">
+                                                        <i class="bi bi-heart-fill text-danger"></i> Shared Interests
+                                                    </p>
+                                                    <div class="d-flex flex-wrap gap-1">
+                                                        @foreach(array_slice($sharedInterests, 0, 4) as $int)
+                                                            <span class="badge bg-info bg-opacity-25 text-info">{{ $int }}</span>
+                                                        @endforeach
+                                                        @if(count($sharedInterests) > 4)
+                                                            <span class="badge bg-secondary bg-opacity-25 text-secondary">+{{ count($sharedInterests) - 4 }}</span>
+                                                        @endif
+                                                    </div>
+                                                </div>
+                                            @endif
+
+                                            <div class="mt-auto">
+                                                {{-- Compatibility Bar --}}
+                                                <div class="mb-3">
+                                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                                        <small class="text-white-50">Compatibility</small>
+                                                        <small class="fw-bold" style="color: {{ $barColor }};">{{ $score }}%</small>
+                                                    </div>
+                                                    <div class="progress" style="height: 8px; background: rgba(255, 255, 255, 0.1);">
+                                                        <div class="progress-bar" role="progressbar" 
+                                                             style="width: {{ $score }}%; background: {{ $barColor }};"
+                                                             aria-valuenow="{{ $score }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                                    </div>
+                                                </div>
+
+                                                {{-- Match Button --}}
+                                                <button
+                                                    wire:click="forceMatch({{ $focusUserId }}, {{ $candidate->id }})"
+                                                    wire:loading.attr="disabled"
+                                                    class="match-btn w-100"
+                                                >
+                                                    <span wire:loading.remove wire:target="forceMatch({{ $focusUserId }}, {{ $candidate->id }})">
+                                                        💞 Force Match
+                                                    </span>
+                                                    <span wire:loading wire:target="forceMatch({{ $focusUserId }}, {{ $candidate->id }})"
+                                                          class="d-flex align-items-center justify-content-center gap-2">
+                                                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                                        Matching…
+                                                    </span>
+                                                </button>
                                             </div>
                                         </div>
-
-                                        {{-- Force match button --}}
-                                        <button
-                                            wire:click="forceMatch({{ $focusUserId }}, {{ $candidate->id }})"
-                                            wire:loading.attr="disabled"
-                                            class="sm-match-btn"
-                                        >
-                                            <span wire:loading.remove wire:target="forceMatch({{ $focusUserId }}, {{ $candidate->id }})">
-                                                💞 Force Match
-                                            </span>
-                                            <span wire:loading wire:target="forceMatch({{ $focusUserId }}, {{ $candidate->id }})"
-                                                  class="flex items-center justify-center gap-1.5">
-                                                <svg class="h-3 w-3 animate-spin" fill="none" viewBox="0 0 24 24">
-                                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-                                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-                                                </svg>
-                                                Matching…
-                                            </span>
-                                        </button>
                                     </div>
                                 </div>
                             @endforeach
@@ -736,524 +638,104 @@
                     @endif
                 @endif
             @endif
-        </div>{{-- /sm-main --}}
-    </div>{{-- /sm-layout --}}
-</div>{{-- /sm-page --}}
+        </div>
+    </div>
+</div>
 
+{{-- Real-time JavaScript Integration --}}
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-// Auto-open sidebar on desktop; keep state across Livewire re-renders
-(function () {
-    function applyState() {
-        const inner = document.getElementById('sm-sidebar-inner');
-        if (!inner) return;
-        // Always open on lg+
-        if (window.innerWidth >= 1024) {
-            inner.classList.add('is-open');
-        }
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize online status tracking
+    const onlineUsers = new Set();
+    
+    // Toast notification system
+    function showToast(title, message, type = 'info') {
+        const toastId = 'toast-' + Date.now();
+        const bgClass = type === 'success' ? 'bg-success' : 
+                       type === 'danger' ? 'bg-danger' : 
+                       type === 'warning' ? 'bg-warning' : 'bg-primary';
+        
+        const toastHtml = `
+            <div id="${toastId}" class="toast align-items-center ${bgClass} text-white border-0" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="d-flex">
+                    <div class="toast-body">
+                        <strong>${title}</strong><br>${message}
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            </div>
+        `;
+        
+        document.getElementById('toast-container').insertAdjacentHTML('beforeend', toastHtml);
+        const toastElement = document.getElementById(toastId);
+        const toast = new bootstrap.Toast(toastElement, { delay: 5000 });
+        toast.show();
+        
+        toastElement.addEventListener('hidden.bs.toast', () => toastElement.remove());
     }
-    applyState();
-    window.addEventListener('resize', applyState);
-    // Livewire re-render hook
-    document.addEventListener('livewire:navigated', applyState);
-    document.addEventListener('livewire:update', () => setTimeout(applyState, 50));
-})();
+    
+    // Livewire event listeners
+    Livewire.on('match-created', (event) => {
+        showToast('New Match!', 'A new match has been created successfully.', 'success');
+        
+        // Play notification sound if available
+        if ('Audio' in window) {
+            const audio = new Audio('/sounds/notification.mp3');
+            audio.play().catch(() => {}); // Fail silently if no sound file
+        }
+        
+        // Request browser notification permission
+        if ('Notification' in window && Notification.permission === 'granted') {
+            new Notification('New Match Created!', {
+                body: 'You successfully created a new match.',
+                icon: '/images/icon-match.png'
+            });
+        }
+    });
+    
+    // Simulate real-time online status updates (replace with actual broadcasting)
+    setInterval(() => {
+        // This would be replaced with actual Echo/Pusher integration
+        document.querySelectorAll('[data-user-id]').forEach(el => {
+            const userId = el.getAttribute('data-user-id');
+            // Randomly simulate online status for demo
+            if (Math.random() > 0.7) {
+                const statusEl = el.querySelector('.online-status');
+                if (statusEl) {
+                    statusEl.style.display = 'block';
+                }
+            }
+        });
+    }, 10000);
+    
+    // Request notification permission on load
+    if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission();
+    }
+    
+    console.log('✅ Real-time features initialized');
+});
+
+/*  
+    TODO: Integration with Laravel Echo/Pusher
+    Uncomment and configure when broadcasting is set up:
+    
+    window.Echo.channel('user-status')
+        .listen('.user.status.changed', (e) => {
+            console.log('User status changed:', e);
+            updateUserOnlineStatus(e.userId, e.isOnline);
+        });
+    
+    window.Echo.private('user.{{ auth()->id() }}')
+        .listen('.match.created', (e) => {
+            showToast('New Match!', `You matched with ${e.otherUser.name}!', 'success');
+        })
+        .listen('.new.notification', (e) => {
+            showToast(e.title, e.message, e.type);
+        });
+*/
 </script>
-
-
-
-/* Gradient glow for active user card */
-.sm-user-active {
-    background: linear-gradient(135deg, rgba(244,63,94,.15) 0%, rgba(168,85,247,.1) 100%) !important;
-    border-left: 3px solid #f43f5e !important;
-}
-/* Score arc ring */
-@keyframes ring-fill { from { stroke-dashoffset: 220; } }
-/* Card hover lift */
-.sm-candidate-card { transition: transform .18s ease, box-shadow .18s ease; }
-.sm-candidate-card:hover { transform: translateY(-3px); box-shadow: 0 16px 40px rgba(0,0,0,.5); }
-/* Pulse dot */
-@keyframes pulse-dot { 0%,100%{opacity:1} 50%{opacity:.35} }
-.sm-pulse { animation: pulse-dot 1.8s infinite; }
-/* Shimmer skeleton */
-@keyframes shimmer { 0%{background-position:-400px 0} 100%{background-position:400px 0} }
-.sm-skeleton {
-    background: linear-gradient(90deg, rgba(255,255,255,.04) 25%, rgba(255,255,255,.09) 50%, rgba(255,255,255,.04) 75%);
-    background-size: 400px 100%;
-    animation: shimmer 1.4s infinite;
-    border-radius: 6px;
-}
-</style>
-
-<div class="flex flex-col gap-5 lg:flex-row lg:items-start" style="min-height:70vh">
-
-    {{-- ══════════════════════════════════════════════════════════
-         LEFT SIDEBAR — New Members
-    ══════════════════════════════════════════════════════════ --}}
-    <div class="w-full shrink-0 lg:w-[280px]">
-        {{-- Sidebar header --}}
-        <div class="mb-3 overflow-hidden rounded-2xl"
-             style="background:linear-gradient(135deg,#1e0a2e 0%,#2d1050 50%,#1a0a2e 100%);border:1px solid rgba(244,63,94,.25)">
-            <div class="px-4 py-3" style="border-bottom:1px solid rgba(255,255,255,.07)">
-                <div class="flex items-center gap-2">
-                    <div class="flex h-7 w-7 items-center justify-center rounded-lg"
-                         style="background:linear-gradient(135deg,#f43f5e,#a855f7)">
-                        <svg class="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                  d="M17 20h5v-2a3 3 0 00-3-3H5a3 3 0 00-3 3v2h5M9 11a4 4 0 110-8 4 4 0 010 8zm6 0a4 4 0 110-8 4 4 0 010 8z"/>
-                        </svg>
-                    </div>
-                    <div>
-                        <p class="text-[11px] font-bold uppercase tracking-widest" style="color:rgba(255,255,255,.5)">New Members</p>
-                        <p class="text-[10px]" style="color:rgba(255,255,255,.3)">Last 7 days</p>
-                    </div>
-                    @php $newUsers = $this->getNewUsers(); @endphp
-                    <span class="ml-auto inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full px-1 text-[10px] font-bold"
-                          style="background:linear-gradient(135deg,#f43f5e,#a855f7);color:#fff">
-                        {{ $newUsers->count() }}
-                    </span>
-                </div>
-            </div>
-
-            {{-- Member list --}}
-            @if($newUsers->isEmpty())
-                <div class="px-4 py-8 text-center">
-                    <div class="mb-2 text-3xl">👥</div>
-                    <p class="text-xs" style="color:rgba(255,255,255,.35)">No new users in the past 7 days.</p>
-                </div>
-            @else
-                <ul class="max-h-[calc(100vh-220px)] overflow-y-auto" style="scrollbar-width:thin;scrollbar-color:rgba(244,63,94,.3) transparent">
-                    @foreach($newUsers as $nu)
-                        @php
-                            $photo    = $nu->primaryPhoto;
-                            $photoUrl = $photo ? $photo->thumbnail_url : null;
-                            $active   = $focusUserId === $nu->id;
-                        @endphp
-                        <li style="border-bottom:1px solid rgba(255,255,255,.05)">
-                            <button
-                                wire:click="selectUser({{ $nu->id }})"
-                                wire:loading.class="opacity-60"
-                                wire:target="selectUser({{ $nu->id }})"
-                                class="group flex w-full items-center gap-3 px-4 py-2.5 text-left transition-all duration-150
-                                       {{ $active ? 'sm-user-active' : 'hover:bg-white/5' }}"
-                            >
-                                {{-- Avatar --}}
-                                <div class="relative shrink-0">
-                                    @if($photoUrl)
-                                        <img src="{{ $photoUrl }}" alt="{{ $nu->name }}"
-                                             class="h-9 w-9 rounded-full object-cover"
-                                             style="box-shadow:0 0 0 2px {{ $active ? '#f43f5e' : 'rgba(255,255,255,.12)' }}" />
-                                    @else
-                                        <div class="flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold"
-                                             style="background:linear-gradient(135deg,#2d1050,#4a0e6e);color:#fff;box-shadow:0 0 0 2px {{ $active ? '#f43f5e' : 'rgba(255,255,255,.12)' }}">
-                                            {{ strtoupper(substr($nu->name, 0, 1)) }}
-                                        </div>
-                                    @endif
-                                    {{-- Online indicator --}}
-                                    @if(isset($nu->last_active_at) && \Carbon\Carbon::parse($nu->last_active_at)->diffInMinutes() < 30)
-                                        <span class="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 sm-pulse"
-                                              style="background:#22c55e;border-color:#1a0a2e"></span>
-                                    @endif
-                                </div>
-
-                                {{-- Info --}}
-                                <div class="min-w-0 flex-1">
-                                    <div class="flex items-center gap-1">
-                                        <p class="truncate text-xs font-semibold {{ $active ? '' : 'text-white/80 group-hover:text-white' }}"
-                                           style="{{ $active ? 'color:#fb7185' : '' }}">
-                                            {{ $nu->name }}
-                                        </p>
-                                        @if($nu->is_premium)
-                                            <span class="shrink-0 rounded px-1 text-[9px] font-black"
-                                                  style="background:#f59e0b;color:#000">★</span>
-                                        @endif
-                                        @if($nu->is_verified)
-                                            <span class="shrink-0 rounded px-1 text-[9px] font-black"
-                                                  style="background:#0ea5e9;color:#fff">✓</span>
-                                        @endif
-                                    </div>
-                                    <p class="text-[10px]" style="color:rgba(255,255,255,.35)">
-                                        {{ ucfirst($nu->gender ?? '—') }}{{ $nu->age ? ' · '.$nu->age.' yrs' : '' }}
-                                    </p>
-                                    <p class="text-[10px]" style="color:rgba(255,255,255,.2)">{{ $nu->created_at->diffForHumans() }}</p>
-                                </div>
-
-                                {{-- Chevron when active --}}
-                                @if($active)
-                                    <svg class="h-4 w-4 shrink-0" style="color:#f43f5e" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                                    </svg>
-                                @endif
-                            </button>
-                        </li>
-                    @endforeach
-                </ul>
-            @endif
-        </div>
-    </div>
-
-    {{-- ══════════════════════════════════════════════════════════
-         RIGHT PANEL — Suggestions
-    ══════════════════════════════════════════════════════════ --}}
-    <div class="flex-1 min-w-0">
-
-        @if(! $focusUserId)
-            {{-- Empty state --}}
-            <div class="flex flex-col items-center justify-center rounded-2xl py-20 text-center"
-                 style="background:linear-gradient(135deg,rgba(30,10,46,.6),rgba(45,16,80,.4));border:1.5px dashed rgba(244,63,94,.2)">
-                <div class="mb-5 flex h-20 w-20 items-center justify-center rounded-full"
-                     style="background:linear-gradient(135deg,rgba(244,63,94,.12),rgba(168,85,247,.12));border:1.5px solid rgba(244,63,94,.2)">
-                    <svg class="h-10 w-10" style="color:rgba(244,63,94,.5)" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                              d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/>
-                    </svg>
-                </div>
-                <h3 class="mb-1 text-base font-bold text-white/70">Select a member to begin</h3>
-                <p class="text-sm" style="color:rgba(255,255,255,.3);max-width:300px">
-                    Pick any new member from the sidebar to see their AI-powered compatibility suggestions.
-                </p>
-                <div class="mt-6 flex items-center gap-6 text-[11px]" style="color:rgba(255,255,255,.25)">
-                    <span>🧠 AI scoring</span>
-                    <span>💞 Auto-match</span>
-                    <span>⚡ Instant notifications</span>
-                </div>
-            </div>
-
-        @else
-            @php
-                $focusUser  = \App\Models\User::with(['profile.interests', 'primaryPhoto'])->find($focusUserId);
-                $focusPhoto = $focusUser?->primaryPhoto;
-            @endphp
-
-            @if(! $focusUser)
-                <div class="rounded-xl py-6 text-center text-sm"
-                     style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:#fca5a5">
-                    User not found.
-                </div>
-            @else
-
-                {{-- ── Focus user hero banner ─────────────────────────────── --}}
-                <div class="mb-5 overflow-hidden rounded-2xl"
-                     style="background:linear-gradient(135deg,#1e0a2e 0%,#2d1050 50%,#1a0a2e 100%);border:1px solid rgba(244,63,94,.3);box-shadow:0 8px 32px rgba(244,63,94,.12)">
-                    {{-- Top gradient line --}}
-                    <div class="h-0.5 w-full" style="background:linear-gradient(90deg,#f43f5e,#a855f7,#3b82f6)"></div>
-
-                    <div class="flex flex-col gap-4 p-5 sm:flex-row sm:items-center">
-                        {{-- Avatar --}}
-                        <div class="relative shrink-0 self-start sm:self-center">
-                            @if($focusPhoto)
-                                <img src="{{ $focusPhoto->thumbnail_url }}" alt="{{ $focusUser->name }}"
-                                     class="h-16 w-16 rounded-2xl object-cover"
-                                     style="box-shadow:0 0 0 3px #f43f5e,0 8px 24px rgba(244,63,94,.35)" />
-                            @else
-                                <div class="flex h-16 w-16 items-center justify-center rounded-2xl text-2xl font-black text-white"
-                                     style="background:linear-gradient(135deg,#f43f5e,#a855f7);box-shadow:0 8px 24px rgba(244,63,94,.35)">
-                                    {{ strtoupper(substr($focusUser->name, 0, 1)) }}
-                                </div>
-                            @endif
-                            {{-- "Analysing" pulse ring --}}
-                            <span class="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full text-[10px]"
-                                  style="background:linear-gradient(135deg,#f43f5e,#a855f7);box-shadow:0 2px 8px rgba(244,63,94,.5)">
-                                ✦
-                            </span>
-                        </div>
-
-                        {{-- Details --}}
-                        <div class="flex-1 min-w-0">
-                            <div class="flex flex-wrap items-center gap-2 mb-1">
-                                <h2 class="text-lg font-black text-white leading-none">{{ $focusUser->name }}</h2>
-                                @if($focusUser->is_premium)
-                                    <span class="rounded-full px-2 py-0.5 text-[10px] font-black"
-                                          style="background:linear-gradient(90deg,#f59e0b,#f97316);color:#fff">
-                                        ★ PREMIUM
-                                    </span>
-                                @endif
-                                @if($focusUser->is_verified)
-                                    <span class="rounded-full px-2 py-0.5 text-[10px] font-bold"
-                                          style="background:rgba(14,165,233,.2);border:1px solid rgba(14,165,233,.4);color:#7dd3fc">
-                                        ✓ VERIFIED
-                                    </span>
-                                @endif
-                            </div>
-                            <div class="flex flex-wrap gap-x-3 gap-y-1 text-xs" style="color:rgba(255,255,255,.5)">
-                                <span>{{ ucfirst($focusUser->gender ?? 'Unknown') }}</span>
-                                @if($focusUser->age)<span>· {{ $focusUser->age }} yrs</span>@endif
-                                <span>· Seeking <strong class="text-white/70">{{ ucfirst($focusUser->seeking ?? 'everyone') }}</strong></span>
-                                @if($focusUser->profile?->city)
-                                    <span>· 📍 {{ $focusUser->profile->city }}{{ $focusUser->profile->country ? ', '.$focusUser->profile->country : '' }}</span>
-                                @endif
-                            </div>
-                            @if($focusUser->profile?->headline)
-                                <p class="mt-1.5 text-xs italic" style="color:rgba(255,255,255,.35)">"{{ Str::limit($focusUser->profile->headline, 80) }}"</p>
-                            @endif
-                        </div>
-
-                        {{-- Joined meta --}}
-                        <div class="shrink-0 text-right">
-                            <p class="text-[10px] font-semibold uppercase tracking-widest" style="color:rgba(255,255,255,.25)">Joined</p>
-                            <p class="text-sm font-bold text-white/60">{{ $focusUser->created_at->format('d M Y') }}</p>
-                            <p class="text-[10px]" style="color:rgba(255,255,255,.25)">{{ $focusUser->created_at->diffForHumans() }}</p>
-                        </div>
-                    </div>
-                </div>
-
-                {{-- ── Suggestions grid ──────────────────────────────────── --}}
-                @if($suggestions->isEmpty())
-                    <div class="flex flex-col items-center justify-center rounded-2xl py-14 text-center"
-                         style="background:rgba(255,255,255,.025);border:1.5px dashed rgba(255,255,255,.1)">
-                        <div class="mb-3 text-4xl">🤷</div>
-                        <p class="text-sm text-white/50">No compatible candidates found.</p>
-                        <p class="mt-1 text-xs text-white/25">All suitable users may already be matched.</p>
-                    </div>
-                @else
-                    {{-- Count header --}}
-                    <div class="mb-3 flex items-center gap-3">
-                        <p class="text-sm font-semibold text-white/60">
-                            <span class="font-black text-white">{{ $suggestions->count() }}</span> compatibility matches found
-                        </p>
-                        <div class="h-px flex-1" style="background:linear-gradient(90deg,rgba(244,63,94,.3),transparent)"></div>
-                        <div class="flex items-center gap-2 text-[10px]" style="color:rgba(255,255,255,.3)">
-                            <span class="flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-emerald-400"></span>≥70%</span>
-                            <span class="flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-amber-400"></span>≥40%</span>
-                            <span class="flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-gray-500"></span>&lt;40%</span>
-                        </div>
-                    </div>
-
-                    <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                        @foreach($suggestions as $rank => $item)
-                            @php
-                                $candidate  = $item['user'];
-                                $score      = $item['score'];
-                                $candPhoto  = $candidate->primaryPhoto;
-                                $interests  = $candidate->profile?->interests ?? collect();
-
-                                // Tiers
-                                if ($score >= 70) {
-                                    $tier      = 'emerald';
-                                    $cardBg    = 'background:linear-gradient(160deg,rgba(16,185,129,.06),rgba(5,150,105,.03));border:1px solid rgba(16,185,129,.25)';
-                                    $barColor  = '#10b981';
-                                    $scoreText = 'color:#34d399';
-                                } elseif ($score >= 40) {
-                                    $tier      = 'amber';
-                                    $cardBg    = 'background:linear-gradient(160deg,rgba(245,158,11,.06),rgba(217,119,6,.03));border:1px solid rgba(245,158,11,.2)';
-                                    $barColor  = '#f59e0b';
-                                    $scoreText = 'color:#fbbf24';
-                                } else {
-                                    $tier      = 'gray';
-                                    $cardBg    = 'background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.07)';
-                                    $barColor  = '#6b7280';
-                                    $scoreText = 'color:#9ca3af';
-                                }
-
-                                $focusInterestNames = $focusUser->profile?->interests->pluck('name')->toArray() ?? [];
-                                $sharedInterests    = array_intersect($focusInterestNames, $interests->pluck('name')->toArray());
-                            @endphp
-
-                            <div class="sm-candidate-card flex flex-col rounded-2xl overflow-hidden"
-                                 style="{{ $cardBg }};box-shadow:0 4px 20px rgba(0,0,0,.3)">
-
-                                {{-- Card photo banner (if has photo) --}}
-                                @if($candPhoto)
-                                    <div class="relative h-28 w-full overflow-hidden">
-                                        <img src="{{ $candPhoto->thumbnail_url }}"
-                                             alt="{{ $candidate->name }}"
-                                             class="h-full w-full object-cover"
-                                             style="filter:brightness(.7)" />
-                                        <div class="absolute inset-0"
-                                             style="background:linear-gradient(to top,rgba(0,0,0,.85) 0%,transparent 60%)"></div>
-
-                                        {{-- Rank badge --}}
-                                        <span class="absolute left-2.5 top-2.5 flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-black"
-                                              style="background:rgba(0,0,0,.6);backdrop-filter:blur(6px);color:#fff;border:1px solid rgba(255,255,255,.2)">
-                                            #{{ $rank + 1 }}
-                                        </span>
-
-                                        {{-- Score ring --}}
-                                        <div class="absolute right-2.5 top-2" style="line-height:0">
-                                            <svg width="44" height="44" viewBox="0 0 44 44">
-                                                <circle cx="22" cy="22" r="18" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="3"/>
-                                                <circle cx="22" cy="22" r="18" fill="none" stroke="{{ $barColor }}" stroke-width="3"
-                                                        stroke-dasharray="113"
-                                                        stroke-dashoffset="{{ 113 - ($score / 100 * 113) }}"
-                                                        stroke-linecap="round"
-                                                        transform="rotate(-90 22 22)"/>
-                                                <text x="22" y="26" text-anchor="middle"
-                                                      font-size="9" font-weight="900" fill="{{ $barColor }}">{{ $score }}%</text>
-                                            </svg>
-                                        </div>
-
-                                        {{-- Name over photo --}}
-                                        <div class="absolute bottom-2 left-3 right-3">
-                                            <p class="truncate text-sm font-bold text-white leading-tight">{{ $candidate->name }}</p>
-                                        </div>
-                                    </div>
-                                @else
-                                    {{-- No photo — gradient banner --}}
-                                    <div class="relative flex h-20 items-center justify-center overflow-hidden"
-                                         style="background:linear-gradient(135deg,#2d1050,#4a0e6e)">
-                                        <span class="text-3xl font-black text-white/20 select-none">{{ strtoupper(substr($candidate->name,0,1)) }}</span>
-                                        <span class="absolute left-2.5 top-2.5 flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-black"
-                                              style="background:rgba(0,0,0,.5);color:#fff;border:1px solid rgba(255,255,255,.2)">#{{ $rank + 1 }}</span>
-                                        <div class="absolute right-2.5 top-2" style="line-height:0">
-                                            <svg width="44" height="44" viewBox="0 0 44 44">
-                                                <circle cx="22" cy="22" r="18" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="3"/>
-                                                <circle cx="22" cy="22" r="18" fill="none" stroke="{{ $barColor }}" stroke-width="3"
-                                                        stroke-dasharray="113" stroke-dashoffset="{{ 113 - ($score / 100 * 113) }}"
-                                                        stroke-linecap="round" transform="rotate(-90 22 22)"/>
-                                                <text x="22" y="26" text-anchor="middle" font-size="9" font-weight="900" fill="{{ $barColor }}">{{ $score }}%</text>
-                                            </svg>
-                                        </div>
-                                    </div>
-                                @endif
-
-                                {{-- Card body --}}
-                                <div class="flex flex-1 flex-col gap-2 p-3">
-                                    {{-- Basic info --}}
-                                    <div>
-                                        @if(!$candPhoto)
-                                            <p class="mb-0.5 text-sm font-bold text-white">{{ $candidate->name }}</p>
-                                        @endif
-                                        <div class="flex flex-wrap items-center gap-1.5 text-[10px]" style="color:rgba(255,255,255,.45)">
-                                            {{ ucfirst($candidate->gender ?? '?') }}
-                                            @if($candidate->age)<span>· {{ $candidate->age }} yrs</span>@endif
-                                            @if($candidate->is_premium)
-                                                <span class="rounded px-1 text-[9px] font-black" style="background:#f59e0b;color:#000">★</span>
-                                            @endif
-                                        </div>
-                                        @if($candidate->profile?->city)
-                                            <p class="mt-0.5 truncate text-[10px]" style="color:rgba(255,255,255,.3)">
-                                                📍 {{ $candidate->profile->city }}{{ $candidate->profile->country ? ', '.$candidate->profile->country : '' }}
-                                            </p>
-                                        @endif
-                                    </div>
-
-                                    {{-- Headline --}}
-                                    @if($candidate->profile?->headline)
-                                        <p class="text-[10px] italic" style="color:rgba(255,255,255,.3)">
-                                            "{{ Str::limit($candidate->profile->headline, 55) }}"
-                                        </p>
-                                    @endif
-
-                                    {{-- Tags --}}
-                                    @php $tags = array_filter([$candidate->profile?->relationship_goal ?? null, $candidate->profile?->religion ?? null, $candidate->profile?->education ?? null]); @endphp
-                                    @if(count($tags))
-                                        <div class="flex flex-wrap gap-1">
-                                            @foreach(array_slice($tags, 0, 3) as $tag)
-                                                <span class="rounded-full px-1.5 py-0.5 text-[9px] font-medium capitalize"
-                                                      style="background:rgba(168,85,247,.15);border:1px solid rgba(168,85,247,.25);color:#c4b5fd">
-                                                    {{ $tag }}
-                                                </span>
-                                            @endforeach
-                                        </div>
-                                    @endif
-
-                                    {{-- Shared interests --}}
-                                    @if(count($sharedInterests) > 0)
-                                        <div>
-                                            <p class="mb-1 text-[9px] uppercase tracking-wider" style="color:rgba(255,255,255,.2)">Shared</p>
-                                            <div class="flex flex-wrap gap-1">
-                                                @foreach(array_slice($sharedInterests, 0, 4) as $int)
-                                                    <span class="rounded-full px-1.5 py-0.5 text-[9px]"
-                                                          style="background:rgba(20,184,166,.15);border:1px solid rgba(20,184,166,.25);color:#5eead4">
-                                                        {{ $int }}
-                                                    </span>
-                                                @endforeach
-                                                @if(count($sharedInterests) > 4)
-                                                    <span class="rounded-full px-1.5 py-0.5 text-[9px]"
-                                                          style="background:rgba(255,255,255,.06);color:rgba(255,255,255,.3)">
-                                                        +{{ count($sharedInterests) - 4 }}
-                                                    </span>
-                                                @endif
-                                            </div>
-                                        </div>
-                                    @endif
-                                </div>
-
-                                {{-- Compat bar + Action --}}
-                                <div class="px-3 pb-3 pt-1">
-                                    <div class="mb-2">
-                                        <div class="mb-1 flex items-center justify-between text-[10px]" style="color:rgba(255,255,255,.3)">
-                                            <span>Compatibility</span>
-                                            <span style="{{ $scoreText }}" class="font-bold">{{ $score }}%</span>
-                                        </div>
-                                        <div class="h-1 w-full overflow-hidden rounded-full" style="background:rgba(255,255,255,.07)">
-                                            <div class="h-full rounded-full transition-all duration-700"
-                                                 style="width:{{ $score }}%;background:{{ $barColor }}"></div>
-                                        </div>
-                                    </div>
-
-                                    <button
-                                        wire:click="forceMatch({{ $focusUserId }}, {{ $candidate->id }})"
-                                        wire:confirm="Force match {{ addslashes($focusUser->name) }} ↔ {{ addslashes($candidate->name) }}?\n\nThis creates a mutual match, ensures cross-likes exist, and opens a shared conversation. Both users will be notified."
-                                        wire:loading.attr="disabled"
-                                        class="group w-full overflow-hidden rounded-xl px-3 py-2 text-xs font-bold text-white transition-all duration-150"
-                                        style="background:linear-gradient(135deg,#f43f5e,#a855f7);box-shadow:0 4px 14px rgba(244,63,94,.3)"
-                                        onmouseover="this.style.boxShadow='0 6px 20px rgba(244,63,94,.55)'"
-                                        onmouseout="this.style.boxShadow='0 4px 14px rgba(244,63,94,.3)'"
-                                    >
-                                        <span wire:loading.remove wire:target="forceMatch({{ $focusUserId }}, {{ $candidate->id }})">
-                                            💞 Force Match
-                                        </span>
-                                        <span wire:loading wire:target="forceMatch({{ $focusUserId }}, {{ $candidate->id }})" class="flex items-center justify-center gap-1.5">
-                                            <svg class="h-3 w-3 animate-spin" fill="none" viewBox="0 0 24 24">
-                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-                                            </svg>
-                                            Matching…
-                                        </span>
-                                    </button>
-                                </div>
-                            </div>
-                        @endforeach
-                    </div>
-                @endif
-            @endif
-        @endif
-    </div>
-</div>
-
-{{-- ── Same-sex match confirmation modal ─────────────────────────────── --}}
-@if($showSameSexModal)
-<div
-    style="position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(0,0,0,.7);backdrop-filter:blur(4px)"
-    x-data x-init="$el.style.opacity=0; setTimeout(()=>$el.style.transition='opacity .25s',0); setTimeout(()=>$el.style.opacity=1,10)"
->
-    <div style="
-        width:100%;max-width:420px;
-        background:linear-gradient(160deg,#1e0a2e,#2d1050);
-        border:1.5px solid rgba(239,68,68,.45);
-        border-radius:20px;overflow:hidden;
-        box-shadow:0 24px 64px rgba(239,68,68,.25),0 0 0 1px rgba(255,255,255,.05);
-    ">
-        <div style="height:3px;background:linear-gradient(90deg,#ef4444,#f97316,#ef4444)"></div>
-        <div style="padding:24px 24px 20px">
-            <div style="display:flex;justify-content:center;margin-bottom:16px">
-                <div style="width:56px;height:56px;border-radius:50%;background:rgba(239,68,68,.15);border:1.5px solid rgba(239,68,68,.35);display:flex;align-items:center;justify-content:center;font-size:1.75rem">⚠️</div>
-            </div>
-            <h3 style="color:#fff;font-size:1.05rem;font-weight:800;text-align:center;margin:0 0 8px">Same-Gender Match Detected</h3>
-            <p style="color:rgba(255,255,255,.55);font-size:.8rem;text-align:center;margin:0 0 6px;line-height:1.6">
-                You are about to force-match two <strong style="color:#fca5a5">{{ $pendingGender }}</strong> users:
-            </p>
-            <div style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);border-radius:12px;padding:10px 16px;text-align:center;margin-bottom:16px">
-                <span style="font-size:.92rem;font-weight:700;color:#fff">{{ $pendingMatchNames }}</span>
-            </div>
-            <p style="color:rgba(255,255,255,.4);font-size:.75rem;text-align:center;margin:0 0 20px;line-height:1.5">
-                This platform is designed for opposite-gender matching. Same-sex matches should only be created if both users have explicitly requested it.
-            </p>
-            <div style="display:flex;gap:10px">
-                <button wire:click="cancelSameSexMatch" wire:loading.attr="disabled"
-                    style="flex:1;padding:10px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:rgba(255,255,255,.75);font-size:.82rem;font-weight:600;cursor:pointer"
-                >Cancel</button>
-                <button wire:click="confirmSameSexMatch" wire:loading.attr="disabled"
-                    style="flex:1;padding:10px;border-radius:12px;border:none;background:linear-gradient(135deg,#ef4444,#f97316);color:#fff;font-size:.82rem;font-weight:700;cursor:pointer;box-shadow:0 4px 16px rgba(239,68,68,.4)"
-                >
-                    <span wire:loading.remove wire:target="confirmSameSexMatch">⚠️ Yes, Force Match Anyway</span>
-                    <span wire:loading wire:target="confirmSameSexMatch">Matching…</span>
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-@endif
 
 </x-filament-panels::page>
 
