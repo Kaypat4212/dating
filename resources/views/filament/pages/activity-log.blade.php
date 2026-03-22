@@ -612,24 +612,34 @@ document.addEventListener('DOMContentLoaded', function() {
     window.addEventListener('beforeunload', () => {
         if (refreshTimer) clearInterval(refreshTimer);
     });
-});
-
-/*
-    TODO: Real-time broadcasting integration
-    Uncomment when broadcasting is configured:
     
-    window.Echo.channel('activity-log')
-        .listen('.new.activity', (e) => {
-            console.log('New activity:', e);
-            showToast('New Activity', e.message, 'info');
-            Livewire.emit('prependActivity', e.activity);
-        });
+    // Laravel Echo real-time broadcasting with Reverb
+    if (window.Echo) {
+        console.log('🔴 Connecting to activity log channels...');
         
-    window.Echo.channel('moderation')
-        .listen('.suspicious.activity', (e) => {
-            showToast('⚠️ Suspicious Activity', e.message, 'warning');
-        });
-*/
+        // Listen for new activity events
+        window.Echo.channel('activity-log')
+            .listen('.new.activity', (e) => {
+                console.log('New activity:', e);
+                showToast('📊 New Activity', e.message || 'New user action recorded', 'info');
+                // Refresh the activity log
+                Livewire.emit('refreshComponent');
+            });
+        
+        // Listen for moderation alerts
+        window.Echo.channel('moderation')
+            .listen('.suspicious.activity', (e) => {
+                console.log('Suspicious activity detected:', e);
+                showToast('⚠️ Suspicious Activity', e.message || 'Flagged activity detected', 'warning');
+                // Refresh to show flagged activity
+                Livewire.emit('refreshComponent');
+            });
+        
+        console.log('✅ Activity log real-time channels connected');
+    } else {
+        console.warn('⚠️ Laravel Echo not available - real-time features disabled');
+    }
+});
 </script>
 
 </x-filament-panels::page>

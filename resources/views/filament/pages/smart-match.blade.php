@@ -715,26 +715,36 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     console.log('✅ Real-time features initialized');
+    
+    // Laravel Echo real-time broadcasting with Reverb
+    if (window.Echo) {
+        console.log('🔴 Connecting to real-time channels...');
+        
+        // Listen for user online status changes
+        window.Echo.channel('user-status')
+            .listen('.user.status.changed', (e) => {
+                console.log('User status changed:', e);
+                updateUserOnlineStatus(e.userId, e.isOnline);
+            });
+        
+        // Listen for private notifications
+        window.Echo.private('user.{{ auth()->id() }}')
+            .listen('.match.created', (e) => {
+                console.log('New match created:', e);
+                showToast('💞 New Match!', `You matched with ${e.otherUser.name}!`, 'success');
+                // Refresh component to show new match
+                Livewire.emit('refreshComponent');
+            })
+            .listen('.new.notification', (e) => {
+                console.log('New notification:', e);
+                showToast(e.title, e.message, e.type || 'info');
+            });
+        
+        console.log('✅ Real-time channels connected');
+    } else {
+        console.warn('⚠️ Laravel Echo not available - real-time features disabled');
+    }
 });
-
-/*  
-    TODO: Integration with Laravel Echo/Pusher
-    Uncomment and configure when broadcasting is set up:
-    
-    window.Echo.channel('user-status')
-        .listen('.user.status.changed', (e) => {
-            console.log('User status changed:', e);
-            updateUserOnlineStatus(e.userId, e.isOnline);
-        });
-    
-    window.Echo.private('user.{{ auth()->id() }}')
-        .listen('.match.created', (e) => {
-            showToast('New Match!', `You matched with ${e.otherUser.name}!', 'success');
-        })
-        .listen('.new.notification', (e) => {
-            showToast(e.title, e.message, e.type);
-        });
-*/
 </script>
 
 </x-filament-panels::page>

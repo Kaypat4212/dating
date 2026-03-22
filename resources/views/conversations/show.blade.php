@@ -56,6 +56,82 @@ main { padding-bottom: 0 !important; }
 .gift-choice:hover { background: #fce4ec; }
 .gift-emoji { font-size: 1.4rem; }
 .gift-label { font-size: .6rem; color: #888; margin-top: 3px; }
+/* ── Matches Stories (Instagram-style) ──────────────────────── */
+.matches-stories-container {
+    background: #fff;
+    border-bottom: 1px solid var(--bs-border-color);
+    padding: 12px 8px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    white-space: nowrap;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+.matches-stories-container::-webkit-scrollbar { display: none; }
+.matches-stories {
+    display: inline-flex;
+    gap: 12px;
+    padding: 0 4px;
+}
+.story-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    text-decoration: none;
+}
+.story-avatar-ring {
+    width: 66px;
+    height: 66px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #f43f5e, #ec4899, #a855f7);
+    padding: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    transition: transform .2s;
+}
+.story-item:hover .story-avatar-ring { transform: scale(1.05); }
+.story-avatar {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    border: 3px solid #fff;
+    object-fit: cover;
+    background: linear-gradient(135deg, #7c3aed, #a855f7);
+}
+.story-avatar-ph {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    border: 3px solid #fff;
+    background: linear-gradient(135deg, #7c3aed, #a855f7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-weight: 700;
+    font-size: 1.3rem;
+}
+.story-online-dot {
+    position: absolute;
+    bottom: 2px;
+    right: 2px;
+    width: 16px;
+    height: 16px;
+    background: #10b981;
+    border: 3px solid #fff;
+    border-radius: 50%;
+}
+.story-name {
+    font-size: 0.7rem;
+    color: #666;
+    max-width: 66px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
 /* ── Redesigned 2-row chat footer ──────────────────────────── */
 .chat-footer {
     flex-direction: column !important;
@@ -207,6 +283,59 @@ main { padding-bottom: 0 !important; }
             <i class="bi bi-person"></i>
         </a>
     </div>
+
+    {{-- -- Matches Stories (Instagram-style) --------------------------------- --}}
+    @php
+        // Get all user's matches with primary photos
+        $allMatches = \App\Models\UserMatch::where(function($q) use ($me) {
+            $q->where('user1_id', $me->id)->orWhere('user2_id', $me->id);
+        })->where('is_active', true)
+          ->with(['user1.primaryPhoto', 'user2.primaryPhoto'])
+          ->latest('matched_at')
+          ->limit(20)
+          ->get()
+          ->map(function($match) use ($me) {
+              $matchUser = $match->user1_id === $me->id ? $match->user2 : $match->user1;
+              $isOnline = $matchUser->last_active_at && $matchUser->last_active_at->gt(now()->subMinutes(10));
+              return (object)[
+                  'user' => $matchUser,
+                  'isOnline' => $isOnline,
+                  'conversationId' => $match->conversation?->id,
+              ];
+          })
+          ->filter(fn($item) => $item->user && $item->conversationId);
+    @endphp
+
+    @if($allMatches->isNotEmpty())
+    <div class="matches-stories-container">
+        <div class="matches-stories">
+            @foreach($allMatches as $matchItem)
+                @php
+                    $matchUser = $matchItem->user;
+                    $isCurrent = $matchUser->id === $other->id;
+                @endphp
+                <a href="{{ route('conversations.show', $matchItem->conversationId) }}" 
+                   class="story-item {{ $isCurrent ? 'opacity-50' : '' }}">
+                    <div class="story-avatar-ring">
+                        @if($matchUser->primaryPhoto)
+                            <img src="{{ $matchUser->primaryPhoto->thumbnail_url }}" 
+                                 alt="{{ $matchUser->name }}" 
+                                 class="story-avatar">
+                        @else
+                            <div class="story-avatar-ph">
+                                {{ strtoupper(substr($matchUser->name, 0, 1)) }}
+                            </div>
+                        @endif
+                        @if($matchItem->isOnline)
+                            <div class="story-online-dot"></div>
+                        @endif
+                    </div>
+                    <span class="story-name">{{ $matchUser->name }}</span>
+                </a>
+            @endforeach
+        </div>
+    </div>
+    @endif
 
     {{-- -- Messages ---------------------------------------------------------- --}}
     <div class="chat-body-scroll" id="chatBody">
