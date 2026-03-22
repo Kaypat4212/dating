@@ -9,7 +9,7 @@ class ReverbControl extends Page
 {
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-signal';
     
-    protected static string $view = 'filament.pages.reverb-control';
+    protected string $view = 'filament.pages.reverb-control';
     
     protected static ?string $navigationLabel = 'Reverb Server';
     
