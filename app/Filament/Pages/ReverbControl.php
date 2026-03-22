@@ -15,7 +15,7 @@ class ReverbControl extends Page
     
     protected static ?string $title = 'Reverb WebSocket Server';
     
-    protected static ?string $navigationGroup = 'System';
+    protected static $navigationGroup = 'System';
     
     protected static ?int $navigationSort = 99;
 
