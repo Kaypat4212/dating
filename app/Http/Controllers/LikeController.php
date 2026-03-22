@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Events\MatchCreated;
 use App\Models\Like;
 use App\Models\SiteSetting;
 use App\Models\User;
@@ -157,7 +156,7 @@ class LikeController extends Controller
             if ($match->wasRecentlyCreated) {
                 $match->conversation()->create();
                 $match->load('conversation');
-                broadcast(new MatchCreated($match))->toOthers();
+                // Match created - notify both users
                 try { $user->notify(new \App\Notifications\NewMatchNotification($match, $sender)); } catch (\Throwable) {}
                 try { $sender->notify(new \App\Notifications\NewMatchNotification($match, $user)); } catch (\Throwable) {}
 

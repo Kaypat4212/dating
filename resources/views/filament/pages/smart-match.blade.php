@@ -16,44 +16,6 @@ body {
     background: #0f0a1a;
 }
 
-/* Real-time Online Status Indicator */
-.online-status {
-    width: 12px;
-    height: 12px;
-    background: #22c55e;
-    border-radius: 50%;
-    border: 2px solid #1a1625;
-    animation: pulse-glow 2s infinite;
-}
-
-@keyframes pulse-glow {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
-    50% { box-shadow: 0 0 0 6px rgba(34, 197, 94, 0); }
-}
-
-/* Typing Indicator */
-.typing-indicator {
-    display: inline-flex;
-    align-items: center;
-    gap: 3px;
-}
-
-.typing-dot {
-    width: 6px;
-    height: 6px;
-    background: #a855f7;
-    border-radius: 50%;
-    animation: typing-bounce 1.4s infinite;
-}
-
-.typing-dot:nth-child(2) { animation-delay: 0.2s; }
-.typing-dot:nth-child(3) { animation-delay: 0.4s; }
-
-@keyframes typing-bounce {
-    0%, 60%, 100% { transform: translate Y(0); }
-    30% { transform: translateY(-10px); }
-}
-
 /* Stat Cards */
 .stat-card {
     background: linear-gradient(135deg, rgba(30, 10, 46, 0.9), rgba(45, 16, 80, 0.7));
@@ -214,7 +176,7 @@ body {
 
 @php $newUsers = $this->getNewUsers(); @endphp
 
-{{-- Real-time Toast Container --}}
+{{-- Toast Container --}}
 <div id="toast-container" class="position-fixed top-0 end-0 p-3" style="z-index: 9999;"></div>
 
 <div class="container-fluid px-4 py-4">
@@ -229,9 +191,6 @@ body {
                         Smart Match
                     </h1>
                     <p class="text-white-50 mb-0">AI-powered compatibility matching for new members</p>
-                </div>
-                <div class="badge bg-success px-3 py-2">
-                    <i class="bi bi-broadcast"></i> Real-time Enabled
                 </div>
             </div>
         </div>
@@ -314,14 +273,12 @@ body {
                         @php
                             $photoUrl = $nu->primaryPhoto?->thumbnail_url;
                             $active = $focusUserId === $nu->id;
-                            $isOnline = isset($nu->last_active_at) && \Carbon\Carbon::parse($nu->last_active_at)->diffInMinutes() < 30;
                         @endphp
                         
                         <button
                             wire:click="selectUser({{ $nu->id }})"
                             wire:loading.class="opacity-50"
                             class="member-item {{ $active ? 'active' : '' }}"
-                            data-user-id="{{ $nu->id }}"
                         >
                             <div class="d-flex align-items-center">
                                 <div class="position-relative flex-shrink-0">
@@ -334,9 +291,6 @@ body {
                                              style="width: 48px; height: 48px; background: linear-gradient(135deg, #2d1050, #4a0e6e); border: 2px solid {{ $active ? '#f43f5e' : 'rgba(255,255,255,0.2)' }};">
                                             {{ strtoupper(substr($nu->name, 0, 1)) }}
                                         </div>
-                                    @endif
-                                    @if($isOnline)
-                                        <span class="online-status position-absolute bottom-0 end-0"></span>
                                     @endif
                                 </div>
                                 
@@ -407,9 +361,9 @@ body {
                         <div class="text-center">
                             <div class="rounded-circle d-inline-flex align-items-center justify-content-center mb-2"
                                  style="width: 50px; height: 50px; background: rgba(16, 185, 129, 0.15);">
-                                <span style="font-size: 1.5rem;">⚡</span>
+                                <span style="font-size: 1.5rem;">📊</span>
                             </div>
-                            <p class="text-white-50 small mb-0">Instant notifications</p>
+                            <p class="text-white-50 small mb-0">Compatibility score</p>
                         </div>
                     </div>
                 </div>
@@ -642,13 +596,10 @@ body {
     </div>
 </div>
 
-{{-- Real-time JavaScript Integration --}}
+{{-- JavaScript for SmartMatch --}}
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize online status tracking
-    const onlineUsers = new Set();
-    
     // Toast notification system
     function showToast(title, message, type = 'info') {
         const toastId = 'toast-' + Date.now();
@@ -675,75 +626,12 @@ document.addEventListener('DOMContentLoaded', function() {
         toastElement.addEventListener('hidden.bs.toast', () => toastElement.remove());
     }
     
-    // Livewire event listeners
+    // Livewire event listener for match creation
     Livewire.on('match-created', (event) => {
         showToast('New Match!', 'A new match has been created successfully.', 'success');
-        
-        // Play notification sound if available
-        if ('Audio' in window) {
-            const audio = new Audio('/sounds/notification.mp3');
-            audio.play().catch(() => {}); // Fail silently if no sound file
-        }
-        
-        // Request browser notification permission
-        if ('Notification' in window && Notification.permission === 'granted') {
-            new Notification('New Match Created!', {
-                body: 'You successfully created a new match.',
-                icon: '/images/icon-match.png'
-            });
-        }
     });
     
-    // Simulate real-time online status updates (replace with actual broadcasting)
-    setInterval(() => {
-        // This would be replaced with actual Echo/Pusher integration
-        document.querySelectorAll('[data-user-id]').forEach(el => {
-            const userId = el.getAttribute('data-user-id');
-            // Randomly simulate online status for demo
-            if (Math.random() > 0.7) {
-                const statusEl = el.querySelector('.online-status');
-                if (statusEl) {
-                    statusEl.style.display = 'block';
-                }
-            }
-        });
-    }, 10000);
-    
-    // Request notification permission on load
-    if ('Notification' in window && Notification.permission === 'default') {
-        Notification.requestPermission();
-    }
-    
-    console.log('✅ Real-time features initialized');
-    
-    // Laravel Echo real-time broadcasting with Reverb
-    if (window.Echo) {
-        console.log('🔴 Connecting to real-time channels...');
-        
-        // Listen for user online status changes
-        window.Echo.channel('user-status')
-            .listen('.user.status.changed', (e) => {
-                console.log('User status changed:', e);
-                updateUserOnlineStatus(e.userId, e.isOnline);
-            });
-        
-        // Listen for private notifications
-        window.Echo.private('user.{{ auth()->id() }}')
-            .listen('.match.created', (e) => {
-                console.log('New match created:', e);
-                showToast('💞 New Match!', `You matched with ${e.otherUser.name}!`, 'success');
-                // Refresh component to show new match
-                Livewire.emit('refreshComponent');
-            })
-            .listen('.new.notification', (e) => {
-                console.log('New notification:', e);
-                showToast(e.title, e.message, e.type || 'info');
-            });
-        
-        console.log('✅ Real-time channels connected');
-    } else {
-        console.warn('⚠️ Laravel Echo not available - real-time features disabled');
-    }
+    console.log('✅ SmartMatch features initialized');
 });
 </script>
 </div>

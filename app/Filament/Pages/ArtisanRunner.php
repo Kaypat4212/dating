@@ -80,9 +80,6 @@ class ArtisanRunner extends Page
 
             // Premium expiry job
             'app:expire-premium'        => ['cmd' => 'app:expire-premium',         'args' => [],              'label' => 'app:expire-premium — Expire overdue premium accounts',             'group' => 'App Jobs',     'dangerous' => false],
-
-            // Broadcasting
-            'reverb:start'              => ['cmd' => 'reverb:start',               'args' => [],              'label' => 'reverb:start — Start the Reverb WebSocket server',                 'group' => 'Broadcasting', 'dangerous' => false],
         ];
     }
 

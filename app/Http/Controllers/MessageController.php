@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Events\MessageSent;
 use App\Models\Conversation;
 use App\Models\Message;
 use App\Models\SiteSetting;
@@ -119,8 +118,7 @@ class MessageController extends Controller
 
         $message->load('sender.primaryPhoto');
 
-        broadcast(new MessageSent($message))->toOthers();
-
+        // Notify partner about new message
         $partner = $match->getOtherUser($user->id);
         try { $partner->notify(new \App\Notifications\NewMessageNotification($message, $user)); } catch (\Throwable) {}
 
