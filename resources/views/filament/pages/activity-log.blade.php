@@ -1,5 +1,5 @@
 <x-filament-panels::page>
-
+<div>
 {{-- Include Bootstrap CSS --}}
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
@@ -641,5 +641,5 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
-
+</div>
 </x-filament-panels::page>
