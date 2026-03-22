@@ -55,6 +55,12 @@ body {
     color: #9ca3af;
 }
 
+.status-unavailable {
+    background: rgba(245, 158, 11, 0.15);
+    border: 2px solid rgba(245, 158, 11, 0.4);
+    color: #f59e0b;
+}
+
 @keyframes pulse-ring {
     0%, 100% { transform: scale(1); opacity: 1; }
     50% { transform: scale(1.1); opacity: 0.8; }
@@ -176,6 +182,11 @@ body {
                             <i class="bi bi-x-circle-fill"></i>
                             Server Stopped
                         </div>
+                    @elseif($serverStatus === 'unavailable')
+                        <div class="status-badge status-unavailable">
+                            <i class="bi bi-exclamation-triangle-fill"></i>
+                            Control Unavailable
+                        </div>
                     @else
                         <div class="status-badge status-unknown">
                             <i class="bi bi-question-circle-fill"></i>
@@ -189,7 +200,7 @@ body {
                     <button wire:click="startServer" 
                             class="control-btn btn-start"
                             wire:loading.attr="disabled"
-                            {{ $isRunning ? 'disabled' : '' }}>
+                            {{ ($isRunning || $serverStatus === 'unavailable') ? 'disabled' : '' }}>
                         <i class="bi bi-play-fill me-2"></i>
                         Start Server
                     </button>
@@ -197,14 +208,15 @@ body {
                     <button wire:click="stopServer" 
                             class="control-btn btn-stop"
                             wire:loading.attr="disabled"
-                            {{ !$isRunning ? 'disabled' : '' }}>
+                            {{ (!$isRunning || $serverStatus === 'unavailable') ? 'disabled' : '' }}>
                         <i class="bi bi-stop-fill me-2"></i>
                         Stop Server
                     </button>
 
                     <button wire:click="restartServer" 
                             class="control-btn btn-restart"
-                            wire:loading.attr="disabled">
+                            wire:loading.attr="disabled"
+                            {{ $serverStatus === 'unavailable' ? 'disabled' : '' }}>
                         <i class="bi bi-arrow-repeat me-2"></i>
                         Restart Server
                     </button>

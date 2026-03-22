@@ -30,13 +30,20 @@ class ReverbControl extends Page
 
     public function checkServerStatus(): void
     {
+        // Check if exec() is available
+        if (!function_exists('exec') || in_array('exec', array_map('trim', explode(',', ini_get('disable_functions'))))) {
+            $this->serverStatus = 'unavailable';
+            $this->output = "⚠️ The exec() function is disabled on this server.\nPlease enable it in php.ini or contact your hosting provider.\n\nYou can still start Reverb manually from SSH:\nphp artisan reverb:start";
+            return;
+        }
+
         // Check if Reverb process is running
         if (stripos(PHP_OS, 'WIN') === 0) {
             // Windows
-            exec('tasklist /FI "IMAGENAME eq php.exe" /FO CSV 2>NUL | findstr /I "reverb"', $output, $returnCode);
+            @exec('tasklist /FI "IMAGENAME eq php.exe" /FO CSV 2>NUL | findstr /I "reverb"', $output, $returnCode);
         } else {
             // Linux/Mac
-            exec('ps aux | grep "reverb:start" | grep -v grep', $output, $returnCode);
+            @exec('ps aux | grep "reverb:start" | grep -v grep', $output, $returnCode);
         }
 
         $this->isRunning = !empty($output);
@@ -46,6 +53,17 @@ class ReverbControl extends Page
     public function startServer(): void
     {
         try {
+            // Check if exec() is available
+            if (!function_exists('exec') || in_array('exec', array_map('trim', explode(',', ini_get('disable_functions'))))) {
+                $this->output = "❌ Cannot start server: exec() function is disabled.\nPlease enable it in php.ini or start Reverb manually via SSH:\nphp artisan reverb:start";
+                \Filament\Notifications\Notification::make()
+                    ->title('Server Control Unavailable')
+                    ->danger()
+                    ->body('exec() function is disabled on this server')
+                    ->send();
+                return;
+            }
+
             if ($this->isRunning) {
                 $this->output = "⚠️ Reverb server is already running.\n";
                 return;
@@ -56,11 +74,11 @@ class ReverbControl extends Page
 
             if (stripos(PHP_OS, 'WIN') === 0) {
                 // Windows - Start in background
-                pclose(popen('start /B php ' . base_path('artisan') . ' reverb:start --host=' . $reverbHost . ' --port=' . $reverbPort . ' 2>&1', 'r'));
+                @pclose(@popen('start /B php ' . base_path('artisan') . ' reverb:start --host=' . $reverbHost . ' --port=' . $reverbPort . ' 2>&1', 'r'));
                 $this->output = "🚀 Starting Reverb server on {$reverbHost}:{$reverbPort}...\n";
             } else {
                 // Linux/Mac - Start in background
-                exec('php ' . base_path('artisan') . ' reverb:start --host=' . $reverbHost . ' --port=' . $reverbPort . ' > /dev/null 2>&1 &');
+                @exec('php ' . base_path('artisan') . ' reverb:start --host=' . $reverbHost . ' --port=' . $reverbPort . ' > /dev/null 2>&1 &');
                 $this->output = "🚀 Starting Reverb server on {$reverbHost}:{$reverbPort}...\n";
             }
 
@@ -89,6 +107,17 @@ class ReverbControl extends Page
     public function stopServer(): void
     {
         try {
+            // Check if exec() is available
+            if (!function_exists('exec') || in_array('exec', array_map('trim', explode(',', ini_get('disable_functions'))))) {
+                $this->output = "❌ Cannot stop server: exec() function is disabled.\nPlease enable it in php.ini or stop Reverb manually via SSH or task manager.";
+                \Filament\Notifications\Notification::make()
+                    ->title('Server Control Unavailable')
+                    ->danger()
+                    ->body('exec() function is disabled on this server')
+                    ->send();
+                return;
+            }
+
             if (!$this->isRunning) {
                 $this->output = "⚠️ Reverb server is not running.\n";
                 return;
@@ -96,12 +125,12 @@ class ReverbControl extends Page
 
             if (stripos(PHP_OS, 'WIN') === 0) {
                 // Windows - Kill php processes running reverb
-                exec('taskkill /F /FI "WINDOWTITLE eq *reverb*" 2>NUL', $output, $returnCode);
+                @exec('taskkill /F /FI "WINDOWTITLE eq *reverb*" 2>NUL', $output, $returnCode);
                 // Alternative: kill all php.exe with reverb in command line (more aggressive)
-                exec('wmic process where "commandline like \'%reverb:start%\'" delete 2>NUL', $output2);
+                @exec('wmic process where "commandline like \'%reverb:start%\'" delete 2>NUL', $output2);
             } else {
                 // Linux/Mac
-                exec('pkill -f "reverb:start"');
+                @exec('pkill -f "reverb:start"');
             }
 
             $this->output = "🛑 Stopping Reverb server...\n";
