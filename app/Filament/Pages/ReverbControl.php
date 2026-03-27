@@ -7,17 +7,27 @@ use Illuminate\Support\Facades\Artisan;
 
 class ReverbControl extends Page
 {
-    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-signal';
-    
     protected string $view = 'filament.pages.reverb-control';
     
-    protected static ?string $navigationLabel = 'Reverb Server';
+    public static function getNavigationIcon(): ?string 
+    { 
+        return 'heroicon-o-signal'; 
+    }
     
-    protected static ?string $title = 'Reverb WebSocket Server';
+    public static function getNavigationLabel(): string 
+    { 
+        return 'Reverb Server'; 
+    }
     
-    protected static \UnitEnum|string|null $navigationGroup = 'System';
+    public static function getNavigationGroup(): ?string 
+    { 
+        return 'System'; 
+    }
     
-    protected static ?int $navigationSort = 99;
+    public static function getNavigationSort(): ?int 
+    { 
+        return 99; 
+    }
 
     public string $serverStatus = 'unknown';
     public string $output = '';

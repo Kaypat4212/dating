@@ -58,6 +58,7 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser, Has
         'totp_secret', 'totp_recovery_codes',
         'credit_balance',
         'location_filter_uses',
+        'registration_ip', 'last_login_ip', 'last_login_at',
     ];
 
     protected $hidden = [

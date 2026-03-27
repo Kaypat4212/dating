@@ -35,4 +35,20 @@ return [
         ],
     ],
 
+    'iphub' => [
+        'api_key' => env('IPHUB_API_KEY'),
+        'enabled' => env('VPN_ENABLE_IPHUB', true),
+    ],
+
+    'proxycheck' => [
+        'api_key' => env('PROXYCHECK_API_KEY'),
+        'enabled' => env('VPN_ENABLE_PROXYCHECK', true),
+    ],
+
+    'telegram' => [
+        'bot_token' => env('TELEGRAM_BOT_TOKEN'),
+        'chat_id' => env('TELEGRAM_CHAT_ID'),
+        'enabled' => env('TELEGRAM_NOTIFICATIONS_ENABLED', false),
+    ],
+
 ];

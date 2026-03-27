@@ -34,6 +34,12 @@ class AuthenticatedSessionController extends Controller
         /** @var \App\Models\User $user */
         $user = Auth::user();
 
+        // Update last login IP and timestamp
+        $user->update([
+            'last_login_ip' => $request->ip(),
+            'last_login_at' => now(),
+        ]);
+
         // Send login alert email if the feature is enabled.
         if (SiteSetting::get('email_login_alert_enabled', true)) {
             try {

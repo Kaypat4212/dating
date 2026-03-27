@@ -40,6 +40,7 @@ class RegisteredUserController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
+            'registration_ip' => $request->ip(),
         ]);
 
         // Auto-verify email so users can access the app immediately.

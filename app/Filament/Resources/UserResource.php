@@ -46,6 +46,23 @@ class UserResource extends Resource
                     ->helperText('Prevent this user from viewing the swipe deck.'),
                 Forms\Components\Toggle::make('profile_complete')->label('Profile Complete'),
             ])->columns(2),
+            Section::make('Security & Tracking')->schema([
+                Forms\Components\TextInput::make('registration_ip')
+                    ->label('Registration IP')
+                    ->disabled()
+                    ->helperText('IP address used during account creation'),
+                Forms\Components\TextInput::make('last_login_ip')
+                    ->label('Last Login IP')
+                    ->disabled()
+                    ->helperText('Most recent login IP address'),
+                Forms\Components\DateTimePicker::make('last_login_at')
+                    ->label('Last Login')
+                    ->disabled()
+                    ->helperText('Last successful login timestamp'),
+                Forms\Components\DateTimePicker::make('created_at')
+                    ->label('Account Created')
+                    ->disabled(),
+            ])->columns(2)->collapsible(),
         ]);
     }
 
@@ -67,6 +84,21 @@ class UserResource extends Resource
                 Tables\Columns\IconColumn::make('profile_complete')->label('Profile Done')->boolean(),
                 Tables\Columns\TextColumn::make('credit_balance')->label('Credits')->sortable()->alignRight(),
                 Tables\Columns\TextColumn::make('created_at')->dateTime()->label('Joined')->sortable(),
+                Tables\Columns\TextColumn::make('registration_ip')
+                    ->label('Reg. IP')
+                    ->searchable()
+                    ->copyable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('last_login_ip')
+                    ->label('Last IP')
+                    ->searchable()
+                    ->copyable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('last_login_at')
+                    ->label('Last Login')
+                    ->dateTime()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 Tables\Filters\Filter::make('premium')->query(fn ($query) => $query->where('is_premium', true)),
