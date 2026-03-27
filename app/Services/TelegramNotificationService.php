@@ -13,9 +13,9 @@ class TelegramNotificationService
 
     public function __construct()
     {
-        $this->botToken = config('services.telegram.bot_token', '');
-        $this->chatId = config('services.telegram.chat_id', '');
-        $this->enabled = config('services.telegram.enabled', false);
+        $this->botToken = (string) config('services.telegram.bot_token', '');
+        $this->chatId = (string) config('services.telegram.chat_id', '');
+        $this->enabled = (bool) config('services.telegram.enabled', false);
     }
 
     /**
