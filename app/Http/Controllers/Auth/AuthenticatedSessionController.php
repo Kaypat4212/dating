@@ -34,11 +34,15 @@ class AuthenticatedSessionController extends Controller
         /** @var \App\Models\User $user */
         $user = Auth::user();
 
-        // Update last login IP and timestamp
-        $user->update([
-            'last_login_ip' => $request->ip(),
-            'last_login_at' => now(),
-        ]);
+        // Update last login IP and timestamp (columns may not exist on older DB schemas)
+        try {
+            $user->update([
+                'last_login_ip' => $request->ip(),
+                'last_login_at' => now(),
+            ]);
+        } catch (\Illuminate\Database\QueryException $e) {
+            // Silently skip if columns don't exist yet — run the migration to fix permanently
+        }
 
         // Send login alert email if the feature is enabled.
         if (SiteSetting::get('email_login_alert_enabled', true)) {
