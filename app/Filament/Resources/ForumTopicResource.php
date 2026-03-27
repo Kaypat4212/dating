@@ -22,7 +22,11 @@ class ForumTopicResource extends Resource
 
     public static function getNavigationBadge(): ?string
     {
-        return (string) static::getEloquentQuery()->where('is_flagged', true)->count() ?: null;
+        try {
+            return (string) static::getEloquentQuery()->where('is_flagged', true)->count() ?: null;
+        } catch (\Illuminate\Database\QueryException) {
+            return null;
+        }
     }
 
     public static function form(Schema $schema): Schema

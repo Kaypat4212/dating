@@ -16,7 +16,7 @@ if (($_GET['secret'] ?? '') !== SECRET) {
     die('Forbidden.');
 }
 
-$allowed = ['migrate', 'storage:link', 'optimize:clear', 'config:clear', 'cache:clear', 'view:clear'];
+$allowed = ['migrate', 'db:seed', 'storage:link', 'optimize:clear', 'config:clear', 'cache:clear', 'view:clear'];
 $cmd = $_GET['cmd'] ?? 'migrate';
 
 if (! in_array($cmd, $allowed, true)) {
@@ -34,7 +34,12 @@ $app = require_once $laravelRoot . '/bootstrap/app.php';
 $kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
 $kernel->bootstrap();
 
-$args = $cmd === 'migrate' ? ['--force' => true] : [];
+$args = [];
+if ($cmd === 'migrate') {
+    $args = ['--force' => true];
+} elseif ($cmd === 'db:seed') {
+    $args = ['--class' => 'Database\\Seeders\\CommunityDataSeeder', '--force' => true];
+}
 
 echo '<pre style="font-family:monospace;font-size:13px;">';
 echo "=== Path Diagnostics ===\n";
