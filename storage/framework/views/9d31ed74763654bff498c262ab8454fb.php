@@ -1,0 +1,168 @@
+
+<?php $__env->startSection('title', 'Get Verified'); ?>
+<?php $__env->startSection('content'); ?>
+<div class="container py-4" style="max-width:720px">
+
+    
+    <div class="text-center mb-5">
+        <div class="mb-3">
+            <span style="font-size:3.5rem">✅</span>
+        </div>
+        <h2 class="fw-bold">Identity Verification</h2>
+        <p class="text-muted lead">Earn the <strong>Verified badge</strong> next to your name so everyone knows you're the real deal.</p>
+    </div>
+
+    
+    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($user->is_verified): ?>
+    <div class="alert border-0 rounded-4 shadow-sm mb-4 d-flex align-items-center gap-3"
+         style="background:linear-gradient(135deg,#d1fae5,#a7f3d0)">
+        <span style="font-size:2rem">✅</span>
+        <div>
+            <div class="fw-bold text-success fs-5">You're verified!</div>
+            <div class="text-success-emphasis small">Your profile carries the <strong>Verified</strong> badge. Other members can see it while swiping and on your profile.</div>
+        </div>
+    </div>
+
+    <?php elseif($verification && $verification->isPending()): ?>
+    <div class="alert border-0 rounded-4 shadow-sm mb-4 d-flex align-items-center gap-3"
+         style="background:linear-gradient(135deg,#fef9c3,#fde68a)">
+        <span style="font-size:2rem">⏳</span>
+        <div>
+            <div class="fw-bold text-warning-emphasis fs-5">Under Review</div>
+            <div class="text-warning-emphasis small">Your documents were submitted on <strong><?php echo e($verification->created_at->format('M j, Y')); ?></strong>. Our team usually responds within 24–48 hours. You'll receive a notification once reviewed.</div>
+        </div>
+    </div>
+
+    <?php elseif($verification && $verification->isRejected()): ?>
+    <div class="alert border-0 rounded-4 shadow-sm mb-4 d-flex align-items-center gap-3"
+         style="background:linear-gradient(135deg,#fee2e2,#fecaca)">
+        <span style="font-size:2rem">❌</span>
+        <div>
+            <div class="fw-bold text-danger fs-5">Verification Not Approved</div>
+            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($verification->admin_notes): ?>
+            <div class="text-danger-emphasis small">Reason: <em><?php echo e($verification->admin_notes); ?></em></div>
+            <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+            <div class="text-danger-emphasis small mt-1">Please re-submit with clearer, better-lit photos. Make sure the document text is fully readable.</div>
+        </div>
+    </div>
+    <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+
+    
+    <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
+        <h5 class="fw-bold mb-3"><i class="bi bi-question-circle me-2 text-primary"></i>How verification works</h5>
+        <div class="row g-3">
+            <div class="col-md-4 text-center">
+                <div class="rounded-circle bg-primary bg-opacity-10 d-inline-flex align-items-center justify-content-center mb-2"
+                     style="width:56px;height:56px;font-size:1.6rem">📸</div>
+                <div class="fw-semibold small">Step 1 — Selfie</div>
+                <div class="text-muted" style="font-size:.8rem">Take a clear, front-facing selfie in good lighting. No filters, sunglasses, or hats.</div>
+            </div>
+            <div class="col-md-4 text-center">
+                <div class="rounded-circle bg-primary bg-opacity-10 d-inline-flex align-items-center justify-content-center mb-2"
+                     style="width:56px;height:56px;font-size:1.6rem">🪪</div>
+                <div class="fw-semibold small">Step 2 — ID Document</div>
+                <div class="text-muted" style="font-size:.8rem">Upload a government-issued ID (passport, driver's licence, or national ID). All text must be readable.</div>
+            </div>
+            <div class="col-md-4 text-center">
+                <div class="rounded-circle bg-primary bg-opacity-10 d-inline-flex align-items-center justify-content-center mb-2"
+                     style="width:56px;height:56px;font-size:1.6rem">✅</div>
+                <div class="fw-semibold small">Step 3 — Badge Granted</div>
+                <div class="text-muted" style="font-size:.8rem">Our moderation team reviews submissions within 24–48 hours. Once approved, your badge goes live instantly.</div>
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
+        <h5 class="fw-bold mb-3"><i class="bi bi-star me-2 text-warning"></i>Why get verified?</h5>
+        <ul class="list-unstyled mb-0">
+            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php $__currentLoopData = [
+                ['bi-patch-check-fill text-info',    'Blue verified badge shown next to your name everywhere'],
+                ['bi-shield-check text-success',     'Other members feel safer connecting with you'],
+                ['bi-graph-up-arrow text-primary',   'Verified profiles appear higher in discovery'],
+                ['bi-heart-fill text-danger',        'Get more likes and conversations'],
+                ['bi-lock-fill text-secondary',      'Your documents are stored encrypted and never shared publicly'],
+            ]; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as [$icon, $text]): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+            <li class="d-flex align-items-center gap-2 mb-2">
+                <i class="bi <?php echo e($icon); ?>"></i>
+                <span class="small"><?php echo e($text); ?></span>
+            </li>
+            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+        </ul>
+    </div>
+
+    
+    <div class="alert alert-secondary rounded-4 border-0 small mb-4">
+        <i class="bi bi-lock me-2"></i><strong>Privacy:</strong> Your ID document is stored on a private, encrypted disk and is <strong>never visible</strong> to other users. It is only accessed by our moderation team for verification purposes and deleted after 90 days.
+    </div>
+
+    
+    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(!$user->is_verified && (!$verification || $verification->isRejected())): ?>
+    <div class="card border-0 shadow-sm rounded-4 p-4">
+        <h5 class="fw-bold mb-4"><i class="bi bi-upload me-2 text-primary"></i>Submit Your Verification</h5>
+
+        <form method="POST" action="<?php echo e(route('verify.store')); ?>" enctype="multipart/form-data">
+            <?php echo csrf_field(); ?>
+
+            <div class="mb-4">
+                <label class="form-label fw-semibold">Your Selfie <span class="text-danger">*</span></label>
+                <input type="file" name="selfie" class="form-control <?php $__errorArgs = ['selfie'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> is-invalid <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>"
+                       accept="image/jpeg,image/png,image/webp" required>
+                <div class="form-text">JPG, PNG, or WEBP · max 5 MB · No sunglasses, filters, or hats</div>
+                <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php $__errorArgs = ['selfie'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?><div class="invalid-feedback"><?php echo e($message); ?></div><?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label fw-semibold">Government-Issued ID <span class="text-danger">*</span></label>
+                <input type="file" name="id_document" class="form-control <?php $__errorArgs = ['id_document'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> is-invalid <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>"
+                       accept="image/jpeg,image/png,image/webp,application/pdf" required>
+                <div class="form-text">Passport, driver's licence, or national ID · JPG, PNG, WEBP, or PDF · max 8 MB</div>
+                <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php $__errorArgs = ['id_document'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?><div class="invalid-feedback"><?php echo e($message); ?></div><?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+            </div>
+
+            <div class="form-check mb-4">
+                <input class="form-check-input" type="checkbox" id="privacyConsent" required>
+                <label class="form-check-label small" for="privacyConsent">
+                    I consent to HeartsConnect storing my documents securely for identity verification purposes. I understand they will not be shared publicly and will be deleted after 90 days.
+                </label>
+            </div>
+
+            <button type="submit" class="btn btn-primary rounded-3 px-4">
+                <i class="bi bi-send me-2"></i>Submit for Verification
+            </button>
+        </form>
+    </div>
+    <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+
+</div>
+<?php $__env->stopSection(); ?>
+
+<?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\dating\resources\views\verification\show.blade.php ENDPATH**/ ?>

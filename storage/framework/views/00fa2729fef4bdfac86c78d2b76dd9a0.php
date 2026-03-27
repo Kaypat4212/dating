@@ -1,0 +1,1 @@
+﻿<?php /**PATH C:\xampp\htdocs\dating\resources\views\components\danger-button.blade.php ENDPATH**/ ?>

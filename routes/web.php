@@ -3,6 +3,12 @@
 use App\Http\Controllers\AccountController;
 use App\Http\Controllers\Admin\ImpersonateController;
 use App\Http\Controllers\AiController;
+use App\Http\Controllers\BlogController;
+use App\Http\Controllers\ChatRoomController;
+use App\Http\Controllers\ForumController;
+use App\Http\Controllers\IcebreakerController;
+use App\Http\Controllers\ProfileExtrasController;
+use App\Http\Controllers\TravelController;
 use App\Http\Controllers\BlockController;
 use App\Http\Controllers\FeatureRequestController;
 use App\Http\Controllers\PageController;
@@ -231,6 +237,61 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 ['Content-Disposition' => 'inline']
             );
         })->name('admin.verify.doc');
+
+        // ── Blog ──────────────────────────────────────────────────────────────
+        Route::prefix('blog')->name('blog.')->group(function () {
+            Route::get('/',                           [BlogController::class, 'index'])->name('index');
+            Route::get('/category/{category:slug}',   [BlogController::class, 'category'])->name('category');
+            Route::get('/{post:slug}',                [BlogController::class, 'show'])->name('show');
+            Route::post('/{post:slug}/comment',       [BlogController::class, 'storeComment'])->name('comment.store');
+        });
+
+        // ── Forum ─────────────────────────────────────────────────────────────
+        Route::prefix('forum')->name('forum.')->group(function () {
+            Route::get('/',                                           [ForumController::class, 'index'])->name('index');
+            Route::get('/{category:slug}',                            [ForumController::class, 'category'])->name('category');
+            Route::get('/{category:slug}/new',                        [ForumController::class, 'createTopic'])->name('create-topic');
+            Route::post('/{category:slug}/new',                       [ForumController::class, 'storeTopic'])->name('store-topic');
+            Route::get('/{category:slug}/{topic:slug}',               [ForumController::class, 'topic'])->name('topic');
+            Route::post('/{category:slug}/{topic:slug}/reply',        [ForumController::class, 'storeReply'])->name('reply');
+        });
+
+        // ── Chat Rooms ────────────────────────────────────────────────────────
+        Route::prefix('chat-rooms')->name('chat-rooms.')->group(function () {
+            Route::get('/',                       [ChatRoomController::class, 'index'])->name('index');
+            Route::post('/',                      [ChatRoomController::class, 'store'])->name('store');
+            Route::get('/{chatRoom:slug}',        [ChatRoomController::class, 'show'])->name('show');
+            Route::post('/{chatRoom:slug}/send',  [ChatRoomController::class, 'sendMessage'])->name('send');
+            Route::get('/{chatRoom:slug}/messages',[ChatRoomController::class, 'messages'])->name('messages');
+            Route::post('/{chatRoom:slug}/join',  [ChatRoomController::class, 'join'])->name('join');
+            Route::post('/{chatRoom:slug}/leave', [ChatRoomController::class, 'leave'])->name('leave');
+        });
+
+        // ── Travel Buddy ──────────────────────────────────────────────────────
+        Route::prefix('travel')->name('travel.')->group(function () {
+            Route::get('/',                            [TravelController::class, 'index'])->name('index');
+            Route::post('/',                           [TravelController::class, 'store'])->name('store');
+            Route::delete('/{travelPlan}',             [TravelController::class, 'destroy'])->name('destroy');
+            Route::post('/{travelPlan}/interest',      [TravelController::class, 'expressInterest'])->name('interest');
+        });
+
+        // ── Icebreakers ───────────────────────────────────────────────────────
+        Route::prefix('icebreakers')->name('icebreaker.')->group(function () {
+            Route::get('/',              [IcebreakerController::class, 'index'])->name('index');
+            Route::post('/answer',       [IcebreakerController::class, 'answer'])->name('answer');
+            Route::get('/questions',     [IcebreakerController::class, 'questions'])->name('questions');
+        });
+
+        // ── Profile Extras (Pets & Voice Prompts) ─────────────────────────────
+        Route::prefix('profile/extras')->name('extras.')->group(function () {
+            Route::get('/pets',                    [ProfileExtrasController::class, 'petsIndex'])->name('pets');
+            Route::post('/pets',                   [ProfileExtrasController::class, 'storePet'])->name('pets.store');
+            Route::delete('/pets/{pet}',           [ProfileExtrasController::class, 'destroyPet'])->name('pets.destroy');
+            Route::get('/voice',                   [ProfileExtrasController::class, 'voiceIndex'])->name('voice');
+            Route::post('/voice',                  [ProfileExtrasController::class, 'storeVoice'])->name('voice.store');
+            Route::delete('/voice/{voicePrompt}',  [ProfileExtrasController::class, 'destroyVoice'])->name('voice.destroy');
+            Route::get('/voice/{voicePrompt}/play',[ProfileExtrasController::class, 'playVoice'])->name('voice.play');
+        });
     });
 });
 

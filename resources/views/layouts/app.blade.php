@@ -183,6 +183,23 @@
                         <i class="bi bi-hand-wave me-1"></i>Waves
                     </a>
                 </li>
+                {{-- Community dropdown --}}
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle {{ request()->routeIs('blog.*') || request()->routeIs('forum.*') || request()->routeIs('chat-rooms.*') || request()->routeIs('travel.*') ? 'active fw-semibold' : '' }}"
+                       href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="bi bi-globe-americas me-1"></i>Community
+                    </a>
+                    <ul class="dropdown-menu shadow border-0">
+                        <li><a class="dropdown-item" href="{{ route('blog.index') }}"><i class="bi bi-journal-richtext me-2 text-primary"></i>Blog</a></li>
+                        <li><a class="dropdown-item" href="{{ route('forum.index') }}"><i class="bi bi-people-fill me-2 text-success"></i>Forum</a></li>
+                        <li><a class="dropdown-item" href="{{ route('chat-rooms.index') }}"><i class="bi bi-chat-dots me-2 text-info"></i>Chat Rooms</a></li>
+                        <li><a class="dropdown-item" href="{{ route('travel.index') }}"><i class="bi bi-airplane me-2 text-warning"></i>Travel Buddy</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="{{ route('icebreaker.index') }}"><i class="bi bi-snow2 me-2 text-primary"></i>Icebreakers</a></li>
+                        <li><a class="dropdown-item" href="{{ route('extras.pets') }}"><i class="bi bi-heart-fill me-2 text-danger"></i>My Pets</a></li>
+                        <li><a class="dropdown-item" href="{{ route('extras.voice') }}"><i class="bi bi-mic-fill me-2 text-danger"></i>Voice Prompts</a></li>
+                    </ul>
+                </li>
             </ul>
 
             {{-- Right-side actions --}}
