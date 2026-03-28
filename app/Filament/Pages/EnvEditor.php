@@ -143,11 +143,12 @@ class EnvEditor extends Page
                         Forms\Components\Select::make('mail_mailer')
                             ->label('Mail Driver')
                             ->options([
-                                'smtp' => 'SMTP',
+                                'smtp'     => 'SMTP',
                                 'sendmail' => 'Sendmail',
-                                'mailgun' => 'Mailgun',
-                                'ses' => 'Amazon SES',
-                                'log' => 'Log (Testing)',
+                                'cpanel'   => 'cPanel PHP Mail (/usr/sbin/sendmail -t -i)',
+                                'mailgun'  => 'Mailgun',
+                                'ses'      => 'Amazon SES',
+                                'log'      => 'Log (Testing)',
                             ])
                             ->required(),
                         

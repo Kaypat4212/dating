@@ -43,6 +43,7 @@ class MailSettingsService
             'smtp'     => static::applySmtp(),
             'mailhog'  => static::applyMailhog(),
             'sendmail' => static::applySendmail(),
+            'cpanel'   => static::applyCpanel(),
             'mailgun'  => static::applyMailgun(),
             'ses'      => static::applySes(),
             'postmark' => static::applyPostmark(),
@@ -95,12 +96,20 @@ class MailSettingsService
         ]);
     }
 
-    // ── Sendmail / cPanel PHP Mail ───────────────────────────────────────────
+    // ── Sendmail ─────────────────────────────────────────────────────────────
 
     private static function applySendmail(): void
     {
         $path = SiteSetting::get('mail_sendmail_path') ?: '/usr/sbin/sendmail -bs -i';
         Config::set('mail.mailers.sendmail.path', $path);
+    }
+
+    // ── cPanel PHP Mail (/usr/sbin/sendmail -t -i) ───────────────────────────
+
+    private static function applyCpanel(): void
+    {
+        $path = SiteSetting::get('mail_cpanel_sendmail_path') ?: '/usr/sbin/sendmail -t -i';
+        Config::set('mail.mailers.cpanel.path', $path);
     }
 
     // ── Mailgun ──────────────────────────────────────────────────────────────

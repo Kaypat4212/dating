@@ -51,8 +51,11 @@ class ManageEmailSettings extends Page
             'mail_mailhog_host'    => '127.0.0.1',
             'mail_mailhog_port'    => '1025',
 
-            // Sendmail / cPanel
-            'mail_sendmail_path'   => '/usr/sbin/sendmail -bs -i',
+            // Sendmail
+            'mail_sendmail_path'        => '/usr/sbin/sendmail -bs -i',
+
+            // cPanel PHP Mail
+            'mail_cpanel_sendmail_path' => '/usr/sbin/sendmail -t -i',
 
             // Mailgun
             'mail_mailgun_domain'   => null,
@@ -108,7 +111,8 @@ class ManageEmailSettings extends Page
                                             'log'      => '🪵  Log (development — writes to laravel.log)',
                                             'smtp'     => '📨  SMTP (custom mail server)',
                                             'mailhog'  => '🐷  Mailhog (local dev mail catcher)',
-                                            'sendmail' => '📬  PHP Mail / Sendmail (cPanel hosting)',
+                                            'sendmail' => '📬  Sendmail (generic server sendmail)',
+                                            'cpanel'   => '🖥️  cPanel PHP Mail (/usr/sbin/sendmail -t -i)',
                                             'mailgun'  => '✈️  Mailgun (transactional email API)',
                                             'ses'      => '🌩️  Amazon SES (AWS email)',
                                             'postmark' => '📮  Postmark (transactional email API)',
@@ -183,8 +187,8 @@ class ManageEmailSettings extends Page
                                     ])->columns(2)
                                     ->description('Mailhog catches all outgoing emails locally. Open http://localhost:8025 to view caught mail.'),
 
-                                // ── Sendmail / cPanel ────────────────────────────────────────
-                                Section::make('PHP Mail / Sendmail (cPanel)')
+                                // ── Sendmail ─────────────────────────────────────────────────
+                                Section::make('Sendmail Configuration')
                                     ->icon('heroicon-o-command-line')
                                     ->hidden(fn ($get) => $get('mail_driver') !== 'sendmail')
                                     ->schema([
@@ -192,10 +196,24 @@ class ManageEmailSettings extends Page
                                             ->label('Sendmail Binary Path')
                                             ->default('/usr/sbin/sendmail -bs -i')
                                             ->required()
-                                            ->helperText('On cPanel servers this is usually /usr/sbin/sendmail -bs -i. Check with your host if unsure.')
+                                            ->helperText('Generic sendmail binary path. Default: /usr/sbin/sendmail -bs -i')
                                             ->columnSpanFull(),
                                     ])->columns(1)
-                                    ->description('Uses your server\'s built-in sendmail binary. Ideal for cPanel shared hosting.'),
+                                    ->description('Uses the server\'s sendmail binary in SMTP batch mode (-bs -i).'),
+
+                                // ── cPanel PHP Mail ──────────────────────────────────────────
+                                Section::make('cPanel PHP Mail')
+                                    ->icon('heroicon-o-server-stack')
+                                    ->hidden(fn ($get) => $get('mail_driver') !== 'cpanel')
+                                    ->schema([
+                                        TextInput::make('mail_cpanel_sendmail_path')
+                                            ->label('cPanel Sendmail Path')
+                                            ->default('/usr/sbin/sendmail -t -i')
+                                            ->required()
+                                            ->helperText('Standard path on cPanel shared hosting. Uses -t to read recipients from headers and -i to disable dot-termination. No SMTP credentials needed.')
+                                            ->columnSpanFull(),
+                                    ])->columns(1)
+                                    ->description('Recommended for cPanel shared hosting. Delivers via the server\'s built-in mail agent — no SMTP port or credentials required.'),
 
                                 // ── Mailgun ──────────────────────────────────────────────────
                                 Section::make('Mailgun Configuration')
