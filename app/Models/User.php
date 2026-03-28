@@ -206,6 +206,16 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser, Has
         return $this->hasMany(VoicePrompt::class);
     }
 
+    public function travelPlans(): HasMany
+    {
+        return $this->hasMany(TravelPlan::class);
+    }
+
+    public function travelInterests(): HasMany
+    {
+        return $this->hasMany(TravelInterest::class);
+    }
+
     public function verification(): HasOne
     {
         return $this->hasOne(UserVerification::class);

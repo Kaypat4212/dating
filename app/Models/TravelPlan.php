@@ -10,7 +10,8 @@ class TravelPlan extends Model
 {
     protected $fillable = [
         'user_id', 'destination', 'destination_country',
-        'latitude', 'longitude',
+        'origin_country', 'from_city',
+        'destination_lat', 'destination_lng',
         'travel_from', 'travel_to', 'travel_type',
         'description', 'interests', 'accommodation',
         'is_active', 'is_visible',
@@ -19,13 +20,13 @@ class TravelPlan extends Model
     protected function casts(): array
     {
         return [
-            'interests'   => 'array',
-            'travel_from' => 'date',
-            'travel_to'   => 'date',
-            'is_active'   => 'boolean',
-            'is_visible'  => 'boolean',
-            'latitude'    => 'float',
-            'longitude'   => 'float',
+            'interests'       => 'array',
+            'travel_from'     => 'date',
+            'travel_to'       => 'date',
+            'is_active'       => 'boolean',
+            'is_visible'      => 'boolean',
+            'destination_lat' => 'float',
+            'destination_lng' => 'float',
         ];
     }
 

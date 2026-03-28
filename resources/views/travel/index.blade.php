@@ -132,6 +132,12 @@
                     </label>
                     <input type="text" name="destination" class="form-control form-control-sm" value="{{ request('destination') }}" placeholder="e.g. Paris, Japan…">
                 </div>
+                <div class="col-12 col-md-3">
+                    <label class="form-label small fw-semibold mb-1">
+                        <i class="bi bi-geo me-1 text-muted"></i>Travelling From
+                    </label>
+                    <input type="text" name="from_country" class="form-control form-control-sm" value="{{ request('from_country') }}" placeholder="e.g. Nigeria, UK…">
+                </div>
                 <div class="col-6 col-md-2">
                     <label class="form-label small fw-semibold mb-1">Travel Type</label>
                     <select name="travel_type" class="form-select form-select-sm">
@@ -177,7 +183,7 @@
     @if($plans->isEmpty())
     <div class="text-center py-5 text-muted">
         <i class="bi bi-airplane fs-1 d-block mb-2"></i>
-        @if(request()->hasAny(['destination','travel_type','month','accommodation']))
+        @if(request()->hasAny(['destination','travel_type','month','accommodation','from_country']))
             <p>No plans match your filters. <a href="{{ route('travel.index') }}">Clear filters</a></p>
         @else
             <p>No travel plans yet. Add yours and find travel buddies!</p>
@@ -221,6 +227,14 @@
                         <span class="text-muted fw-normal" style="font-size:.8rem">, {{ $plan->destination_country }}</span>
                         @endif
                     </h6>
+
+                    {{-- Origin --}}
+                    @if($plan->from_city || $plan->origin_country)
+                    <p class="text-muted small mb-1" style="font-size:.8rem">
+                        <i class="bi bi-house-door me-1"></i>From:
+                        {{ implode(', ', array_filter([$plan->from_city, $plan->origin_country])) }}
+                    </p>
+                    @endif
 
                     {{-- Dates --}}
                     <p class="text-muted small mb-2">
@@ -289,8 +303,16 @@
                             <input type="text" name="destination" class="form-control" required maxlength="150" placeholder="e.g. Paris" value="{{ old('destination') }}">
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label fw-semibold">Country *</label>
+                            <label class="form-label fw-semibold">Destination Country *</label>
                             <input type="text" name="destination_country" class="form-control" required maxlength="100" placeholder="France" value="{{ old('destination_country') }}">
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label fw-semibold">Travelling From (City)</label>
+                            <input type="text" name="from_city" class="form-control" maxlength="150" placeholder="e.g. London" value="{{ old('from_city') }}">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">From Country</label>
+                            <input type="text" name="origin_country" class="form-control" maxlength="100" placeholder="UK" value="{{ old('origin_country') }}">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">From Date *</label>

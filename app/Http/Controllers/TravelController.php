@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Conversation;
 use App\Models\TravelInterest;
 use App\Models\TravelPlan;
 use App\Models\User;
+use App\Models\UserMatch;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
@@ -45,6 +47,11 @@ class TravelController extends Controller
             $query->where('accommodation', $request->input('accommodation'));
         }
 
+        // Origin country filter
+        if ($request->filled('from_country')) {
+            $query->where('origin_country', 'like', '%'.$request->input('from_country').'%');
+        }
+
         $plans = $query->orderByDesc('created_at')->paginate(12)->withQueryString();
 
         $myPlans = TravelPlan::where('user_id', $user->id)
@@ -74,6 +81,8 @@ class TravelController extends Controller
         $request->validate([
             'destination'         => ['required', 'string', 'max:150'],
             'destination_country' => ['required', 'string', 'max:100'],
+            'origin_country'      => ['nullable', 'string', 'max:100'],
+            'from_city'           => ['nullable', 'string', 'max:150'],
             'travel_from'         => ['required', 'date', 'after_or_equal:today'],
             'travel_to'           => ['required', 'date', 'after_or_equal:travel_from'],
             'travel_type'         => ['required', 'in:solo,with_friends,seeking_companion'],
@@ -85,6 +94,8 @@ class TravelController extends Controller
             'user_id'             => Auth::id(),
             'destination'         => $request->destination,
             'destination_country' => $request->destination_country,
+            'origin_country'      => $request->origin_country,
+            'from_city'           => $request->from_city,
             'travel_from'         => $request->travel_from,
             'travel_to'           => $request->travel_to,
             'travel_type'         => $request->travel_type,
@@ -134,10 +145,34 @@ class TravelController extends Controller
 
         $travelInterest->update(['status' => $action]);
 
-        $msg = $action === 'accepted'
-            ? 'Connection accepted! You can now message them.'
-            : 'Interest declined.';
+        if ($action === 'accepted') {
+            $planOwnerId    = Auth::id();
+            $interestedUserId = $travelInterest->user_id;
 
-        return back()->with('success', $msg);
+            // Find or create a UserMatch between the two users
+            $match = UserMatch::where(function ($q) use ($planOwnerId, $interestedUserId) {
+                    $q->where('user1_id', $planOwnerId)->where('user2_id', $interestedUserId);
+                })->orWhere(function ($q) use ($planOwnerId, $interestedUserId) {
+                    $q->where('user1_id', $interestedUserId)->where('user2_id', $planOwnerId);
+                })->first();
+
+            if (! $match) {
+                $match = UserMatch::create([
+                    'user1_id'   => $planOwnerId,
+                    'user2_id'   => $interestedUserId,
+                    'matched_at' => now(),
+                    'is_active'  => true,
+                ]);
+            }
+
+            // Find or create the conversation for this match
+            $conversation = Conversation::firstOrCreate(['match_id' => $match->id]);
+
+            return redirect()
+                ->route('conversations.show', $conversation)
+                ->with('success', 'Travel buddy connection accepted! Start the conversation.');
+        }
+
+        return back()->with('success', 'Interest declined.');
     }
 }
