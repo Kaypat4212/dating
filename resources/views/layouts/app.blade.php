@@ -194,10 +194,6 @@
                         <li><a class="dropdown-item" href="{{ route('forum.index') }}"><i class="bi bi-people-fill me-2 text-success"></i>Forum</a></li>
                         <li><a class="dropdown-item" href="{{ route('chat-rooms.index') }}"><i class="bi bi-chat-dots me-2 text-info"></i>Chat Rooms</a></li>
                         <li><a class="dropdown-item" href="{{ route('travel.index') }}"><i class="bi bi-airplane me-2 text-warning"></i>Travel Buddy</a></li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item" href="{{ route('icebreaker.index') }}"><i class="bi bi-snow2 me-2 text-primary"></i>Icebreakers</a></li>
-                        <li><a class="dropdown-item" href="{{ route('extras.pets') }}"><i class="bi bi-heart-fill me-2 text-danger"></i>My Pets</a></li>
-                        <li><a class="dropdown-item" href="{{ route('extras.voice') }}"><i class="bi bi-mic-fill me-2 text-danger"></i>Voice Prompts</a></li>
                     </ul>
                 </li>
             </ul>
@@ -239,6 +235,9 @@
                         <li class="px-3 py-2 text-muted small">{{ auth()->user()->email }}</li>
                         <li><hr class="dropdown-divider my-1"></li>
                         <li><a class="dropdown-item" href="{{ route('profile.edit') }}"><i class="bi bi-pencil-square me-2 text-primary"></i>Edit Profile</a></li>
+                        <li><a class="dropdown-item" href="{{ route('extras.voice') }}"><i class="bi bi-mic-fill me-2 text-danger"></i>Voice Prompts</a></li>
+                        <li><a class="dropdown-item" href="{{ route('extras.pets') }}"><i class="bi bi-heart-fill me-2 text-warning"></i>My Pets</a></li>
+                        <li><a class="dropdown-item" href="{{ route('icebreaker.index') }}"><i class="bi bi-snow2 me-2 text-info"></i>Icebreakers</a></li>
                         <li><a class="dropdown-item" href="{{ route('account.show') }}"><i class="bi bi-gear me-2 text-secondary"></i>Settings</a></li>
                         {{-- Verification link --}}
                         @if(auth()->user()->is_verified)
