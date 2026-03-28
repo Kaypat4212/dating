@@ -9,7 +9,7 @@ class ForumCategory extends Model
 {
     protected $fillable = [
         'name', 'slug', 'description', 'icon', 'color',
-        'order', 'is_active', 'requires_verified',
+        'order', 'is_active', 'requires_verified', 'country_code',
     ];
 
     protected function casts(): array

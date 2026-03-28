@@ -23,13 +23,23 @@ class BlockVpnUsers
      */
     public function handle(Request $request, Closure $next): Response
     {
-        // Check if VPN blocking is enabled
-        if (!SiteSetting::get('vpn_detection_enabled', false)) {
+        // Check if VPN blocking is enabled — DB setting takes precedence, fallback to .env
+        $dbEnabled = SiteSetting::get('vpn_detection_enabled', null);
+        $enabled   = $dbEnabled !== null
+            ? filter_var($dbEnabled, FILTER_VALIDATE_BOOLEAN)
+            : filter_var(env('VPN_DETECTION_ENABLED', false), FILTER_VALIDATE_BOOLEAN);
+
+        if (!$enabled) {
             return $next($request);
         }
 
-        // Skip for already authenticated users (only check on registration)
-        if (Auth::check() && !SiteSetting::get('vpn_detection_check_all', false)) {
+        // Skip for already authenticated users unless check-all is active
+        $dbCheckAll = SiteSetting::get('vpn_detection_check_all', null);
+        $checkAll   = $dbCheckAll !== null
+            ? filter_var($dbCheckAll, FILTER_VALIDATE_BOOLEAN)
+            : filter_var(env('VPN_DETECTION_CHECK_ALL', false), FILTER_VALIDATE_BOOLEAN);
+
+        if (Auth::check() && !$checkAll) {
             return $next($request);
         }
 

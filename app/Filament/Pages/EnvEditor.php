@@ -49,6 +49,7 @@ class EnvEditor extends Page
             // App Settings
             'app_name' => env('APP_NAME', 'Laravel'),
             'app_url' => env('APP_URL', ''),
+            'app_trusted_urls' => env('APP_TRUSTED_URLS', ''),
             'app_debug' => env('APP_DEBUG', false),
             
             // Database
@@ -104,6 +105,13 @@ class EnvEditor extends Page
                             ->label('Application URL')
                             ->url()
                             ->required(),
+
+                        Forms\Components\Textarea::make('app_trusted_urls')
+                            ->label('Additional Trusted URLs')
+                            ->rows(2)
+                            ->columnSpanFull()
+                            ->helperText('Comma-separated list of additional trusted APP URLs (e.g. staging or CDN URLs). Used for CORS and host validation.')
+                            ->placeholder('https://staging.example.com, https://www.example.com'),
                         
                         Forms\Components\Toggle::make('app_debug')
                             ->label('Debug Mode')
@@ -297,6 +305,7 @@ class EnvEditor extends Page
             $updates = [
                 'APP_NAME' => $data['app_name'],
                 'APP_URL' => $data['app_url'],
+                'APP_TRUSTED_URLS' => $data['app_trusted_urls'] ?? '',
                 'APP_DEBUG' => $data['app_debug'] ? 'true' : 'false',
                 
                 'DB_HOST' => $data['db_host'],

@@ -33,6 +33,15 @@ class UserResource extends Resource
                 Forms\Components\Select::make('seeking')->options(['male' => 'Male', 'female' => 'Female', 'everyone' => 'Everyone']),
                 Forms\Components\DatePicker::make('date_of_birth')->label('Date of Birth'),
             ])->columns(2),
+            Section::make('Roles')->schema([
+                Forms\Components\Select::make('roles')
+                    ->label('Assigned Roles')
+                    ->multiple()
+                    ->relationship('roles', 'name')
+                    ->preload()
+                    ->columnSpanFull()
+                    ->helperText('admin · user · moderator · blogger · personal_assistant'),
+            ])->columns(1),
             Section::make('Moderation')->schema([
                 Forms\Components\Toggle::make('is_premium')->label('Premium'),
                 Forms\Components\DateTimePicker::make('premium_expires_at')->label('Premium Expires'),
@@ -78,6 +87,17 @@ class UserResource extends Resource
                 Tables\Columns\TextColumn::make('name')->searchable()->sortable(),
                 Tables\Columns\TextColumn::make('email')->searchable(),
                 Tables\Columns\TextColumn::make('username')->searchable(),
+                Tables\Columns\TextColumn::make('roles.name')
+                    ->label('Roles')
+                    ->badge()
+                    ->color(fn (string $state): string => match($state) {
+                        'admin'              => 'danger',
+                        'moderator'          => 'warning',
+                        'blogger'            => 'info',
+                        'personal_assistant' => 'purple',
+                        default              => 'gray',
+                    })
+                    ->separator(','),
                 Tables\Columns\IconColumn::make('is_premium')->label('Premium')->boolean(),
                 Tables\Columns\IconColumn::make('is_banned')->label('Banned')->boolean(),
                 Tables\Columns\IconColumn::make('likes_restricted')->label('Likes Off')->boolean(),

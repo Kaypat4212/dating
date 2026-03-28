@@ -34,6 +34,16 @@ class ChatRoomController extends Controller
         abort_unless($chatRoom->is_active, 404);
 
         $user = Auth::user();
+
+        // Location-type rooms require the user to have their location set
+        if ($chatRoom->type === 'location') {
+            $profile = $user->profile;
+            if (!$profile || empty($profile->city)) {
+                return redirect()->route('profile.edit')
+                    ->with('error', 'You need to set your location in your profile before joining location-based chat rooms.');
+            }
+        }
+
         /** @var ChatRoomMember|null $member */
         $member = $chatRoom->members()->where('user_id', $user->id)->first();
 
@@ -125,7 +135,16 @@ class ChatRoomController extends Controller
 
     public function join(ChatRoom $chatRoom): \Illuminate\Http\RedirectResponse
     {
-        abort_unless($chatRoom->is_active && $chatRoom->type === 'public', 403);
+        abort_unless($chatRoom->is_active && in_array($chatRoom->type, ['public', 'location']), 403);
+
+        // Location rooms require the user to have their location set
+        if ($chatRoom->type === 'location') {
+            $profile = Auth::user()->profile;
+            if (!$profile || empty($profile->city)) {
+                return redirect()->route('profile.edit')
+                    ->with('error', 'Please set your location in your profile before joining location-based chat rooms.');
+            }
+        }
 
         $existing = $chatRoom->members()->where('user_id', Auth::id())->first();
         if (!$existing) {

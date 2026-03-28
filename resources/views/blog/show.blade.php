@@ -20,7 +20,16 @@
                 <img src="{{ Storage::url($post->featured_image) }}" class="card-img-top rounded-top" style="max-height:400px;object-fit:cover;" alt="">
                 @endif
                 <div class="card-body">
-                    <h1 class="fw-bold h3 mb-2">{{ $post->title }}</h1>
+                    <div class="d-flex align-items-start justify-content-between gap-2 mb-2">
+                        <h1 class="fw-bold h3 mb-0">{{ $post->title }}</h1>
+                        @auth
+                        @if(auth()->user()->hasRole('admin') || (auth()->user()->hasRole('blogger') && $post->author_id === auth()->id()))
+                        <a href="{{ route('blog.edit', $post->slug) }}" class="btn btn-sm btn-outline-secondary flex-shrink-0">
+                            <i class="bi bi-pencil me-1"></i>Edit
+                        </a>
+                        @endif
+                        @endauth
+                    </div>
                     <div class="d-flex align-items-center gap-3 mb-3 text-muted small flex-wrap">
                         <span><i class="bi bi-person me-1"></i>{{ $post->author->name }}</span>
                         <span><i class="bi bi-calendar me-1"></i>{{ $post->published_at->format('M j, Y') }}</span>
@@ -35,7 +44,7 @@
                     </div>
                     @endif
                     <div class="blog-content lh-lg">
-                        {!! nl2br(e($post->content)) !!}
+                        {!! $post->content !!}
                     </div>
                 </div>
             </article>

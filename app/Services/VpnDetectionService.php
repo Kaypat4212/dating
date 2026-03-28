@@ -88,9 +88,15 @@ class VpnDetectionService
 
         // Calculate confidence percentage
         $confidence = $maxScore > 0 ? (int) (($vpnScore / $maxScore) * 100) : 0;
-        
-        // Determine if VPN is detected (threshold: 40%)
-        $isVpn = $confidence >= 40;
+
+        // Read threshold from SiteSetting (DB) with fallback to env or default 40
+        $dbThreshold = \App\Models\SiteSetting::get('vpn_confidence_threshold', null);
+        $threshold   = $dbThreshold !== null
+            ? (int) $dbThreshold
+            : (int) env('VPN_CONFIDENCE_THRESHOLD', 40);
+
+        // Determine if VPN is detected
+        $isVpn = $confidence >= $threshold;
 
         $result = [
             'is_vpn' => $isVpn,

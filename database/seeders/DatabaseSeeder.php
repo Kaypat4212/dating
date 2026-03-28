@@ -28,6 +28,9 @@ class DatabaseSeeder extends Seeder
         // Seed voice prompt questions & icebreakers
         $this->call(CommunityDataSeeder::class);
 
+        // Seed country-based forum categories & starter topics
+        $this->call(CountryForumSeeder::class);
+
         // 3. Create admin user
         $admin = User::firstOrCreate(
             ['email' => 'admin@heartsconnect.com'],
@@ -44,10 +47,12 @@ class DatabaseSeeder extends Seeder
                 'last_active_at'   => now(),
             ]
         );
-        // Ensure admin role exists and is assigned
-        \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'admin',      'guard_name' => 'web']);
-        \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'user',       'guard_name' => 'web']);
-        \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'moderator',  'guard_name' => 'web']);
+        // Ensure all roles exist
+        \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'admin',              'guard_name' => 'web']);
+        \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'user',               'guard_name' => 'web']);
+        \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'moderator',          'guard_name' => 'web']);
+        \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'blogger',            'guard_name' => 'web']);
+        \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'personal_assistant', 'guard_name' => 'web']);
         $admin->assignRole('admin');
 
         // Create admin profile

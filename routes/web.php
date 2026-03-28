@@ -242,6 +242,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::prefix('blog')->name('blog.')->group(function () {
             Route::get('/',                           [BlogController::class, 'index'])->name('index');
             Route::get('/category/{category:slug}',   [BlogController::class, 'category'])->name('category');
+            // User post creation (blogger/admin role)
+            Route::get('/create',                     [BlogController::class, 'create'])->name('create');
+            Route::post('/create',                    [BlogController::class, 'store'])->name('store');
+            Route::get('/{post:slug}/edit',           [BlogController::class, 'edit'])->name('edit');
+            Route::put('/{post:slug}',                [BlogController::class, 'update'])->name('update');
+            Route::delete('/{post:slug}',             [BlogController::class, 'destroy'])->name('destroy');
             Route::get('/{post:slug}',                [BlogController::class, 'show'])->name('show');
             Route::post('/{post:slug}/comment',       [BlogController::class, 'storeComment'])->name('comment.store');
         });
