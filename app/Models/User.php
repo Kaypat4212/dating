@@ -201,6 +201,11 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser, Has
         return $this->hasMany(Boost::class);
     }
 
+    public function voicePrompts(): HasMany
+    {
+        return $this->hasMany(VoicePrompt::class);
+    }
+
     public function verification(): HasOne
     {
         return $this->hasOne(UserVerification::class);

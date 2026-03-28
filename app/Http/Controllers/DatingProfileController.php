@@ -9,6 +9,7 @@ use App\Models\SiteSetting;
 use App\Models\User;
 use App\Models\UserMatch;
 use App\Models\UserPreference;
+use App\Models\VoicePrompt;
 use App\Services\CompatibilityService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -64,9 +65,15 @@ class DatingProfileController extends Controller
             }
         }
 
+        $voicePrompts = VoicePrompt::where('user_id', $userId)
+            ->where('show_on_profile', true)
+            ->with('question')
+            ->get();
+
         return view('profile.show', compact(
             'profileUser', 'profile', 'photos',
-            'compatibility', 'hasLiked', 'isMatched', 'isBlocked', 'iBlockedThem', 'theyBlockedMe', 'conversationId'
+            'compatibility', 'hasLiked', 'isMatched', 'isBlocked', 'iBlockedThem', 'theyBlockedMe', 'conversationId',
+            'voicePrompts'
         ));
     }
 

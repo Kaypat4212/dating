@@ -184,6 +184,29 @@
                         @endforeach
                     </div>
                     @endif
+
+                    {{-- Voice Prompts --}}
+                    @if(!empty($voicePrompts) && $voicePrompts->isNotEmpty())
+                    <div class="mt-4">
+                        <h6 class="fw-bold mb-3"><i class="bi bi-mic-fill text-danger me-2"></i>Voice Prompts</h6>
+                        <div class="d-flex flex-column gap-3">
+                            @foreach($voicePrompts as $vp)
+                            <div class="card border-0 bg-light rounded-3 p-3">
+                                <p class="fw-semibold small mb-2 text-muted">"{{ $vp->question->prompt_text }}"</p>
+                                <audio controls preload="none"
+                                       src="{{ Storage::url($vp->audio_path) }}"
+                                       class="w-100 voice-prompt-audio"
+                                       style="height:40px;"
+                       data-play-url="{{ route('extras.voice.play', $vp->id) }}"
+                                ></audio>
+                                @if($vp->duration_seconds)
+                                <span class="text-muted" style="font-size:.7rem">{{ $vp->duration_seconds }}s &middot; {{ $vp->plays_count }} plays</span>
+                                @endif
+                            </div>
+                            @endforeach
+                        </div>
+                    </div>
+                    @endif
                 </div>
             </div>
         </div>
@@ -293,6 +316,22 @@
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+
+// ── Voice Prompt play-count tracking ─────────────────────────────────────────
+document.querySelectorAll('.voice-prompt-audio').forEach(function (audio) {
+    var counted = false;
+    audio.addEventListener('play', function () {
+        if (counted) return;
+        counted = true;
+        var url  = audio.dataset.playUrl;
+        var csrf = document.querySelector('meta[name="csrf-token"]');
+        if (!url || !csrf) return;
+        fetch(url, {
+            method: 'GET',
+            headers: { 'Accept': 'application/json' },
+        }).catch(function () {});
+    });
+});
 
 // ── Wave ──────────────────────────────────────────────────────────────────────
 document.querySelectorAll('.wave-btn').forEach(btn => {

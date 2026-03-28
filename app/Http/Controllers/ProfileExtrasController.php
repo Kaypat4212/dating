@@ -83,6 +83,14 @@ class ProfileExtrasController extends Controller
 
         $path = $request->file('audio')->store('voice-prompts', 'public');
 
+        // Delete the old audio file if re-recording (avoids storage leak)
+        $existing = VoicePrompt::where('user_id', Auth::id())
+            ->where('question_id', $request->question_id)
+            ->first();
+        if ($existing && $existing->audio_path) {
+            \Illuminate\Support\Facades\Storage::disk('public')->delete($existing->audio_path);
+        }
+
         VoicePrompt::updateOrCreate(
             ['user_id' => Auth::id(), 'question_id' => $request->question_id],
             ['audio_path' => $path, 'duration_seconds' => $request->integer('duration', 0), 'show_on_profile' => true]
