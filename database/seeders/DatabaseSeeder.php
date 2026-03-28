@@ -25,6 +25,9 @@ class DatabaseSeeder extends Seeder
         // Seed email templates
         $this->call(EmailTemplateSeeder::class);
 
+        // Seed voice prompt questions & icebreakers
+        $this->call(CommunityDataSeeder::class);
+
         // 3. Create admin user
         $admin = User::firstOrCreate(
             ['email' => 'admin@heartsconnect.com'],

@@ -78,7 +78,7 @@ class ProfileExtrasController extends Controller
     {
         $request->validate([
             'question_id' => ['required', 'exists:voice_prompt_questions,id'],
-            'audio'       => ['required', 'file', 'mimetypes:audio/webm,audio/ogg,audio/mpeg,audio/mp4,audio/wav', 'max:5120'],
+            'audio'       => ['required', 'file', 'mimetypes:audio/webm,audio/ogg,audio/mpeg,audio/mp4,audio/wav,video/webm', 'max:5120'],
         ]);
 
         $path = $request->file('audio')->store('voice-prompts', 'public');
