@@ -18,6 +18,7 @@ if (($_GET['secret'] ?? '') !== SECRET) {
 
 $allowed = ['migrate', 'db:seed', 'storage:link', 'optimize:clear', 'config:clear', 'cache:clear', 'view:clear'];
 $cmd = $_GET['cmd'] ?? 'migrate';
+$seeder = $_GET['seeder'] ?? 'Database\\Seeders\\CommunityDataSeeder';
 
 if (! in_array($cmd, $allowed, true)) {
     die('Command not allowed. Allowed: ' . implode(', ', $allowed));
@@ -38,7 +39,16 @@ $args = [];
 if ($cmd === 'migrate') {
     $args = ['--force' => true];
 } elseif ($cmd === 'db:seed') {
-    $args = ['--class' => 'Database\\Seeders\\CommunityDataSeeder', '--force' => true];
+    // Accept seeder class via ?seeder= param
+    $allowedSeeders = [
+        'Database\\Seeders\\CommunityDataSeeder',
+        'Database\\Seeders\\CountryForumSeeder',
+        'Database\\Seeders\\DatabaseSeeder',
+    ];
+    if (! in_array($seeder, $allowedSeeders, true)) {
+        die('Seeder not allowed. Allowed: ' . implode(', ', $allowedSeeders));
+    }
+    $args = ['--class' => $seeder, '--force' => true];
 }
 
 echo '<pre style="font-family:monospace;font-size:13px;">';
