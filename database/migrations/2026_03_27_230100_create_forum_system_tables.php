@@ -34,6 +34,7 @@ return new class extends Migration
             $table->boolean('is_pinned')->default(false);
             $table->boolean('is_locked')->default(false);
             $table->boolean('is_answered')->default(false); // For Q&A style forums
+            $table->boolean('is_flagged')->default(false);
             $table->integer('views_count')->default(0);
             $table->integer('replies_count')->default(0);
             $table->integer('likes_count')->default(0);

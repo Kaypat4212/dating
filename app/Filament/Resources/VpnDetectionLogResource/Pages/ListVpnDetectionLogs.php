@@ -5,8 +5,9 @@ namespace App\Filament\Resources\VpnDetectionLogResource\Pages;
 use App\Filament\Resources\VpnDetectionLogResource;
 use App\Models\VpnDetectionLog;
 use Filament\Actions;
+use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ListRecords;
-use Filament\Resources\Components\Tab;
+use Filament\Schemas\Components\Tabs\Tab;
 use Illuminate\Database\Eloquent\Builder;
 
 class ListVpnDetectionLogs extends ListRecords
@@ -27,7 +28,10 @@ class ListVpnDetectionLogs extends ListRecords
                 ->action(function () {
                     $deleted = VpnDetectionLog::where('created_at', '<', now()->subDays(90))->delete();
                     
-                    $this->notify('success', "Successfully deleted {$deleted} old log entries.");
+                    Notification::make()
+                        ->title("Successfully deleted {$deleted} old log entries.")
+                        ->success()
+                        ->send();
                 }),
         ];
     }
