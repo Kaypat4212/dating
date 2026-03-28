@@ -34,14 +34,16 @@ return Application::configure(basePath: dirname(__DIR__))
         // Append to the 'web' middleware group
         $middleware->web(append: [
             \App\Http\Middleware\UpdateLastActive::class,
+            \App\Http\Middleware\BlockRestrictedCountries::class,
             \App\Http\Middleware\BlockVpnUsers::class,
             \App\Http\Middleware\TrackHomepageVisits::class,
         ]);
 
         // Alias for use in routes
         $middleware->alias([
-            'profile.complete' => \App\Http\Middleware\EnsureProfileComplete::class,
-            'vpn.block' => \App\Http\Middleware\BlockVpnUsers::class,
+            'profile.complete'   => \App\Http\Middleware\EnsureProfileComplete::class,
+            'vpn.block'          => \App\Http\Middleware\BlockVpnUsers::class,
+            'country.restrict'   => \App\Http\Middleware\BlockRestrictedCountries::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
