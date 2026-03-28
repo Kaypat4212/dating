@@ -418,19 +418,44 @@
                 </select>
             </div>
             <div class="col-6 col-md-2">
+                <label class="form-label small fw-semibold mb-1">Shared Interest</label>
+                <select name="interest_id" class="form-select form-select-sm">
+                    <option value="">Any interest</option>
+                    @foreach($allInterests as $int)
+                    <option value="{{ $int->id }}" {{ request('interest_id') == $int->id ? 'selected' : '' }}>
+                        {{ $int->icon ?? '' }} {{ $int->name }}
+                    </option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="col-6 col-md-2">
                 <label class="form-label small fw-semibold mb-1">Online now</label>
                 <select name="online_only" class="form-select form-select-sm">
                     <option value="">Any</option>
                     <option value="1" {{ request('online_only') === '1' ? 'selected' : '' }}>Online only</option>
                 </select>
             </div>
-            <div class="col-6 col-md-2 d-flex gap-2">
-                <button type="submit" class="btn btn-primary btn-sm flex-grow-1 rounded-pill fw-semibold">
-                    <i class="bi bi-search me-1"></i>Filter
-                </button>
-                <a href="{{ route('discover.index') }}" class="btn btn-outline-secondary btn-sm rounded-pill px-3" title="Clear filters">
-                    <i class="bi bi-x-lg"></i>
-                </a>
+            <div class="col-12 d-flex gap-2 align-items-center flex-wrap">
+                {{-- Has location toggle --}}
+                <label class="d-flex align-items-center gap-2 mb-0" style="cursor:pointer;font-size:.82rem;font-weight:600">
+                    <div class="form-check form-switch mb-0">
+                        <input class="form-check-input" type="checkbox" name="has_location" value="1"
+                               id="hasLocationToggle"
+                               {{ request('has_location') ? 'checked' : '' }}
+                               onchange="this.closest('form').submit()">
+                        <label class="form-check-label text-muted" for="hasLocationToggle">
+                            <i class="bi bi-geo-alt-fill text-danger me-1"></i>With Location Set
+                        </label>
+                    </div>
+                </label>
+                <div class="ms-auto d-flex gap-2">
+                    <button type="submit" class="btn btn-primary btn-sm rounded-pill fw-semibold px-4">
+                        <i class="bi bi-search me-1"></i>Filter
+                    </button>
+                    <a href="{{ route('discover.index') }}" class="btn btn-outline-secondary btn-sm rounded-pill px-3" title="Clear filters">
+                        <i class="bi bi-x-lg"></i>
+                    </a>
+                </div>
             </div>
         </div>
 
@@ -502,6 +527,14 @@
             $age      = $user->date_of_birth ? \Carbon\Carbon::parse($user->date_of_birth)->age : null;
             $isOnline = $user->last_active_at && $user->last_active_at->gt(now()->subMinutes(10));
             $delay    = ($i % 12) * 55;
+            // Location label: "City, Country" or just whichever is set
+            $city    = $user->profile?->city    ?? '';
+            $country = $user->profile?->country ?? '';
+            $locationLabel = trim(implode(', ', array_filter([$city, $country])));
+            // Shared interests
+            $cardInterestIds   = $user->profile?->interests->pluck('id')->toArray() ?? [];
+            $sharedInterestIds = array_intersect($myInterestIds, $cardInterestIds);
+            $sharedCount       = count($sharedInterestIds);
         @endphp
         <div class="profile-card-wrap" style="animation-delay: {{ $delay }}ms">
             <div class="pc" tabindex="0" role="article" aria-label="{{ $user->name }}{{ $age ? ', '.$age : '' }}">
@@ -547,10 +580,18 @@
                     <div class="pc__name">
                         {{ $user->name }}{{ $age ? ', '.$age : '' }}
                     </div>
-                    @if($user->profile?->city || isset($user->distance_km))
+                    @if($locationLabel || isset($user->distance_km))
                     <div class="pc__meta">
                         <i class="bi bi-geo-alt-fill me-1" style="font-size:.62rem;opacity:.8"></i>
-                        @if(isset($user->distance_km)){{ round($user->distance_km) }} km · @endif{{ $user->profile?->city }}
+                        @if(isset($user->distance_km)){{ round($user->distance_km) }} km · @endif{{ $locationLabel ?: 'Location not set' }}
+                    </div>
+                    @endif
+                    @if($sharedCount > 0)
+                    <div style="margin-bottom:4px">
+                        <span style="display:inline-flex;align-items:center;gap:3px;background:rgba(225,29,116,.75);color:#fff;font-size:.58rem;font-weight:700;padding:2px 7px;border-radius:20px;backdrop-filter:blur(4px)">
+                            <i class="bi bi-heart-fill" style="font-size:.55rem"></i>
+                            {{ $sharedCount }} shared interest{{ $sharedCount > 1 ? 's' : '' }}
+                        </span>
                     </div>
                     @endif
                     @if($user->profile?->headline)

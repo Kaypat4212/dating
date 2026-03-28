@@ -9,6 +9,8 @@ class TravelInterest extends Model
 {
     protected $fillable = ['user_id', 'plan_id', 'expressed_at', 'status'];
 
+    protected $with = ['plan'];
+
     protected function casts(): array
     {
         return ['expressed_at' => 'datetime'];

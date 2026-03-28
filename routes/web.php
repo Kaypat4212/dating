@@ -269,10 +269,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         // ── Travel Buddy ──────────────────────────────────────────────────────
         Route::prefix('travel')->name('travel.')->group(function () {
-            Route::get('/',                            [TravelController::class, 'index'])->name('index');
-            Route::post('/',                           [TravelController::class, 'store'])->name('store');
-            Route::delete('/{travelPlan}',             [TravelController::class, 'destroy'])->name('destroy');
-            Route::post('/{travelPlan}/interest',      [TravelController::class, 'expressInterest'])->name('interest');
+            Route::get('/',                                         [TravelController::class, 'index'])->name('index');
+            Route::post('/',                                        [TravelController::class, 'store'])->name('store');
+            Route::delete('/{travelPlan}',                          [TravelController::class, 'destroy'])->name('destroy');
+            Route::post('/{travelPlan}/interest',                   [TravelController::class, 'expressInterest'])->name('interest');
+            Route::patch('/interest/{travelInterest}/{action}',     [TravelController::class, 'respondInterest'])->name('respond');
         });
 
         // ── Icebreakers ───────────────────────────────────────────────────────
