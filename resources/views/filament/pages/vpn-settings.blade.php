@@ -2,8 +2,10 @@
     <form wire:submit="save">
         {{ $this->form }}
         
-        <div class="mt-6">
-            {{ $this->getFormActions() }}
+        <div class="mt-6 flex flex-wrap items-center gap-3">
+            @foreach ($this->getFormActions() as $action)
+                {{ $action }}
+            @endforeach
         </div>
     </form>
 </div>
