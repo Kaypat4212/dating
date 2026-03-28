@@ -1,7 +1,10 @@
 <x-guest-layout>
 @php /** @var \Illuminate\Support\ViewErrorBag $errors */ @endphp
     <h4 class="fw-bold mb-1 text-center auth-heading">Create Your Account <i class="bi bi-hearts ms-1" style="color:#f48fb1"></i></h4>
-    <p class="text-center mb-4 auth-subtitle">Free forever � find your match today</p>
+    <p class="text-center mb-2 auth-subtitle"><i class="bi bi-infinity me-1" style="color:#ce93d8"></i>Free forever &mdash; find your match today</p>
+    <p class="text-center mb-4 small" style="color:rgba(255,255,255,0.35)">
+        <i class="bi bi-shield-check me-1" style="color:#80cbc4"></i>Your IP address: <span style="color:rgba(255,255,255,0.6);font-family:monospace">{{ request()->ip() }}</span>
+    </p>
 
     <form method="POST" action="{{ route('register') }}">
         @csrf
@@ -71,7 +74,7 @@
             {{-- Loading state (hidden initially) --}}
             <span id="registerBtnLoading" class="d-none">
                 <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                {{ __('Creating your account�') }}
+                {{ __('Creating your account...') }}
             </span>
         </button>
 

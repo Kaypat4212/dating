@@ -160,9 +160,13 @@
                                     <div class="col-auto">
                                         <input type="radio" class="btn-check" name="crypto_currency"
                                                id="uw{{ $wallet->id }}" value="{{ $wallet->currency }}"
-                                               data-address="{{ $wallet->address }}" required>
-                                        <label class="btn btn-outline-secondary" for="uw{{ $wallet->id }}">
-                                            {{ $wallet->currency }}
+                                               data-address="{{ $wallet->address }}"
+                                               data-network="{{ $wallet->network ?? 'USDT' }}" required>
+                                        <label class="btn btn-outline-secondary d-flex flex-column align-items-center px-3 py-2" for="uw{{ $wallet->id }}">
+                                            <span class="fw-bold">{{ $wallet->currency }}</span>
+                                            @if($wallet->network)
+                                            <span class="badge bg-warning text-dark mt-1" style="font-size:.65rem;font-weight:600">{{ $wallet->network }}</span>
+                                            @endif
                                         </label>
                                     </div>
                                     @endforeach
@@ -171,6 +175,10 @@
 
                             <div class="mb-3" id="upgradeWalletBox" style="display:none">
                                 <label class="form-label fw-semibold">Send to this address:</label>
+                                <div class="d-flex align-items-center gap-2 mb-1">
+                                    <span class="badge bg-warning text-dark" id="upgradeNetworkBadge" style="font-size:.75rem"></span>
+                                    <small class="text-muted" id="upgradeNetworkNote"></small>
+                                </div>
                                 <div class="input-group">
                                     <span class="form-control font-monospace" id="upgradeWalletAddress" style="user-select:all;overflow-x:auto"></span>
                                     <button type="button" class="btn btn-outline-secondary" onclick="navigator.clipboard.writeText(document.getElementById('upgradeWalletAddress').textContent)">
@@ -229,9 +237,13 @@
                             @foreach($wallets as $wallet)
                             <div class="col-auto">
                                 <input type="radio" class="btn-check" name="crypto_currency" id="w{{ $wallet->id }}" value="{{ $wallet->currency }}"
-                                    data-address="{{ $wallet->address }}" required>
-                                <label class="btn btn-outline-secondary" for="w{{ $wallet->id }}">
-                                    {{ $wallet->currency }}
+                                    data-address="{{ $wallet->address }}"
+                                    data-network="{{ $wallet->network ?? 'USDT' }}" required>
+                                <label class="btn btn-outline-secondary d-flex flex-column align-items-center px-3 py-2" for="w{{ $wallet->id }}">
+                                    <span class="fw-bold">{{ $wallet->currency }}</span>
+                                    @if($wallet->network)
+                                    <span class="badge bg-warning text-dark mt-1" style="font-size:.65rem;font-weight:600">{{ $wallet->network }}</span>
+                                    @endif
                                 </label>
                             </div>
                             @endforeach
@@ -239,6 +251,10 @@
                     </div>
                     <div class="mb-3" id="walletAddressBox" style="display:none">
                         <label class="form-label fw-semibold">Send to this address:</label>
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <span class="badge bg-warning text-dark" id="walletNetworkBadge" style="font-size:.75rem"></span>
+                            <small class="text-muted" id="walletNetworkNote"></small>
+                        </div>
                         <div class="input-group">
                             <span class="form-control font-monospace" id="walletAddress" style="user-select:all;overflow-x:auto"></span>
                             <button type="button" class="btn btn-outline-secondary" onclick="navigator.clipboard.writeText(document.getElementById('walletAddress').textContent)"><i class="bi bi-clipboard"></i></button>
@@ -296,8 +312,11 @@ document.querySelectorAll('.select-upgrade').forEach(btn => {
 document.querySelectorAll('[name="crypto_currency"]').forEach(r => {
     if (!r.closest('form[action*="upgrade"]')) return;
     r.addEventListener('change', () => {
+        const network = r.dataset.network || '';
         document.getElementById('upgradeWalletAddress').textContent = r.dataset.address;
         document.getElementById('upgradeHiddenWallet').value = r.dataset.address;
+        document.getElementById('upgradeNetworkBadge').textContent = network ? 'Network: ' + network : '';
+        document.getElementById('upgradeNetworkNote').textContent = network ? 'Send only ' + network + ' to this address or funds may be lost.' : '';
         document.getElementById('upgradeWalletBox').style.removeProperty('display');
     });
 });
@@ -325,10 +344,13 @@ document.querySelectorAll('.select-plan').forEach(btn => {
     });
 });
 document.querySelectorAll('[name="crypto_currency"]').forEach(r => {
+    if (r.closest('form[action*="upgrade"]')) return;
     r.addEventListener('change', () => {
-        const addr = r.dataset.address;
-        document.getElementById('walletAddress').textContent = addr;
-        document.getElementById('hiddenWallet').value = addr;
+        const network = r.dataset.network || '';
+        document.getElementById('walletAddress').textContent = r.dataset.address;
+        document.getElementById('hiddenWallet').value = r.dataset.address;
+        document.getElementById('walletNetworkBadge').textContent = network ? 'Network: ' + network : '';
+        document.getElementById('walletNetworkNote').textContent = network ? 'Send only ' + network + ' to this address or funds may be lost.' : '';
         document.getElementById('walletAddressBox').style.removeProperty('display');
     });
 });
