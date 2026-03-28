@@ -207,6 +207,32 @@
                         </div>
                     </div>
                     @endif
+
+                    {{-- Icebreakers --}}
+                    @if(!empty($icebreakerAnswers) && $icebreakerAnswers->isNotEmpty())
+                    <div class="mt-4">
+                        <h6 class="fw-bold mb-3"><i class="bi bi-snow2 text-primary me-2"></i>Icebreakers</h6>
+                        <div class="row g-2">
+                            @foreach($icebreakerAnswers as $ia)
+                            @php
+                                $q = $ia->question;
+                                $isChoice = in_array($q->type, ['would_you_rather', 'this_or_that']);
+                            @endphp
+                            <div class="col-sm-6">
+                                <div class="card border-0 bg-light rounded-3 p-3 h-100">
+                                    <p class="small text-muted mb-2 fw-semibold" style="font-size:.8rem">{{ $q->question }}</p>
+                                    @if($isChoice && $ia->choice)
+                                        @php $chosen = $ia->choice === 'a' ? $q->option_a : $q->option_b; @endphp
+                                        <span class="badge bg-primary rounded-pill px-3 py-2">{{ $chosen }}</span>
+                                    @elseif($ia->answer)
+                                        <p class="mb-0 fw-semibold" style="font-size:.9rem">{{ $ia->answer }}</p>
+                                    @endif
+                                </div>
+                            </div>
+                            @endforeach
+                        </div>
+                    </div>
+                    @endif
                 </div>
             </div>
         </div>

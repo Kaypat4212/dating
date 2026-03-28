@@ -284,9 +284,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         // ── Icebreakers ───────────────────────────────────────────────────────
         Route::prefix('icebreakers')->name('icebreaker.')->group(function () {
-            Route::get('/',              [IcebreakerController::class, 'index'])->name('index');
-            Route::post('/answer',       [IcebreakerController::class, 'answer'])->name('answer');
-            Route::get('/questions',     [IcebreakerController::class, 'questions'])->name('questions');
+            Route::get('/',                                    [IcebreakerController::class, 'index'])->name('index');
+            Route::post('/answer',                             [IcebreakerController::class, 'answer'])->name('answer');
+            Route::delete('/answer/{icebreakerAnswer}',        [IcebreakerController::class, 'destroy'])->name('answer.destroy');
+            Route::get('/questions',                           [IcebreakerController::class, 'questions'])->name('questions');
         });
 
         // ── Profile Extras (Pets & Voice Prompts) ─────────────────────────────

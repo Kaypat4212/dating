@@ -70,7 +70,16 @@
                         @endif
 
                         @if($ans)
-                        <small class="text-success mt-2 d-block"><i class="bi bi-check-circle me-1"></i>Answered</small>
+                        <div class="d-flex align-items-center justify-content-between mt-2">
+                            <small class="text-success"><i class="bi bi-check-circle me-1"></i>Answered</small>
+                            <form action="{{ route('icebreaker.answer.destroy', $ans->id) }}" method="POST" style="display:inline">
+                                @csrf @method('DELETE')
+                                <button type="submit" class="btn btn-sm btn-outline-danger py-0 px-2" style="font-size:.72rem"
+                                        onclick="return confirm('Remove this answer from your profile?')">
+                                    <i class="bi bi-trash me-1"></i>Remove
+                                </button>
+                            </form>
+                        </div>
                         @endif
                     </div>
                 </div>

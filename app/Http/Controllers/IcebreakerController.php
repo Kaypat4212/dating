@@ -51,6 +51,13 @@ class IcebreakerController extends Controller
         return back()->with('success', 'Answer saved!');
     }
 
+    public function destroy(IcebreakerAnswer $icebreakerAnswer): \Illuminate\Http\RedirectResponse
+    {
+        abort_unless($icebreakerAnswer->user_id === Auth::id(), 403);
+        $icebreakerAnswer->delete();
+        return back()->with('success', 'Answer removed.');
+    }
+
     public function questions(): \Illuminate\Http\JsonResponse
     {
         $questions = IcebreakerQuestion::where('is_active', true)

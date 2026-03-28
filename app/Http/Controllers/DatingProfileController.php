@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Conversation;
+use App\Models\IcebreakerAnswer;
 use App\Models\Interest;
 use App\Models\ProfileView;
 use App\Models\SiteSetting;
@@ -70,10 +71,15 @@ class DatingProfileController extends Controller
             ->with('question')
             ->get();
 
+        $icebreakerAnswers = IcebreakerAnswer::where('user_id', $userId)
+            ->where('show_on_profile', true)
+            ->with('question')
+            ->get();
+
         return view('profile.show', compact(
             'profileUser', 'profile', 'photos',
             'compatibility', 'hasLiked', 'isMatched', 'isBlocked', 'iBlockedThem', 'theyBlockedMe', 'conversationId',
-            'voicePrompts'
+            'voicePrompts', 'icebreakerAnswers'
         ));
     }
 
