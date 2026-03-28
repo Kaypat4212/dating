@@ -6,6 +6,7 @@ use App\Models\BlogCategory;
 use App\Models\BlogComment;
 use App\Models\BlogPost;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 
 class BlogController extends Controller
@@ -81,9 +82,9 @@ class BlogController extends Controller
         ]);
 
         $comment = $post->comments()->create([
-            'user_id'   => auth()->id(),
+            'user_id'   => Auth::id(),
             'parent_id' => $request->parent_id,
-            'content'   => $request->content,
+            'content'   => $request->input('content'),
             'is_approved' => true,
         ]);
 

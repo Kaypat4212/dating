@@ -7,6 +7,7 @@ use App\Services\VpnDetectionService;
 use App\Services\TelegramNotificationService;
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -28,7 +29,7 @@ class BlockVpnUsers
         }
 
         // Skip for already authenticated users (only check on registration)
-        if (auth()->check() && !SiteSetting::get('vpn_detection_check_all', false)) {
+        if (Auth::check() && !SiteSetting::get('vpn_detection_check_all', false)) {
             return $next($request);
         }
 
@@ -41,7 +42,7 @@ class BlockVpnUsers
         // Log the detection
         $this->vpnDetector->logDetection(
             $ip,
-            auth()->id(),
+            Auth::id(),
             $result,
             $result['is_vpn'] ? 'blocked' : 'allowed'
         );
@@ -52,7 +53,7 @@ class BlockVpnUsers
                 'ip' => $ip,
                 'confidence' => $result['confidence'],
                 'provider' => $result['provider'],
-                'user_id' => auth()->id(),
+                'user_id' => Auth::id(),
                 'route' => $request->route()?->getName(),
             ]);
 
@@ -61,7 +62,7 @@ class BlockVpnUsers
                 $ip,
                 $result['confidence'],
                 $result['provider'],
-                auth()->id()
+                Auth::id()
             );
 
             // Return custom error view

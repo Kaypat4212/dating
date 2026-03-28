@@ -2,10 +2,14 @@
 
 namespace App\Filament\Pages;
 
+use Filament\Actions\Action;
 use Filament\Forms;
-use Filament\Forms\Form;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Schema;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
 
 class EnvEditor extends Page
@@ -86,11 +90,11 @@ class EnvEditor extends Page
         ];
     }
 
-    public function form(Form $form): Form
+    public function form(Schema $schema): Schema
     {
-        return $form
+        return $schema
             ->schema([
-                Forms\Components\Section::make('Application Settings')
+                Section::make('Application Settings')
                     ->schema([
                         Forms\Components\TextInput::make('app_name')
                             ->label('Application Name')
@@ -106,7 +110,7 @@ class EnvEditor extends Page
                             ->helperText('⚠️ Never enable in production!'),
                     ])->columns(2),
                 
-                Forms\Components\Section::make('Database Configuration')
+                Section::make('Database Configuration')
                     ->schema([
                         Forms\Components\TextInput::make('db_host')
                             ->label('Database Host')
@@ -126,7 +130,7 @@ class EnvEditor extends Page
                             ->required(),
                     ])->columns(2),
                 
-                Forms\Components\Section::make('Mail Configuration')
+                Section::make('Mail Configuration')
                     ->schema([
                         Forms\Components\Select::make('mail_mailer')
                             ->label('Mail Driver')
@@ -157,7 +161,7 @@ class EnvEditor extends Page
                             ->label('From Name'),
                     ])->columns(2),
                 
-                Forms\Components\Section::make('VPN Detection')
+                Section::make('VPN Detection')
                     ->schema([
                         Forms\Components\Toggle::make('vpn_detection_enabled')
                             ->label('Enable VPN Detection')
@@ -165,34 +169,34 @@ class EnvEditor extends Page
                         
                         Forms\Components\Toggle::make('vpn_detection_check_all')
                             ->label('Check All Users')
-                            ->visible(fn (Forms\Get $get) => $get('vpn_detection_enabled')),
+                            ->visible(fn (Get $get) => $get('vpn_detection_enabled')),
                         
                         Forms\Components\TextInput::make('vpn_confidence_threshold')
                             ->label('Confidence Threshold (%)')
                             ->numeric()
                             ->minValue(0)
                             ->maxValue(100)
-                            ->visible(fn (Forms\Get $get) => $get('vpn_detection_enabled')),
+                            ->visible(fn (Get $get) => $get('vpn_detection_enabled')),
                         
                         Forms\Components\TextInput::make('vpn_cache_duration')
                             ->label('Cache Duration (minutes)')
                             ->numeric()
-                            ->visible(fn (Forms\Get $get) => $get('vpn_detection_enabled')),
+                            ->visible(fn (Get $get) => $get('vpn_detection_enabled')),
                         
                         Forms\Components\TextInput::make('iphub_api_key')
                             ->label('IPHub API Key')
                             ->password()
                             ->revealable()
-                            ->visible(fn (Forms\Get $get) => $get('vpn_detection_enabled')),
+                            ->visible(fn (Get $get) => $get('vpn_detection_enabled')),
                         
                         Forms\Components\TextInput::make('proxycheck_api_key')
                             ->label('ProxyCheck API Key')
                             ->password()
                             ->revealable()
-                            ->visible(fn (Forms\Get $get) => $get('vpn_detection_enabled')),
+                            ->visible(fn (Get $get) => $get('vpn_detection_enabled')),
                     ])->columns(2),
                 
-                Forms\Components\Section::make('Telegram Notifications')
+                Section::make('Telegram Notifications')
                     ->schema([
                         Forms\Components\Toggle::make('telegram_enabled')
                             ->label('Enable Telegram Notifications')
@@ -203,15 +207,15 @@ class EnvEditor extends Page
                             ->helperText('Get from @BotFather on Telegram')
                             ->password()
                             ->revealable()
-                            ->visible(fn (Forms\Get $get) => $get('telegram_enabled')),
+                            ->visible(fn (Get $get) => $get('telegram_enabled')),
                         
                         Forms\Components\TextInput::make('telegram_chat_id')
                             ->label('Chat ID')
                             ->helperText('Your chat ID or channel ID')
-                            ->visible(fn (Forms\Get $get) => $get('telegram_enabled')),
+                            ->visible(fn (Get $get) => $get('telegram_enabled')),
                     ])->columns(2),
                 
-                Forms\Components\Section::make('System Configuration')
+                Section::make('System Configuration')
                     ->schema([
                         Forms\Components\Select::make('broadcast_connection')
                             ->label('Broadcasting Driver')
@@ -245,7 +249,7 @@ class EnvEditor extends Page
                             ->numeric(),
                     ])->columns(2),
                 
-                Forms\Components\Section::make('⚠️ Important Notes')
+                Section::make('⚠️ Important Notes')
                     ->schema([
                         Forms\Components\Placeholder::make('warnings')
                             ->content('
@@ -346,7 +350,7 @@ class EnvEditor extends Page
             File::put($envFile, $content);
             
             // Clear config cache
-            \Artisan::call('config:clear');
+            Artisan::call('config:clear');
             
             Notification::make()
                 ->success()
@@ -366,7 +370,7 @@ class EnvEditor extends Page
     protected function getFormActions(): array
     {
         return [
-            Forms\Components\Actions\Action::make('save')
+            Action::make('save')
                 ->label('Save Environment Settings')
                 ->submit('save')
                 ->color('primary'),

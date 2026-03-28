@@ -3,10 +3,14 @@
 namespace App\Filament\Pages;
 
 use App\Models\SiteSetting;
+use Filament\Actions\Action;
 use Filament\Forms;
-use Filament\Forms\Form;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Schema;
+use Illuminate\Support\Facades\Artisan;
 
 class VpnSettings extends Page
 {
@@ -50,11 +54,11 @@ class VpnSettings extends Page
         ]);
     }
 
-    public function form(Form $form): Form
+    public function form(Schema $schema): Schema
     {
-        return $form
+        return $schema
             ->schema([
-                Forms\Components\Section::make('VPN Detection Settings')
+                Section::make('VPN Detection Settings')
                     ->description('Configure how VPN detection works on your platform')
                     ->schema([
                         Forms\Components\Toggle::make('vpn_detection_enabled')
@@ -67,7 +71,7 @@ class VpnSettings extends Page
                             ->label('Check All Users')
                             ->helperText('When enabled, checks all users (not just new registrations). When disabled, only checks unauthenticated users.')
                             ->default(false)
-                            ->visible(fn (Forms\Get $get) => $get('vpn_detection_enabled')),
+                            ->visible(fn (Get $get) => $get('vpn_detection_enabled')),
                         
                         Forms\Components\TextInput::make('vpn_confidence_threshold')
                             ->label('Confidence Threshold (%)')
@@ -77,7 +81,7 @@ class VpnSettings extends Page
                             ->maxValue(100)
                             ->default(40)
                             ->suffix('%')
-                            ->visible(fn (Forms\Get $get) => $get('vpn_detection_enabled')),
+                            ->visible(fn (Get $get) => $get('vpn_detection_enabled')),
                         
                         Forms\Components\TextInput::make('vpn_cache_duration')
                             ->label('Cache Duration (minutes)')
@@ -87,11 +91,11 @@ class VpnSettings extends Page
                             ->maxValue(10080)
                             ->default(1440)
                             ->suffix('min')
-                            ->visible(fn (Forms\Get $get) => $get('vpn_detection_enabled')),
+                            ->visible(fn (Get $get) => $get('vpn_detection_enabled')),
                     ])
                     ->columns(2),
                 
-                Forms\Components\Section::make('Detection Methods')
+                Section::make('Detection Methods')
                     ->description('Enable or disable specific VPN detection methods')
                     ->schema([
                         Forms\Components\Toggle::make('vpn_enable_ip_range_check')
@@ -117,9 +121,9 @@ class VpnSettings extends Page
                             ->live(),
                     ])
                     ->columns(2)
-                    ->visible(fn (Forms\Get $get) => $get('vpn_detection_enabled')),
+                    ->visible(fn (Get $get) => $get('vpn_detection_enabled')),
                 
-                Forms\Components\Section::make('API Configuration')
+                Section::make('API Configuration')
                     ->description('Configure third-party API keys for VPN detection services')
                     ->schema([
                         Forms\Components\TextInput::make('vpn_iphub_api_key')
@@ -128,7 +132,7 @@ class VpnSettings extends Page
                             ->password()
                             ->revealable()
                             ->placeholder('Enter IPHub API key')
-                            ->visible(fn (Forms\Get $get) => $get('vpn_enable_iphub')),
+                            ->visible(fn (Get $get) => $get('vpn_enable_iphub')),
                         
                         Forms\Components\TextInput::make('vpn_proxycheck_api_key')
                             ->label('ProxyCheck API Key')
@@ -136,15 +140,15 @@ class VpnSettings extends Page
                             ->password()
                             ->revealable()
                             ->placeholder('Enter ProxyCheck API key')
-                            ->visible(fn (Forms\Get $get) => $get('vpn_enable_proxycheck')),
+                            ->visible(fn (Get $get) => $get('vpn_enable_proxycheck')),
                     ])
                     ->columns(1)
-                    ->visible(fn (Forms\Get $get) => 
+                    ->visible(fn (Get $get) => 
                         $get('vpn_detection_enabled') && 
                         ($get('vpn_enable_iphub') || $get('vpn_enable_proxycheck'))
                     ),
                 
-                Forms\Components\Section::make('Information')
+                Section::make('Information')
                     ->description('How VPN detection works')
                     ->schema([
                         Forms\Components\Placeholder::make('info')
@@ -201,7 +205,7 @@ class VpnSettings extends Page
         }
 
         // Clear config cache to apply changes
-        \Artisan::call('config:clear');
+        Artisan::call('config:clear');
 
         Notification::make()
             ->success()
@@ -239,7 +243,7 @@ class VpnSettings extends Page
     protected function getFormActions(): array
     {
         return [
-            Forms\Components\Actions\Action::make('save')
+            Action::make('save')
                 ->label('Save Settings')
                 ->submit('save')
                 ->color('primary'),

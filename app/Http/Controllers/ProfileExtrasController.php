@@ -6,6 +6,7 @@ use App\Models\Pet;
 use App\Models\VoicePrompt;
 use App\Models\VoicePromptQuestion;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 
 class ProfileExtrasController extends Controller
@@ -14,7 +15,7 @@ class ProfileExtrasController extends Controller
 
     public function petsIndex(): View
     {
-        $user = auth()->user();
+        $user = Auth::user();
         $pets = Pet::where('user_id', $user->id)->orderBy('created_at')->get();
         return view('profile.extras.pets', compact('pets'));
     }
@@ -38,7 +39,7 @@ class ProfileExtrasController extends Controller
         }
 
         Pet::create([
-            'user_id'        => auth()->id(),
+            'user_id'        => Auth::id(),
             'name'           => $request->name,
             'type'           => $request->type,
             'breed'          => $request->breed,
@@ -55,7 +56,7 @@ class ProfileExtrasController extends Controller
 
     public function destroyPet(Pet $pet): \Illuminate\Http\RedirectResponse
     {
-        abort_unless($pet->user_id === auth()->id(), 403);
+        abort_unless($pet->user_id === Auth::id(), 403);
         if ($pet->photo_path) {
             \Illuminate\Support\Facades\Storage::disk('public')->delete($pet->photo_path);
         }
@@ -67,7 +68,7 @@ class ProfileExtrasController extends Controller
 
     public function voiceIndex(): View
     {
-        $user      = auth()->user();
+        $user      = Auth::user();
         $questions = VoicePromptQuestion::where('is_active', true)->orderBy('order')->get();
         $myPrompts = VoicePrompt::where('user_id', $user->id)->with('question')->get()->keyBy('question_id');
         return view('profile.extras.voice', compact('questions', 'myPrompts'));
@@ -83,7 +84,7 @@ class ProfileExtrasController extends Controller
         $path = $request->file('audio')->store('voice-prompts', 'public');
 
         VoicePrompt::updateOrCreate(
-            ['user_id' => auth()->id(), 'question_id' => $request->question_id],
+            ['user_id' => Auth::id(), 'question_id' => $request->question_id],
             ['audio_path' => $path, 'duration_seconds' => $request->integer('duration', 0), 'show_on_profile' => true]
         );
 
@@ -92,7 +93,7 @@ class ProfileExtrasController extends Controller
 
     public function destroyVoice(VoicePrompt $voicePrompt): \Illuminate\Http\RedirectResponse
     {
-        abort_unless($voicePrompt->user_id === auth()->id(), 403);
+        abort_unless($voicePrompt->user_id === Auth::id(), 403);
         \Illuminate\Support\Facades\Storage::disk('public')->delete($voicePrompt->audio_path);
         $voicePrompt->delete();
         return back()->with('success', 'Voice prompt deleted.');

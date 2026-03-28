@@ -6,6 +6,7 @@ use App\Models\ForumCategory;
 use App\Models\ForumReply;
 use App\Models\ForumTopic;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 
@@ -77,10 +78,10 @@ class ForumController extends Controller
 
         $topic = ForumTopic::create([
             'category_id'    => $category->id,
-            'user_id'        => auth()->id(),
+            'user_id'        => Auth::id(),
             'title'          => $request->title,
             'slug'           => $slug,
-            'content'        => $request->content,
+            'content'        => $request->input('content'),
             'tags'           => $tags,
             'last_reply_at'  => now(),
         ]);
@@ -100,14 +101,14 @@ class ForumController extends Controller
 
         ForumReply::create([
             'topic_id'  => $topic->id,
-            'user_id'   => auth()->id(),
+            'user_id'   => Auth::id(),
             'parent_id' => $request->parent_id,
-            'content'   => $request->content,
+            'content'   => $request->input('content'),
         ]);
 
         $topic->increment('replies_count');
         $topic->update([
-            'last_reply_user_id' => auth()->id(),
+            'last_reply_user_id' => Auth::id(),
             'last_reply_at'      => now(),
         ]);
 

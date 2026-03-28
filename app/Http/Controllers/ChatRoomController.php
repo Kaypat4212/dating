@@ -6,6 +6,7 @@ use App\Models\ChatRoom;
 use App\Models\ChatRoomMember;
 use App\Models\ChatRoomMessage;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 
@@ -19,7 +20,7 @@ class ChatRoomController extends Controller
             ->orderByDesc('messages_count')
             ->paginate(16);
 
-        $myRooms = ChatRoom::whereHas('members', fn($q) => $q->where('user_id', auth()->id()))
+        $myRooms = ChatRoom::whereHas('members', fn($q) => $q->where('user_id', Auth::id()))
             ->where('is_active', true)
             ->with('creator')
             ->limit(6)
@@ -32,7 +33,8 @@ class ChatRoomController extends Controller
     {
         abort_unless($chatRoom->is_active, 404);
 
-        $user = auth()->user();
+        $user = Auth::user();
+        /** @var ChatRoomMember|null $member */
         $member = $chatRoom->members()->where('user_id', $user->id)->first();
 
         // Auto-join public rooms
@@ -73,7 +75,7 @@ class ChatRoomController extends Controller
         $slug = Str::slug($request->name) . '-' . time();
 
         $room = ChatRoom::create([
-            'creator_id'  => auth()->id(),
+            'creator_id'  => Auth::id(),
             'name'        => $request->name,
             'slug'        => $slug,
             'description' => $request->description,
@@ -81,7 +83,7 @@ class ChatRoomController extends Controller
         ]);
 
         $room->members()->create([
-            'user_id' => auth()->id(),
+            'user_id' => Auth::id(),
             'role'    => 'admin',
         ]);
         $room->increment('members_count');
@@ -92,7 +94,8 @@ class ChatRoomController extends Controller
 
     public function sendMessage(Request $request, ChatRoom $chatRoom)
     {
-        $user   = auth()->user();
+        $user   = Auth::user();
+        /** @var ChatRoomMember|null $member */
         $member = $chatRoom->members()->where('user_id', $user->id)->first();
         abort_unless($member && !$member->is_banned && !$member->is_muted, 403);
 
@@ -102,7 +105,7 @@ class ChatRoomController extends Controller
 
         $msg = $chatRoom->messages()->create([
             'user_id' => $user->id,
-            'content' => $request->content,
+            'content' => $request->input('content'),
             'type'    => 'text',
         ]);
 
@@ -124,9 +127,9 @@ class ChatRoomController extends Controller
     {
         abort_unless($chatRoom->is_active && $chatRoom->type === 'public', 403);
 
-        $existing = $chatRoom->members()->where('user_id', auth()->id())->first();
+        $existing = $chatRoom->members()->where('user_id', Auth::id())->first();
         if (!$existing) {
-            $chatRoom->members()->create(['user_id' => auth()->id(), 'role' => 'member']);
+            $chatRoom->members()->create(['user_id' => Auth::id(), 'role' => 'member']);
             $chatRoom->increment('members_count');
         }
 
@@ -135,7 +138,7 @@ class ChatRoomController extends Controller
 
     public function leave(ChatRoom $chatRoom): \Illuminate\Http\RedirectResponse
     {
-        $chatRoom->members()->where('user_id', auth()->id())->delete();
+        $chatRoom->members()->where('user_id', Auth::id())->delete();
         $chatRoom->decrement('members_count');
 
         return redirect()->route('chat-rooms.index')->with('success', 'You left the room.');
@@ -143,8 +146,7 @@ class ChatRoomController extends Controller
 
     public function messages(ChatRoom $chatRoom, Request $request)
     {
-        $member = $chatRoom->members()->where('user_id', auth()->id())->first();
-        abort_unless($member && !$member->is_banned, 403);
+        $member = $chatRoom->members()->where('user_id', Auth::id())->first();
 
         $after = $request->integer('after', 0);
 

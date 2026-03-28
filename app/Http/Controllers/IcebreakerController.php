@@ -5,13 +5,14 @@ namespace App\Http\Controllers;
 use App\Models\IcebreakerAnswer;
 use App\Models\IcebreakerQuestion;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 
 class IcebreakerController extends Controller
 {
     public function index(): View
     {
-        $user = auth()->user();
+        $user = Auth::user();
 
         $myAnswers = IcebreakerAnswer::where('user_id', $user->id)
             ->with('question')
@@ -35,7 +36,7 @@ class IcebreakerController extends Controller
         ]);
 
         IcebreakerAnswer::updateOrCreate(
-            ['user_id' => auth()->id(), 'question_id' => $request->question_id],
+            ['user_id' => Auth::id(), 'question_id' => $request->question_id],
             [
                 'answer'          => $request->answer,
                 'choice'          => $request->choice,

@@ -1,6 +1,6 @@
 @extends('layouts.app')
 @section('title', 'Travel Buddy')
-
+@php /** @var \Illuminate\Support\ViewErrorBag $errors */ @endphp
 @push('styles')
 <style>
 .travel-card { border-radius:16px; transition: transform .25s ease, box-shadow .25s ease; }

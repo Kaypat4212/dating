@@ -6,13 +6,14 @@ use App\Models\TravelInterest;
 use App\Models\TravelPlan;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 
 class TravelController extends Controller
 {
     public function index(Request $request): View
     {
-        $user = auth()->user();
+        $user = Auth::user();
 
         $query = TravelPlan::where('is_visible', true)
             ->where('is_active', true)
@@ -81,7 +82,7 @@ class TravelController extends Controller
         ]);
 
         TravelPlan::create([
-            'user_id'             => auth()->id(),
+            'user_id'             => Auth::id(),
             'destination'         => $request->destination,
             'destination_country' => $request->destination_country,
             'travel_from'         => $request->travel_from,
@@ -98,16 +99,16 @@ class TravelController extends Controller
 
     public function destroy(TravelPlan $travelPlan): \Illuminate\Http\RedirectResponse
     {
-        abort_unless($travelPlan->user_id === auth()->id(), 403);
+        abort_unless($travelPlan->user_id === Auth::id(), 403);
         $travelPlan->delete();
         return back()->with('success', 'Plan removed.');
     }
 
     public function expressInterest(TravelPlan $travelPlan): \Illuminate\Http\RedirectResponse
     {
-        abort_if($travelPlan->user_id === auth()->id(), 403);
+        abort_if($travelPlan->user_id === Auth::id(), 403);
 
-        $already = TravelInterest::where('user_id', auth()->id())
+        $already = TravelInterest::where('user_id', Auth::id())
             ->where('plan_id', $travelPlan->id)
             ->first();
 
@@ -116,7 +117,7 @@ class TravelController extends Controller
         }
 
         TravelInterest::create([
-            'user_id'      => auth()->id(),
+            'user_id'      => Auth::id(),
             'plan_id'      => $travelPlan->id,
             'expressed_at' => now(),
             'status'       => 'pending',
@@ -128,7 +129,7 @@ class TravelController extends Controller
     public function respondInterest(TravelInterest $travelInterest, string $action): \Illuminate\Http\RedirectResponse
     {
         // Only the plan owner can respond
-        abort_unless($travelInterest->plan->user_id === auth()->id(), 403);
+        abort_unless($travelInterest->plan->user_id === Auth::id(), 403);
         abort_unless(in_array($action, ['accepted', 'declined']), 400);
 
         $travelInterest->update(['status' => $action]);
