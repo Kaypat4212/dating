@@ -29,7 +29,7 @@ class ChatRoomController extends Controller
         return view('chat-rooms.index', compact('rooms', 'myRooms'));
     }
 
-    public function show(ChatRoom $chatRoom): View
+    public function show(ChatRoom $chatRoom): View|\Illuminate\Http\RedirectResponse
     {
         abort_unless($chatRoom->is_active, 404);
 

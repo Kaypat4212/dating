@@ -11,6 +11,7 @@
 </style>
 @endpush
 
+@php /** @var \Illuminate\Support\ViewErrorBag $errors */ @endphp
 @section('content')
 <div class="container py-4" style="max-width: 860px;">
     <nav aria-label="breadcrumb" class="mb-3">
