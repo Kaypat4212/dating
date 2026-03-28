@@ -9,7 +9,6 @@ use Filament\Forms;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Schemas\Components\Section;
-use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Illuminate\Contracts\Support\Htmlable;
 
@@ -87,11 +86,7 @@ class CountryRestrictions extends Page
 
                 Section::make('Countries')
                     ->icon('heroicon-o-map')
-                    ->description(fn (Get $get) => match ($get('country_restriction_mode')) {
-                        'blocklist' => 'Users from these countries will be blocked.',
-                        'allowlist' => 'Only users from these countries will be allowed.',
-                        default     => 'Select a mode above to configure countries.',
-                    })
+                    ->description('Blocklist: visitors from selected countries are blocked. Allowlist: only visitors from selected countries are allowed.')
                     ->schema([
                         Forms\Components\Select::make('country_restriction_countries')
                             ->label('Countries')
@@ -103,24 +98,24 @@ class CountryRestrictions extends Page
                             ->columnSpanFull(),
                     ])
                     ->columns(1)
-                    ->visible(fn (Get $get) => $get('country_restriction_mode') !== 'none'),
+                    ->visible(fn ($get) => $get('country_restriction_mode') !== 'none'),
 
                 Section::make('How It Works')
                     ->icon('heroicon-o-information-circle')
                     ->description('Details about how country detection and enforcement work.')
                     ->schema([
-                        Forms\Components\Placeholder::make('how_it_works')
-                            ->label('')
-                            ->content(new \Illuminate\Support\HtmlString('
-                                <ul class="list-disc pl-5 space-y-1 text-sm text-gray-600 dark:text-gray-400">
-                                    <li><strong>Detection:</strong> The visitor\'s IP address is looked up via <code>ip-api.com</code> (free, no key needed).</li>
-                                    <li><strong>Caching:</strong> Results are cached for 24 hours per IP to avoid API rate limits.</li>
-                                    <li><strong>Admin bypass:</strong> The <code>/admin</code> panel is always accessible regardless of restrictions.</li>
-                                    <li><strong>Private IPs:</strong> Local / development IPs are never blocked.</li>
-                                    <li><strong>Detection failure:</strong> If geolocation cannot be determined, the visitor is allowed through to prevent false-blocking.</li>
-                                    <li><strong>Rate limit:</strong> ip-api.com allows 45 requests / minute on the free tier. For high-traffic sites consider a paid plan.</li>
-                                </ul>
-                            '))
+                        Forms\Components\Textarea::make('_info')
+                            ->label('How it works')
+                            ->disabled()
+                            ->rows(6)
+                            ->default(implode("\n", [
+                                '• Detection: visitor IP looked up via ip-api.com (free, no key needed).',
+                                '• Caching: result cached 24 hours per IP to stay within rate limits.',
+                                '• Admin bypass: the /admin panel is always accessible.',
+                                '• Private IPs: local/dev IPs are never blocked.',
+                                '• Detection failure: if geo-lookup fails the visitor is allowed through.',
+                                '• Rate limit: ip-api.com allows 45 requests/minute on the free tier.',
+                            ]))
                             ->columnSpanFull(),
                     ])
                     ->collapsible()
