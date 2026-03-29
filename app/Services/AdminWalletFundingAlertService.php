@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\SiteSetting;
 use App\Models\User;
 use App\Models\WalletFundingRequest;
 use App\Notifications\AdminWalletFundingApprovalRequiredNotification;
@@ -15,7 +16,23 @@ class AdminWalletFundingAlertService
             return;
         }
 
+        $walletAlertsEnabled = filter_var(
+            SiteSetting::get('admin_wallet_funding_alerts_enabled', true),
+            FILTER_VALIDATE_BOOLEAN,
+            FILTER_NULL_ON_FAILURE
+        ) ?? true;
+
+        if (! $walletAlertsEnabled) {
+            return;
+        }
+
         $fundingRequest->loadMissing('user');
+
+        $telegramLinksEnabled = filter_var(
+            SiteSetting::get('admin_funding_telegram_action_links_enabled', true),
+            FILTER_VALIDATE_BOOLEAN,
+            FILTER_NULL_ON_FAILURE
+        ) ?? true;
 
         $admins = User::query()
             ->where(function ($query) {
@@ -46,7 +63,7 @@ class AdminWalletFundingAlertService
                 $admin->notify(new AdminWalletFundingApprovalRequiredNotification($fundingRequest, $approveUrl, $rejectUrl));
             }
 
-            if ($admin->id === $admins->first()->id) {
+            if ($telegramLinksEnabled && $admin->id === $admins->first()->id) {
                 TelegramService::notifyAdminWalletFundingReviewRequired($fundingRequest, $approveUrl, $rejectUrl);
             }
         }

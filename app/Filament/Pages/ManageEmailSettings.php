@@ -80,6 +80,9 @@ class ManageEmailSettings extends Page
             'email_login_alert_enabled'   => true,
             'email_feature_usage_enabled' => true,
             'email_daily_summary_enabled' => true,
+            'admin_wallet_funding_alerts_enabled'  => true,
+            'admin_premium_funding_alerts_enabled' => true,
+            'admin_funding_telegram_action_links_enabled' => true,
 
             // Test email helper (not persisted)
             '_test_email_address' => null,
@@ -337,6 +340,26 @@ class ManageEmailSettings extends Page
                                         ->columnSpanFull(),
                                     Toggle::make('email_daily_summary_enabled')
                                         ->label('Send daily digest email (profile views, new likes, new matches summary)')
+                                        ->inline(false)
+                                        ->columnSpanFull(),
+                                ])->columns(1),
+
+                                Section::make('Admin Funding Review Alerts')->schema([
+                                    Toggle::make('admin_wallet_funding_alerts_enabled')
+                                        ->label('Notify admins for wallet funding requests')
+                                        ->helperText('Sends admin review alerts when users submit wallet top-up funding requests.')
+                                        ->inline(false)
+                                        ->columnSpanFull(),
+
+                                    Toggle::make('admin_premium_funding_alerts_enabled')
+                                        ->label('Notify admins for premium payment submissions')
+                                        ->helperText('Sends admin review alerts when users submit premium plan payments.')
+                                        ->inline(false)
+                                        ->columnSpanFull(),
+
+                                    Toggle::make('admin_funding_telegram_action_links_enabled')
+                                        ->label('Enable Telegram approve/reject action links (otherwise email-only)')
+                                        ->helperText('When OFF, no Telegram funding alerts are sent and only email action links are used.')
                                         ->inline(false)
                                         ->columnSpanFull(),
                                 ])->columns(1),
