@@ -409,6 +409,21 @@ main { padding-bottom: 0 !important; }
   0%   { transform:translateY(-20px) rotate(0deg); opacity:1; }
   100% { transform:translateY(100vh) rotate(720deg); opacity:0; }
 }
+
+/* ── Safety banner — dark-page override (swipe / discover layouts) ───────── */
+#safety-banner .safety-banner-inner {
+  background: linear-gradient(135deg,rgba(251,191,36,.1),rgba(245,158,11,.07)) !important;
+  border: 1px solid rgba(245,158,11,.3) !important;
+  box-shadow: 0 2px 14px rgba(0,0,0,.45) !important;
+}
+#safety-banner .safety-banner-inner,
+#safety-banner .safety-banner-inner * { color: rgba(255,255,255,.82) !important; }
+#safety-banner .safety-banner-inner strong  { color: #fbbf24 !important; }
+#safety-banner .safety-banner-inner [style*="font-weight:700"]  { color: #fde68a !important; }
+#safety-banner #safety-dismiss {
+  border-color: rgba(251,191,36,.5) !important;
+  color: #fde68a !important;
+}
 </style>
 @endpush
 
@@ -832,7 +847,8 @@ if (window.visualViewport) window.visualViewport.addEventListener('resize', fitD
 
 const csrf    = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 const likeUrl = '{{ url("like") }}';
-let isAnimating = false;
+let isAnimating  = false;
+let _matchPending = false; // prevents fetchMoreCards running during match celebration
 
 const _toast     = document.getElementById('swipe-toast');
 const _toastBody = document.getElementById('swipe-toast-body');
@@ -961,6 +977,7 @@ async function swipe(direction) {
             } else {
                 const data = await res.json();
                 if (data.matched) {
+                    _matchPending = true; // block fetchMoreCards until modal is dismissed
                     document.getElementById('match-name').textContent = data.match_name ?? 'them';
                     // Update "Send a Message" to link directly to the new conversation
                     if (data.conversation_url) {
@@ -1012,7 +1029,8 @@ async function swipe(direction) {
         isAnimating = false;
         if (!getTopCard()) {
             await apiCallPromise; // make sure API finished before we reload
-            fetchMoreCards();
+            // Don't reload if a match modal is about to open — wait until it closes
+            if (!_matchPending) fetchMoreCards();
         }
     }, 400);
 }
@@ -1254,6 +1272,11 @@ if (matchModal) {
     matchModal.addEventListener('show.bs.modal', () => {
         icebreakerIndex = Math.floor(Math.random() * icebreakers.length);
         setIcebreaker();
+    });
+    // When match modal is dismissed, load next cards if the deck is now empty
+    matchModal.addEventListener('hidden.bs.modal', () => {
+        _matchPending = false;
+        if (!getTopCard()) fetchMoreCards();
     });
 }
 

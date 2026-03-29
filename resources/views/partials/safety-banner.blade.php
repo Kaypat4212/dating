@@ -1,17 +1,15 @@
 {{--
     Safety / scammer awareness banner.
     Dismissed via localStorage so it only shows once per session.
+    The breakout wrapper uses negative margins to fill edge-to-edge on pages where
+    the container allows it; pages with overflow:hidden will fall back to full container width.
 --}}
-<div id="safety-banner" class="d-none"
-     style="margin-left:calc(-50vw + 50%);margin-right:calc(-50vw + 50%);
-            width:100vw;box-sizing:border-box;padding:.75rem 1rem 0;margin-bottom:1rem">
-    <div style="
+<div id="safety-banner" class="d-none" style="margin-bottom:1rem">
+    <div class="safety-banner-inner" style="
         background:linear-gradient(135deg,#fffbeb,#fef3c7);
         border-radius:1rem;
         box-shadow:0 2px 8px rgba(0,0,0,.08);
         padding:1rem 1.15rem;
-        max-width:560px;
-        margin:0 auto;
         box-sizing:border-box;
     ">
         <div style="display:flex;align-items:flex-start;gap:.75rem">
