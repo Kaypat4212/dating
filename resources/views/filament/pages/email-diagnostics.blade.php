@@ -61,46 +61,68 @@
 @endphp
 
 <style>
+    :root {
+        --white: #ffffff;
+        --gray-50: #f9fafb;
+        --gray-100: #f3f4f6;
+        --gray-200: #e5e7eb;
+        --gray-300: #d1d5db;
+        --gray-400: #9ca3af;
+        --gray-500: #6b7280;
+        --gray-600: #4b5563;
+        --gray-700: #374151;
+        --gray-800: #1f2937;
+        --gray-900: #111827;
+        --amber-50: #fffbeb;
+        --amber-300: #fcd34d;
+        --amber-800: #92400e;
+    }
+    
     .email-diagnostics {
         display: grid;
-        gap: 1rem;
-        padding: .25rem;
+        gap: 1.5rem;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .fi-ta-content .email-diagnostics {
+        margin-top: 1rem;
     }
 
     .email-diag-card {
-        background: #fff;
-        border: 1px solid #e5e7eb;
-        border-radius: 1rem;
+        background: var(--white);
+        border: 1px solid var(--gray-200);
+        border-radius: 0.75rem;
         overflow: hidden;
-        box-shadow: 0 8px 24px rgba(15, 23, 42, .06);
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
     }
 
     .dark .email-diag-card {
-        background: #111827;
-        border-color: #374151;
-        box-shadow: none;
+        background: var(--gray-900);
+        border-color: var(--gray-700); 
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.3);
     }
 
     .email-diag-head {
         display: flex;
         align-items: center;
-        gap: .625rem;
-        padding: .95rem 1rem;
-        border-bottom: 1px solid #eef2f7;
-        background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
-        color: #0f172a;
-        font-weight: 700;
-        font-size: .95rem;
+        gap: 0.75rem;
+        padding: 1rem 1.25rem;
+        border-bottom: 1px solid var(--gray-200);
+        background: var(--gray-50);
+        color: var(--gray-900);
+        font-weight: 600;
+        font-size: 0.875rem;
     }
 
     .dark .email-diag-head {
-        background: linear-gradient(180deg, #111827 0%, #0f172a 100%);
-        border-color: #374151;
-        color: #f9fafb;
+        background: var(--gray-800);
+        border-color: var(--gray-700);
+        color: var(--gray-100);
     }
 
     .email-diag-body {
-        padding: 1rem;
+        padding: 1.25rem;
     }
 
     .email-diag-grid {
@@ -119,47 +141,48 @@
     .email-diag-stat,
     .email-diag-check,
     .email-diag-row {
-        border: 1px solid #e5e7eb;
-        border-radius: .875rem;
-        background: #f8fafc;
+        border: 1px solid var(--gray-200);
+        border-radius: 0.5rem;
+        background: var(--gray-50);
+        transition: all 0.15s ease;
     }
 
     .dark .email-diag-item,
     .dark .email-diag-stat,
     .dark .email-diag-check,
     .dark .email-diag-row {
-        background: #0f172a;
-        border-color: #374151;
+        background: var(--gray-800);
+        border-color: var(--gray-700);
     }
 
     .email-diag-item {
-        padding: .9rem 1rem;
+        padding: 1rem;
     }
 
     .email-diag-label {
         display: block;
-        margin-bottom: .35rem;
-        color: #64748b;
-        font-size: .78rem;
-        font-weight: 600;
+        margin-bottom: 0.5rem;
+        color: var(--gray-600);
+        font-size: 0.75rem;
+        font-weight: 500;
         text-transform: uppercase;
-        letter-spacing: .03em;
+        letter-spacing: 0.05em;
     }
 
     .dark .email-diag-label {
-        color: #94a3b8;
+        color: var(--gray-400);
     }
 
     .email-diag-value {
-        color: #0f172a;
-        font-size: .94rem;
-        font-weight: 700;
-        line-height: 1.45;
+        color: var(--gray-900);
+        font-size: 0.875rem;
+        font-weight: 600;
+        line-height: 1.5;
         word-break: break-word;
     }
 
     .dark .email-diag-value {
-        color: #f8fafc;
+        color: var(--gray-100);
     }
 
     .email-diag-mono {
@@ -167,13 +190,13 @@
     }
 
     .email-diag-subtle {
-        font-size: .78rem;
-        color: #64748b;
-        margin-top: .25rem;
+        font-size: 0.75rem;
+        color: var(--gray-500);
+        margin-top: 0.375rem;
     }
 
     .dark .email-diag-subtle {
-        color: #94a3b8;
+        color: var(--gray-400);
     }
 
     .email-diag-badge {
@@ -199,20 +222,20 @@
     .dark .email-diag-badge--gray { background: rgba(148, 163, 184, .16); color: #cbd5e1; }
 
     .email-diag-note {
-        margin-top: .9rem;
-        padding: .85rem 1rem;
-        border-radius: .875rem;
-        border: 1px solid #fde68a;
-        background: #fffbeb;
-        color: #92400e;
-        font-size: .88rem;
+        margin-top: 1rem;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        border: 1px solid var(--amber-300);
+        background: var(--amber-50);
+        color: var(--amber-800);
+        font-size: 0.875rem;
         line-height: 1.5;
     }
 
     .dark .email-diag-note {
-        background: rgba(245, 158, 11, .08);
-        border-color: rgba(245, 158, 11, .3);
-        color: #fcd34d;
+        background: rgba(245, 158, 11, 0.1);
+        border-color: rgba(245, 158, 11, 0.2);
+        color: var(--amber-300);
     }
 
     .email-diag-list {
@@ -225,7 +248,7 @@
         justify-content: space-between;
         align-items: flex-start;
         gap: 1rem;
-        padding: .85rem 1rem;
+        padding: 1rem;
     }
 
     .email-diag-row-main {
@@ -255,8 +278,8 @@
 
     .email-diag-check {
         display: flex;
-        gap: .75rem;
-        padding: .9rem 1rem;
+        gap: 0.75rem;
+        padding: 1rem;
     }
 
     .email-diag-check-icon {
@@ -270,13 +293,15 @@
     .email-diag-check-icon--bad { color: #dc2626; }
 
     .email-diag-empty {
-        color: #64748b;
-        font-size: .9rem;
+        color: var(--gray-500);
+        font-size: 0.875rem;
         font-style: italic;
+        text-align: center;
+        padding: 2rem 1rem;
     }
 
     .dark .email-diag-empty {
-        color: #94a3b8;
+        color: var(--gray-400);
     }
 
     @media (max-width: 768px) {
