@@ -176,4 +176,24 @@ class AccountController extends Controller
 
         return back()->with('success', 'Secret word saved. You can now use it to reset your password.');
     }
+
+    /**
+     * Save the user's per-notification email preference toggles.
+     */
+    public function updateNotificationPreferences(Request $request): RedirectResponse
+    {
+        $user  = $request->user();
+        $prefs = $user->preferences()->firstOrCreate(['user_id' => $user->id]);
+
+        $prefs->update([
+            'email_new_message'     => $request->boolean('email_new_message'),
+            'email_new_match'       => $request->boolean('email_new_match'),
+            'email_profile_liked'   => $request->boolean('email_profile_liked'),
+            'email_wave_received'   => $request->boolean('email_wave_received'),
+            'email_travel_interest' => $request->boolean('email_travel_interest'),
+            'email_login_alert'     => $request->boolean('email_login_alert'),
+        ]);
+
+        return back()->with('success', 'Notification preferences saved.');
+    }
 }

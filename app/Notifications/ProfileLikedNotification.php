@@ -24,7 +24,8 @@ class ProfileLikedNotification extends Notification implements ShouldQueue
     {
         $channels = ['database'];
 
-        if (MailSettingsService::emailEnabled('email_feature_usage_enabled')) {
+        if (MailSettingsService::emailEnabled('email_feature_usage_enabled')
+            && ($notifiable->preferences?->wantsEmail('email_profile_liked') ?? true)) {
             $channels[] = 'mail';
         }
 

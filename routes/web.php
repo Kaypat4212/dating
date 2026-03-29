@@ -199,6 +199,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/account/private-photos',  [AccountController::class, 'togglePrivatePhotos'])->name('account.private-photos');
         Route::get('/account/blocked',          [AccountController::class, 'blockedUsers'])->name('account.blocked');
         Route::post('/account/secret-word',     [AccountController::class, 'saveSecretWord'])->name('account.secret-word');
+        Route::post('/account/notification-preferences', [AccountController::class, 'updateNotificationPreferences'])->name('account.notification-prefs');
 
         // ── Waves / Wink ──────────────────────────────────────────────────────
         Route::post('/wave/{user}',             [WaveController::class, 'store'])->name('wave.store');

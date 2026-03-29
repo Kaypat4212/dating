@@ -22,7 +22,8 @@ class LoginAlertNotification extends Notification implements ShouldQueue
 
     public function via(object $notifiable): array
     {
-        if (! MailSettingsService::emailEnabled('email_login_alert_enabled')) {
+        if (! MailSettingsService::emailEnabled('email_login_alert_enabled')
+            || ! ($notifiable->preferences?->wantsEmail('email_login_alert') ?? true)) {
             return [];
         }
 

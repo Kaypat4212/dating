@@ -175,6 +175,46 @@
                 </div>
             </div>
 
+            {{-- Email Notification Preferences --}}
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-transparent fw-semibold"><i class="bi bi-bell me-2"></i>Email Notifications</div>
+                <div class="card-body">
+                    <p class="text-muted small mb-3">Choose which events trigger an email notification. In-app notifications are always on.</p>
+                    <form method="POST" action="{{ route('account.notification-prefs') }}">
+                        @csrf
+                        @php $prefs = auth()->user()->preferences; @endphp
+                        <div class="row g-3">
+                            @foreach ([
+                                ['key' => 'email_new_message',     'label' => 'New message',            'desc' => 'Someone sends you a message'],
+                                ['key' => 'email_new_match',       'label' => 'New match',              'desc' => 'You and someone like each other'],
+                                ['key' => 'email_profile_liked',   'label' => 'Profile liked',          'desc' => 'Someone likes your profile'],
+                                ['key' => 'email_wave_received',   'label' => 'Wave received',          'desc' => 'Someone sends you a wave'],
+                                ['key' => 'email_travel_interest', 'label' => 'Travel interest',        'desc' => 'Someone is interested in your travel plan'],
+                                ['key' => 'email_login_alert',     'label' => 'Login alert',            'desc' => 'A new login is detected on your account'],
+                            ] as $item)
+                            <div class="col-12 col-sm-6">
+                                <div class="form-check form-switch d-flex align-items-start gap-2">
+                                    <input class="form-check-input mt-1 flex-shrink-0" type="checkbox"
+                                        role="switch"
+                                        name="{{ $item['key'] }}"
+                                        id="pref_{{ $item['key'] }}"
+                                        value="1"
+                                        {{ ($prefs?->wantsEmail($item['key']) ?? true) ? 'checked' : '' }}>
+                                    <label class="form-check-label" for="pref_{{ $item['key'] }}">
+                                        <span class="fw-semibold d-block">{{ $item['label'] }}</span>
+                                        <span class="text-muted small">{{ $item['desc'] }}</span>
+                                    </label>
+                                </div>
+                            </div>
+                            @endforeach
+                        </div>
+                        <div class="mt-3 text-end">
+                            <button type="submit" class="btn btn-sm btn-primary"><i class="bi bi-floppy me-1"></i>Save preferences</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
             {{-- GDPR Export --}}
             <div class="card border-0 shadow-sm mb-4">
                 <div class="card-header bg-transparent fw-semibold"><i class="bi bi-download me-2"></i>Your Data</div>

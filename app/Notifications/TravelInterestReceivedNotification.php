@@ -28,7 +28,8 @@ class TravelInterestReceivedNotification extends Notification implements ShouldQ
     {
         $channels = ['database'];
 
-        if (MailSettingsService::emailEnabled('email_feature_usage_enabled')) {
+        if (MailSettingsService::emailEnabled('email_feature_usage_enabled')
+            && ($notifiable->preferences?->wantsEmail('email_travel_interest') ?? true)) {
             $channels[] = 'mail';
         }
 

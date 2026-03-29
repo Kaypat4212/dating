@@ -25,7 +25,8 @@ class NewMatchNotification extends Notification implements ShouldQueue
     {
         $channels = ['database'];
 
-        if (MailSettingsService::emailEnabled('email_feature_usage_enabled')) {
+        if (MailSettingsService::emailEnabled('email_feature_usage_enabled')
+            && ($notifiable->preferences?->wantsEmail('email_new_match') ?? true)) {
             $channels[] = 'mail';
         }
 

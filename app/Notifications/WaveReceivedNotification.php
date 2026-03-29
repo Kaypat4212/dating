@@ -23,7 +23,8 @@ class WaveReceivedNotification extends Notification implements ShouldQueue
     {
         $channels = ['database'];
 
-        if (MailSettingsService::emailEnabled('email_feature_usage_enabled')) {
+        if (MailSettingsService::emailEnabled('email_feature_usage_enabled')
+            && ($notifiable->preferences?->wantsEmail('email_wave_received') ?? true)) {
             $channels[] = 'mail';
         }
 

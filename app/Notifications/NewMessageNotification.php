@@ -25,7 +25,8 @@ class NewMessageNotification extends Notification implements ShouldQueue
     {
         $channels = ['database', 'broadcast'];
 
-        if (MailSettingsService::emailEnabled('email_feature_usage_enabled')) {
+        if (MailSettingsService::emailEnabled('email_feature_usage_enabled')
+            && ($notifiable->preferences?->wantsEmail('email_new_message') ?? true)) {
             $channels[] = 'mail';
         }
 
