@@ -121,7 +121,7 @@ class VpnDetectionLogResource extends Resource
                 Tables\Columns\TextColumn::make('user.name')
                     ->label('User')
                     ->searchable()
-                    ->url(fn ($record) => $record->user ? route('filament.admin.resources.users.view', $record->user) : null),
+                    ->url(fn ($record) => $record->user ? route('filament.admin.resources.users.edit', $record->user) : null),
                 
                 Tables\Columns\TextColumn::make('action_taken')
                     ->label('Action')
