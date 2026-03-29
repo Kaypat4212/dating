@@ -1,7 +1,19 @@
 <x-filament-panels::page>
     @php
         $grouped = \App\Filament\Pages\ArtisanRunner::groupedCommands();
-        $filteredCommands = $this->getFilteredCommands();
+        $filteredCommands = \App\Filament\Pages\ArtisanRunner::allowedCommands();
+        
+        // Apply search filter if needed
+        $filteredCommands = $allCommands;
+        if (!empty($this->searchQuery)) {
+            $query = strtolower($this->searchQuery);
+            $filteredCommands = array_filter($allCommands, function ($def, $key) use ($query) {
+                return str_contains(strtolower($key), $query) || 
+                       str_contains(strtolower($def['label']), $query) || 
+                       str_contains(strtolower($def['desc']), $query) ||
+                       str_contains(strtolower($def['group']), $query);
+            }, ARRAY_FILTER_USE_BOTH);
+        }
     @endphp
 
     <style>

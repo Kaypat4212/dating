@@ -1,1 +1,0 @@
-﻿<?php /**PATH C:\xampp\htdocs\dating\resources\views\components\secondary-button.blade.php ENDPATH**/ ?>
