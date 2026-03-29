@@ -35,6 +35,7 @@ class ArtisanRunner extends Page
     public bool   $isRunning       = false;
     public string $lastRunAt       = '';
     public string $searchQuery     = '';
+    public array  $recentCommands  = [];
 
     public function mount(): void
     {
@@ -46,8 +47,6 @@ class ArtisanRunner extends Page
         // Load recent commands from cache for this user
         $this->recentCommands = Cache::get('artisan_recent_' . Auth::id(), []);
     }
-
-    public array $recentCommands = [];
 
     /**
      * Only commands listed here can ever be executed.
