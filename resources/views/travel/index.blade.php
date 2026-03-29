@@ -297,41 +297,104 @@
                         <ul class="mb-0 ps-3">@foreach($errors->all() as $e)<li>{{ $e }}</li>@endforeach</ul>
                     </div>
                     @endif
+
+                    {{-- Mission banner --}}
+                    <div class="alert alert-primary d-flex align-items-start gap-2 py-2 mb-3" style="font-size:.85rem;border-radius:10px;">
+                        <i class="bi bi-people-fill fs-5 flex-shrink-0 mt-1"></i>
+                        <div>
+                            <strong>How Travel Buddy works:</strong> Fill in where you're going <em>and</em> where you're travelling from — we'll connect you with other members making the same journey so you can plan, share costs, and travel together.
+                        </div>
+                    </div>
+
                     <div class="row g-3">
+                        {{-- Destination City --}}
                         <div class="col-md-8">
-                            <label class="form-label fw-semibold">Destination City *</label>
+                            <label class="form-label fw-semibold d-flex align-items-center gap-1">
+                                Destination City *
+                                <i class="bi bi-info-circle text-primary" style="font-size:.85rem;cursor:pointer"
+                                   data-bs-toggle="tooltip" data-bs-placement="top"
+                                   title="The city you are travelling TO. Other members heading to the same city will be suggested as potential travel buddies."></i>
+                            </label>
                             <input type="text" name="destination" class="form-control" required maxlength="150" placeholder="e.g. Paris" value="{{ old('destination') }}">
                         </div>
+
+                        {{-- Destination Country --}}
                         <div class="col-md-4">
-                            <label class="form-label fw-semibold">Destination Country *</label>
+                            <label class="form-label fw-semibold d-flex align-items-center gap-1">
+                                Destination Country *
+                                <i class="bi bi-info-circle text-primary" style="font-size:.85rem;cursor:pointer"
+                                   data-bs-toggle="tooltip" data-bs-placement="top"
+                                   title="The country of your destination. Used alongside the city to filter matches — so 'Paris, France' and 'Paris, Texas' are kept separate."></i>
+                            </label>
                             <input type="text" name="destination_country" class="form-control" required maxlength="100" placeholder="France" value="{{ old('destination_country') }}">
                         </div>
+
+                        {{-- From City --}}
                         <div class="col-md-8">
-                            <label class="form-label fw-semibold">Travelling From (City)</label>
+                            <label class="form-label fw-semibold d-flex align-items-center gap-1">
+                                Travelling From (City)
+                                <i class="bi bi-info-circle text-warning" style="font-size:.85rem;cursor:pointer"
+                                   data-bs-toggle="tooltip" data-bs-placement="top"
+                                   title="⭐ Key matching field — your departure city. Members leaving from the same city can meet up before the trip, share rides to the airport, or travel together the whole way."></i>
+                            </label>
                             <input type="text" name="from_city" class="form-control" maxlength="150" placeholder="e.g. London" value="{{ old('from_city') }}">
+                            <div class="form-text"><i class="bi bi-lightbulb text-warning me-1"></i>Filling this in greatly improves your match quality.</div>
                         </div>
+
+                        {{-- From Country --}}
                         <div class="col-md-4">
-                            <label class="form-label fw-semibold">From Country</label>
+                            <label class="form-label fw-semibold d-flex align-items-center gap-1">
+                                From Country
+                                <i class="bi bi-info-circle text-warning" style="font-size:.85rem;cursor:pointer"
+                                   data-bs-toggle="tooltip" data-bs-placement="top"
+                                   title="⭐ Key matching field — your home or departure country. Members from the same country travelling to the same destination are prioritised as travel buddy suggestions."></i>
+                            </label>
                             <input type="text" name="origin_country" class="form-control" maxlength="100" placeholder="UK" value="{{ old('origin_country') }}">
                         </div>
+
+                        {{-- Dates --}}
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold">From Date *</label>
+                            <label class="form-label fw-semibold d-flex align-items-center gap-1">
+                                Departure Date *
+                                <i class="bi bi-info-circle text-primary" style="font-size:.85rem;cursor:pointer"
+                                   data-bs-toggle="tooltip" data-bs-placement="top"
+                                   title="The date you plan to leave. We show this to potential travel buddies so they can see if your travel windows overlap."></i>
+                            </label>
                             <input type="date" name="travel_from" class="form-control" required min="{{ date('Y-m-d') }}" value="{{ old('travel_from') }}">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold">To Date *</label>
+                            <label class="form-label fw-semibold d-flex align-items-center gap-1">
+                                Return / End Date *
+                                <i class="bi bi-info-circle text-primary" style="font-size:.85rem;cursor:pointer"
+                                   data-bs-toggle="tooltip" data-bs-placement="top"
+                                   title="When your trip ends. Travel buddies with overlapping dates will be matched — even a few shared days is enough to plan something together."></i>
+                            </label>
                             <input type="date" name="travel_to" class="form-control" required min="{{ date('Y-m-d') }}" value="{{ old('travel_to') }}">
                         </div>
+
+                        {{-- Travel Type --}}
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold">Travel Type *</label>
+                            <label class="form-label fw-semibold d-flex align-items-center gap-1">
+                                Travel Type *
+                                <i class="bi bi-info-circle text-primary" style="font-size:.85rem;cursor:pointer"
+                                   data-bs-toggle="tooltip" data-bs-placement="top"
+                                   title="Seeking Companion = you want someone to travel with. Solo = open to connecting but not required. With Friends = you have a group but others can reach out."></i>
+                            </label>
                             <select name="travel_type" class="form-select">
                                 <option value="seeking_companion" {{ old('travel_type') === 'seeking_companion' ? 'selected':'' }}>Seeking a travel companion</option>
                                 <option value="solo"              {{ old('travel_type') === 'solo'              ? 'selected':'' }}>Solo traveler</option>
                                 <option value="with_friends"      {{ old('travel_type') === 'with_friends'      ? 'selected':'' }}>With friends</option>
                             </select>
                         </div>
+
+                        {{-- Accommodation --}}
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold">Accommodation</label>
+                            <label class="form-label fw-semibold d-flex align-items-center gap-1">
+                                Accommodation
+                                <i class="bi bi-info-circle text-secondary" style="font-size:.85rem;cursor:pointer"
+                                   data-bs-toggle="tooltip" data-bs-placement="top"
+                                   title="Optional. Sharing your accommodation preference helps buddies with the same plan (e.g. both staying in a hostel) coordinate bookings and split costs."></i>
+                            </label>
                             <select name="accommodation" class="form-select">
                                 <option value="">Not specified</option>
                                 <option value="hotel"    {{ old('accommodation') === 'hotel'    ? 'selected':'' }}>Hotel</option>
@@ -341,10 +404,18 @@
                                 <option value="flexible" {{ old('accommodation') === 'flexible' ? 'selected':'' }}>Flexible / Open</option>
                             </select>
                         </div>
+
+                        {{-- Description --}}
                         <div class="col-12">
-                            <label class="form-label fw-semibold">What are you planning to do there?</label>
+                            <label class="form-label fw-semibold d-flex align-items-center gap-1">
+                                What are you planning to do there?
+                                <i class="bi bi-info-circle text-secondary" style="font-size:.85rem;cursor:pointer"
+                                   data-bs-toggle="tooltip" data-bs-placement="top"
+                                   title="Describe your plans, interests, and what kind of travel buddy you're looking for. A good description attracts the right people — e.g. 'Looking for someone to explore local food markets and do day hikes with.'"></i>
+                            </label>
                             <textarea name="description" class="form-control" rows="3" maxlength="1000"
-                                      placeholder="e.g. Hiking, food tours, exploring museums, looking for a cultural exchange...">{{ old('description') }}</textarea>
+                                      placeholder="e.g. I plan to do hiking and food tours — looking for someone easy-going who enjoys exploring local culture...">{{ old('description') }}</textarea>
+                            <div class="form-text text-end"><span id="desc-count">0</span> / 1000</div>
                         </div>
                     </div>
                 </div>
@@ -365,5 +436,24 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 @endif
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // Initialise Bootstrap tooltips on all travel form tooltip icons
+    document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
+        new bootstrap.Tooltip(el, { trigger: 'hover focus' });
+    });
+
+    // Description character counter
+    const desc  = document.querySelector('textarea[name="description"]');
+    const count = document.getElementById('desc-count');
+    if (desc && count) {
+        count.textContent = desc.value.length;
+        desc.addEventListener('input', () => { count.textContent = desc.value.length; });
+    }
+});
+</script>
+@endpush
 
 @endsection
