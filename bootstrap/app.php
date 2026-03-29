@@ -33,6 +33,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // Append to the 'web' middleware group
         $middleware->web(append: [
+            \App\Http\Middleware\DynamicSessionDomain::class,
             \App\Http\Middleware\UpdateLastActive::class,
             \App\Http\Middleware\BlockRestrictedCountries::class,
             \App\Http\Middleware\BlockVpnUsers::class,

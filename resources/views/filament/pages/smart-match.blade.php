@@ -1,4 +1,5 @@
 <x-filament-panels::page>
+@php use Illuminate\Support\Str; @endphp
 <div>
 {{-- Include Bootstrap CSS --}}
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -260,7 +261,7 @@ body {
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <h6 class="text-white fw-bold mb-0">New Members</h6>
-                            <small class="text-white-50">Last 7 days</small>
+                            <small class="text-white-50">30 most recent</small>
                         </div>
                         <span class="badge rounded-pill" style="background: linear-gradient(135deg, #f43f5e, #a855f7);">
                             {{ $newUsers->count() }}
@@ -598,6 +599,52 @@ body {
 
 {{-- JavaScript for SmartMatch --}}
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+{{-- ═══════════════════════════════════════════════════════════════════
+     Same-Sex Match Confirmation Modal
+     Rendered by forceMatch() when two users share the same gender.
+══════════════════════════════════════════════════════════════════════ --}}
+@if($showSameSexModal)
+<div class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.7);" role="dialog">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4" style="background: linear-gradient(145deg, #1e0a2e, #2d1050); border: 1px solid rgba(244,63,94,0.4) !important;">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title text-white fw-bold">
+                    <span class="me-2" style="font-size:1.4rem;">⚠️</span> Same-Gender Match
+                </h5>
+            </div>
+            <div class="modal-body text-white-50">
+                <p class="mb-2">
+                    You are about to force-match two <strong class="text-white">{{ $pendingGender }}</strong> users:
+                </p>
+                <div class="rounded-3 p-3 mb-3" style="background: rgba(244,63,94,0.1); border: 1px solid rgba(244,63,94,0.2);">
+                    <strong class="text-white">{{ $pendingMatchNames }}</strong>
+                </div>
+                <p class="mb-0 small">This platform is designed for opposite-gender matches. Are you sure you want to proceed?</p>
+            </div>
+            <div class="modal-footer border-0 pt-0 gap-2">
+                <button
+                    wire:click="cancelSameSexMatch"
+                    class="btn btn-outline-secondary text-white rounded-3 px-4"
+                >
+                    Cancel
+                </button>
+                <button
+                    wire:click="confirmSameSexMatch"
+                    wire:loading.attr="disabled"
+                    class="btn rounded-3 px-4 fw-semibold text-white"
+                    style="background: linear-gradient(135deg, #f43f5e, #a855f7);"
+                >
+                    <span wire:loading.remove wire:target="confirmSameSexMatch">Yes, Force Match</span>
+                    <span wire:loading wire:target="confirmSameSexMatch">
+                        <span class="spinner-border spinner-border-sm me-1"></span> Matching…
+                    </span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+@endif
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Toast notification system
