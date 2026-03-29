@@ -7,6 +7,8 @@ use App\Models\TravelInterest;
 use App\Models\TravelPlan;
 use App\Models\User;
 use App\Models\UserMatch;
+use App\Notifications\TravelInterestReceivedNotification;
+use App\Notifications\TravelInterestRespondedNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
@@ -127,12 +129,20 @@ class TravelController extends Controller
             return back()->with('info', 'You already expressed interest in this plan.');
         }
 
-        TravelInterest::create([
+        $interest = TravelInterest::create([
             'user_id'      => Auth::id(),
             'plan_id'      => $travelPlan->id,
             'expressed_at' => now(),
             'status'       => 'pending',
         ]);
+
+        // Notify the plan owner (in-app notification + email)
+        try {
+            $travelPlan->load('user');
+            $travelPlan->user->notify(
+                new TravelInterestReceivedNotification($interest, Auth::user(), $travelPlan)
+            );
+        } catch (\Throwable) {}
 
         return back()->with('success', 'Interest expressed! The trip owner will be notified.');
     }
@@ -168,10 +178,39 @@ class TravelController extends Controller
             // Find or create the conversation for this match
             $conversation = Conversation::firstOrCreate(['match_id' => $match->id]);
 
+            // Notify the interested user — accepted (in-app + email)
+            try {
+                $interestedUser = User::find($interestedUserId);
+                $travelInterest->load('plan');
+                $interestedUser?->notify(
+                    new TravelInterestRespondedNotification(
+                        $travelInterest,
+                        Auth::user(),
+                        $travelInterest->plan,
+                        'accepted',
+                        $conversation
+                    )
+                );
+            } catch (\Throwable) {}
+
             return redirect()
                 ->route('conversations.show', $conversation)
                 ->with('success', 'Travel buddy connection accepted! Start the conversation.');
         }
+
+        // Declined — notify the interested user
+        try {
+            $interestedUser = User::find($travelInterest->user_id);
+            $travelInterest->load('plan');
+            $interestedUser?->notify(
+                new TravelInterestRespondedNotification(
+                    $travelInterest,
+                    Auth::user(),
+                    $travelInterest->plan,
+                    'declined'
+                )
+            );
+        } catch (\Throwable) {}
 
         return back()->with('success', 'Interest declined.');
     }
