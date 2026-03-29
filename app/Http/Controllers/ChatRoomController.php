@@ -107,7 +107,7 @@ class ChatRoomController extends Controller
         $user   = Auth::user();
         /** @var ChatRoomMember|null $member */
         $member = $chatRoom->members()->where('user_id', $user->id)->first();
-        abort_unless($member && !$member->is_banned && !$member->is_muted, 403);
+        abort_unless($member && !$member->is_banned && !$member->is_muted, 403, 'You are banned or muted in this room and cannot send messages.');
 
         $request->validate([
             'content' => ['required', 'string', 'max:1000'],
@@ -135,7 +135,7 @@ class ChatRoomController extends Controller
 
     public function join(ChatRoom $chatRoom): \Illuminate\Http\RedirectResponse
     {
-        abort_unless($chatRoom->is_active && in_array($chatRoom->type, ['public', 'location']), 403);
+        abort_unless($chatRoom->is_active && in_array($chatRoom->type, ['public', 'location']), 403, 'This room is not open for joining.');
 
         // Location rooms require the user to have their location set
         if ($chatRoom->type === 'location') {

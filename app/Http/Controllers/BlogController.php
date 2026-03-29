@@ -77,7 +77,7 @@ class BlogController extends Controller
     {
         /** @var \App\Models\User $user */
         $user = Auth::user();
-        abort_unless($user->hasAnyRole(['admin', 'blogger']), 403);
+        abort_unless($user->hasAnyRole(['admin', 'blogger']), 403, 'Only admins and bloggers can create posts.');
 
         $categories = BlogCategory::where('is_active', true)->orderBy('order')->get();
 
@@ -88,7 +88,7 @@ class BlogController extends Controller
     {
         /** @var \App\Models\User $user */
         $user = Auth::user();
-        abort_unless($user->hasAnyRole(['admin', 'blogger']), 403);
+        abort_unless($user->hasAnyRole(['admin', 'blogger']), 403, 'Only admins and bloggers can create posts.');
 
         $request->validate([
             'title'       => ['required', 'string', 'max:255'],
@@ -120,7 +120,7 @@ class BlogController extends Controller
     {
         /** @var \App\Models\User $user */
         $user = Auth::user();
-        abort_unless($user->hasRole('admin') || ($user->hasRole('blogger') && $post->author_id === $user->id), 403);
+        abort_unless($user->hasRole('admin') || ($user->hasRole('blogger') && $post->author_id === $user->id), 403, 'You can only edit your own blog posts.');
 
         $categories = BlogCategory::where('is_active', true)->orderBy('order')->get();
 
@@ -131,7 +131,7 @@ class BlogController extends Controller
     {
         /** @var \App\Models\User $user */
         $user = Auth::user();
-        abort_unless($user->hasRole('admin') || ($user->hasRole('blogger') && $post->author_id === $user->id), 403);
+        abort_unless($user->hasRole('admin') || ($user->hasRole('blogger') && $post->author_id === $user->id), 403, 'You can only edit your own blog posts.');
 
         $request->validate([
             'title'       => ['required', 'string', 'max:255'],
@@ -158,7 +158,7 @@ class BlogController extends Controller
     {
         /** @var \App\Models\User $user */
         $user = Auth::user();
-        abort_unless($user->hasRole('admin') || ($user->hasRole('blogger') && $post->author_id === $user->id), 403);
+        abort_unless($user->hasRole('admin') || ($user->hasRole('blogger') && $post->author_id === $user->id), 403, 'You can only delete your own blog posts.');
 
         $post->delete();
 
@@ -168,7 +168,7 @@ class BlogController extends Controller
 
     public function storeComment(Request $request, BlogPost $post)
     {
-        abort_unless($post->allow_comments, 403);
+        abort_unless($post->allow_comments, 403, 'Comments have been disabled on this post.');
 
         $request->validate([
             'content'   => ['required', 'string', 'max:2000'],

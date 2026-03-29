@@ -29,7 +29,8 @@ class MessageController extends Controller
 
         abort_unless(
             $match->user1_id === $user->id || $match->user2_id === $user->id,
-            403
+            403,
+            'You do not have access to this conversation.'
         );
 
         // Rate limit: 30 messages per minute
@@ -153,7 +154,8 @@ class MessageController extends Controller
 
         abort_unless(
             $match->user1_id === $user->id || $match->user2_id === $user->id,
-            403
+            403,
+            'You do not have access to this conversation.'
         );
 
         broadcast(new \App\Events\UserTyping($conversation->id, $user))->toOthers();

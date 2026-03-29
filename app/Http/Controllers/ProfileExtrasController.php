@@ -56,7 +56,7 @@ class ProfileExtrasController extends Controller
 
     public function destroyPet(Pet $pet): \Illuminate\Http\RedirectResponse
     {
-        abort_unless($pet->user_id === Auth::id(), 403);
+        abort_unless($pet->user_id === Auth::id(), 403, 'You can only delete your own pets.');
         if ($pet->photo_path) {
             \Illuminate\Support\Facades\Storage::disk('public')->delete($pet->photo_path);
         }
@@ -101,7 +101,7 @@ class ProfileExtrasController extends Controller
 
     public function destroyVoice(VoicePrompt $voicePrompt): \Illuminate\Http\RedirectResponse
     {
-        abort_unless($voicePrompt->user_id === Auth::id(), 403);
+        abort_unless($voicePrompt->user_id === Auth::id(), 403, 'You can only delete your own voice prompts.');
         \Illuminate\Support\Facades\Storage::disk('public')->delete($voicePrompt->audio_path);
         $voicePrompt->delete();
         return back()->with('success', 'Voice prompt deleted.');

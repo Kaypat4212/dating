@@ -53,7 +53,7 @@ class IcebreakerController extends Controller
 
     public function destroy(IcebreakerAnswer $icebreakerAnswer): \Illuminate\Http\RedirectResponse
     {
-        abort_unless($icebreakerAnswer->user_id === Auth::id(), 403);
+        abort_unless($icebreakerAnswer->user_id === Auth::id(), 403, 'You can only delete your own icebreaker answers.');
         $icebreakerAnswer->delete();
         return back()->with('success', 'Answer removed.');
     }

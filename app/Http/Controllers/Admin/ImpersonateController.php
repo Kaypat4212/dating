@@ -19,7 +19,7 @@ class ImpersonateController extends Controller
         $admin = $request->user();
 
         // Only admins may impersonate
-        abort_unless($admin && $admin->hasRole('admin'), 403);
+        abort_unless($admin && $admin->hasRole('admin'), 403, 'Admin access required to impersonate users.');
 
         // Prevent admin from impersonating themselves
         if ($admin->id === $user->id) {

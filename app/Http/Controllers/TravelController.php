@@ -112,14 +112,14 @@ class TravelController extends Controller
 
     public function destroy(TravelPlan $travelPlan): \Illuminate\Http\RedirectResponse
     {
-        abort_unless($travelPlan->user_id === Auth::id(), 403);
+        abort_unless($travelPlan->user_id === Auth::id(), 403, 'You can only delete your own travel plans.');
         $travelPlan->delete();
         return back()->with('success', 'Plan removed.');
     }
 
     public function expressInterest(TravelPlan $travelPlan): \Illuminate\Http\RedirectResponse
     {
-        abort_if($travelPlan->user_id === Auth::id(), 403);
+        abort_if($travelPlan->user_id === Auth::id(), 403, 'You cannot express interest in your own travel plan.');
 
         $already = TravelInterest::where('user_id', Auth::id())
             ->where('plan_id', $travelPlan->id)
@@ -150,7 +150,7 @@ class TravelController extends Controller
     public function respondInterest(TravelInterest $travelInterest, string $action): \Illuminate\Http\RedirectResponse
     {
         // Only the plan owner can respond
-        abort_unless($travelInterest->plan->user_id === Auth::id(), 403);
+        abort_unless($travelInterest->plan->user_id === Auth::id(), 403, 'Only the plan owner can respond to interest requests.');
         abort_unless(in_array($action, ['accepted', 'declined']), 400);
 
         $travelInterest->update(['status' => $action]);
