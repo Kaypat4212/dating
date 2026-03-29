@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\AccountController;
 use App\Http\Controllers\Admin\ImpersonateController;
+use App\Http\Controllers\Admin\FundingActionController;
+use App\Http\Controllers\Admin\WalletFundingActionController;
 use App\Http\Controllers\AiController;
 use App\Http\Controllers\BlogController;
 use App\Http\Controllers\ChatRoomController;
@@ -71,6 +73,17 @@ Route::get('/install-app', function () {
 Route::get('/install', function () {
     return redirect()->route('pwa.install');
 });
+
+// Signed one-click admin funding actions (approve/reject from email/Telegram)
+Route::get('/admin/funding-actions/{payment}/{action}/{admin}', [FundingActionController::class, 'handle'])
+    ->whereIn('action', ['approve', 'reject'])
+    ->middleware(['signed', 'throttle:60,1'])
+    ->name('admin.funding.action');
+
+Route::get('/admin/wallet-funding-actions/{fundingRequest}/{action}/{admin}', [WalletFundingActionController::class, 'handle'])
+    ->whereIn('action', ['approve', 'reject'])
+    ->middleware(['signed', 'throttle:60,1'])
+    ->name('admin.wallet-funding.action');
 
 Route::get('/sitemap.xml', function () {
     $urls = [

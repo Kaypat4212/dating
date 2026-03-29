@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\AdminFundingAlertService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -50,6 +51,11 @@ class PremiumPayment extends Model
         static::created(function (PremiumPayment $payment): void {
             $number = 'INV-' . now()->format('Y') . '-' . str_pad((string) $payment->id, 6, '0', STR_PAD_LEFT);
             $payment->updateQuietly(['invoice_number' => $number]);
+
+            if ($payment->status === 'pending') {
+                $payment->refresh();
+                app(AdminFundingAlertService::class)->notifyNewPendingFunding($payment);
+            }
         });
     }
 

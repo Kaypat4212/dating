@@ -8,6 +8,7 @@ use App\Models\SiteSetting;
 use App\Models\WalletFundingRequest;
 use App\Models\WalletTransaction;
 use App\Models\WalletWithdrawalRequest;
+use App\Services\AdminWalletFundingAlertService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -42,13 +43,16 @@ class WalletController extends Controller
         ]);
         $user = Auth::user();
         $proofPath = $request->file('proof')->store('wallet_proofs', 'public');
-        WalletFundingRequest::create([
+        $fundingRequest = WalletFundingRequest::create([
             'user_id'    => $user->id,
             'amount'     => $request->amount,
             'txid'       => $request->txid,
             'proof_path' => $proofPath,
             'status'     => 'pending',
         ]);
+
+        app(AdminWalletFundingAlertService::class)->notifyNewPendingFundingRequest($fundingRequest);
+
         return response()->json(['success' => true, 'message' => 'Funding request submitted for review.']);
     }
 
