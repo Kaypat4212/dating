@@ -7,6 +7,7 @@ use Filament\Pages\Page;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 
 class ArtisanRunner extends Page
 {
@@ -17,7 +18,7 @@ class ArtisanRunner extends Page
     public static function getNavigationGroup(): ?string { return 'System'; }
     public static function getNavigationSort(): ?int     { return 99; }
 
-    public function getTitle(): string | Htmlable { return 'Artisan Command Runner'; }
+    public function getTitle(): string | Htmlable { return 'Laravel Artisan Command Runner'; }
 
     /** Only the superadmin (ID 1) may use this page. */
     public static function canAccess(): bool
@@ -31,55 +32,199 @@ class ArtisanRunner extends Page
     public string $output          = '';
     public int    $exitCode        = 0;
     public bool   $ran             = false;
+    public bool   $isRunning       = false;
+    public string $lastRunAt       = '';
+    public string $searchQuery     = '';
 
-    // ── Whitelist of allowed commands ─────────────────────────────────────────
+    public function mount(): void
+    {
+        $this->loadRecentCommands();
+    }
+
+    private function loadRecentCommands(): void
+    {
+        // Load recent commands from cache for this user
+        $this->recentCommands = Cache::get('artisan_recent_' . Auth::id(), []);
+    }
+
+    public array $recentCommands = [];
 
     /**
      * Only commands listed here can ever be executed.
-     * Keys are what the user selects; values are [artisan_command, arguments, label, group, dangerous].
+     * Keys are what the user selects; values are [artisan_command, arguments, label, group, dangerous, icon, description].
      */
     public static function allowedCommands(): array
     {
         return [
-            // Cache
-            'optimize:clear'            => ['cmd' => 'optimize:clear',             'args' => [],              'label' => 'optimize:clear — Clear all caches (config, route, view, events)',  'group' => 'Cache',        'dangerous' => false],
-            'cache:clear'               => ['cmd' => 'cache:clear',                'args' => [],              'label' => 'cache:clear — Flush the application cache',                        'group' => 'Cache',        'dangerous' => false],
-            'config:cache'              => ['cmd' => 'config:cache',               'args' => [],              'label' => 'config:cache — Cache configuration files',                         'group' => 'Cache',        'dangerous' => false],
-            'config:clear'              => ['cmd' => 'config:clear',               'args' => [],              'label' => 'config:clear — Remove cached config',                              'group' => 'Cache',        'dangerous' => false],
-            'route:cache'               => ['cmd' => 'route:cache',                'args' => [],              'label' => 'route:cache — Cache route information',                            'group' => 'Cache',        'dangerous' => false],
-            'route:clear'               => ['cmd' => 'route:clear',                'args' => [],              'label' => 'route:clear — Remove cached routes',                               'group' => 'Cache',        'dangerous' => false],
-            'view:cache'                => ['cmd' => 'view:cache',                 'args' => [],              'label' => 'view:cache — Compile all Blade views',                             'group' => 'Cache',        'dangerous' => false],
-            'view:clear'                => ['cmd' => 'view:clear',                 'args' => [],              'label' => 'view:clear — Clear compiled views',                                'group' => 'Cache',        'dangerous' => false],
-            'event:cache'               => ['cmd' => 'event:cache',                'args' => [],              'label' => 'event:cache — Discover and cache events',                          'group' => 'Cache',        'dangerous' => false],
-            'event:clear'               => ['cmd' => 'event:clear',                'args' => [],              'label' => 'event:clear — Clear cached events',                                'group' => 'Cache',        'dangerous' => false],
+            // Cache Management
+            'optimize:clear'            => [
+                'cmd' => 'optimize:clear', 'args' => [], 'dangerous' => false,
+                'label' => 'Clear All Optimization Caches', 
+                'group' => 'Cache Management', 
+                'icon' => 'heroicon-o-arrow-path',
+                'desc' => 'Clears config, route, view, and event caches in one command'
+            ],
+            'cache:clear'               => [
+                'cmd' => 'cache:clear', 'args' => [], 'dangerous' => false,
+                'label' => 'Flush Application Cache', 
+                'group' => 'Cache Management', 
+                'icon' => 'heroicon-o-trash',
+                'desc' => 'Remove all items from the application cache'
+            ],
+            'config:cache'              => [
+                'cmd' => 'config:cache', 'args' => [], 'dangerous' => false,
+                'label' => 'Cache Configuration', 
+                'group' => 'Cache Management', 
+                'icon' => 'heroicon-o-cog-6-tooth',
+                'desc' => 'Create a cache file for faster configuration loading'
+            ],
+            'config:clear'              => [
+                'cmd' => 'config:clear', 'args' => [], 'dangerous' => false,
+                'label' => 'Clear Configuration Cache', 
+                'group' => 'Cache Management', 
+                'icon' => 'heroicon-o-x-mark',
+                'desc' => 'Remove the configuration cache file'
+            ],
+            'route:cache'               => [
+                'cmd' => 'route:cache', 'args' => [], 'dangerous' => false,
+                'label' => 'Cache Route Information', 
+                'group' => 'Cache Management', 
+                'icon' => 'heroicon-o-map',
+                'desc' => 'Create a route cache file for faster route registration'
+            ],
+            'route:clear'               => [
+                'cmd' => 'route:clear', 'args' => [], 'dangerous' => false,
+                'label' => 'Clear Route Cache', 
+                'group' => 'Cache Management', 
+                'icon' => 'heroicon-o-x-mark',
+                'desc' => 'Remove the route cache file'
+            ],
+            'view:cache'                => [
+                'cmd' => 'view:cache', 'args' => [], 'dangerous' => false,
+                'label' => 'Compile Blade Views', 
+                'group' => 'Cache Management', 
+                'icon' => 'heroicon-o-eye',
+                'desc' => 'Compile all Blade view templates'
+            ],
+            'view:clear'                => [
+                'cmd' => 'view:clear', 'args' => [], 'dangerous' => false,
+                'label' => 'Clear Compiled Views', 
+                'group' => 'Cache Management', 
+                'icon' => 'heroicon-o-x-mark',
+                'desc' => 'Clear all compiled view files'
+            ],
+            'event:cache'               => [
+                'cmd' => 'event:cache', 'args' => [], 'dangerous' => false,
+                'label' => 'Cache Event Discovery', 
+                'group' => 'Cache Management', 
+                'icon' => 'heroicon-o-bolt',
+                'desc' => 'Discover and cache the application events and listeners'
+            ],
+            'event:clear'               => [
+                'cmd' => 'event:clear', 'args' => [], 'dangerous' => false,
+                'label' => 'Clear Event Cache', 
+                'group' => 'Cache Management', 
+                'icon' => 'heroicon-o-x-mark',
+                'desc' => 'Clear cached events and listeners'
+            ],
 
-            // Filament
-            'filament:cache-components'         => ['cmd' => 'filament:cache-components',         'args' => [], 'label' => 'filament:cache-components — Cache Filament component discovery',   'group' => 'Filament',     'dangerous' => false],
-            'filament:clear-cached-components'  => ['cmd' => 'filament:clear-cached-components',  'args' => [], 'label' => 'filament:clear-cached-components — Clear Filament component cache', 'group' => 'Filament',     'dangerous' => false],
+            // Filament Management
+            'filament:cache-components'         => [
+                'cmd' => 'filament:cache-components', 'args' => [], 'dangerous' => false,
+                'label' => 'Cache Filament Components', 
+                'group' => 'Filament', 
+                'icon' => 'heroicon-o-squares-2x2',
+                'desc' => 'Cache Filament component discovery for better performance'
+            ],
+            'filament:clear-cached-components'  => [
+                'cmd' => 'filament:clear-cached-components', 'args' => [], 'dangerous' => false,
+                'label' => 'Clear Filament Component Cache', 
+                'group' => 'Filament', 
+                'icon' => 'heroicon-o-x-mark',
+                'desc' => 'Clear the cached Filament components'
+            ],
 
-            // Storage
-            'storage:link'              => ['cmd' => 'storage:link',               'args' => [],              'label' => 'storage:link — Create the public storage symlink',                 'group' => 'Storage',      'dangerous' => false],
+            // Storage & Files
+            'storage:link'              => [
+                'cmd' => 'storage:link', 'args' => [], 'dangerous' => false,
+                'label' => 'Create Storage Symlink', 
+                'group' => 'Storage & Files', 
+                'icon' => 'heroicon-o-link',
+                'desc' => 'Create the symbolic link from public/storage to storage/app/public'
+            ],
 
-            // Queue
-            'queue:restart'             => ['cmd' => 'queue:restart',              'args' => [],              'label' => 'queue:restart — Restart queue worker daemons',                     'group' => 'Queue',        'dangerous' => false],
+            // Queue Management
+            'queue:restart'             => [
+                'cmd' => 'queue:restart', 'args' => [], 'dangerous' => false,
+                'label' => 'Restart Queue Workers', 
+                'group' => 'Queue Management', 
+                'icon' => 'heroicon-o-arrow-path',
+                'desc' => 'Restart all queue worker daemons after the next job'
+            ],
+            'queue:failed'              => [
+                'cmd' => 'queue:failed', 'args' => [], 'dangerous' => false,
+                'label' => 'List Failed Jobs', 
+                'group' => 'Queue Management', 
+                'icon' => 'heroicon-o-exclamation-triangle',
+                'desc' => 'Show a list of all failed queue jobs'
+            ],
+            'queue:flush'               => [
+                'cmd' => 'queue:flush', 'args' => [], 'dangerous' => true,
+                'label' => 'Flush All Failed Jobs', 
+                'group' => 'Queue Management', 
+                'icon' => 'heroicon-o-trash',
+                'desc' => 'Delete all failed queue jobs'
+            ],
 
-            // Scheduler
-            'schedule:run'              => ['cmd' => 'schedule:run',               'args' => [],              'label' => 'schedule:run — Run scheduled commands due now',                    'group' => 'Scheduler',    'dangerous' => false],
+            // Task Scheduling
+            'schedule:run'              => [
+                'cmd' => 'schedule:run', 'args' => [], 'dangerous' => false,
+                'label' => 'Run Due Scheduled Tasks', 
+                'group' => 'Task Scheduling', 
+                'icon' => 'heroicon-o-clock',
+                'desc' => 'Run the scheduled commands that are due now'
+            ],
 
-            // Maintenance
-            'down'                      => ['cmd' => 'down',                       'args' => [],              'label' => 'down — Put the app in maintenance mode',                           'group' => 'Maintenance',  'dangerous' => true],
-            'up'                        => ['cmd' => 'up',                         'args' => [],              'label' => 'up — Bring the app out of maintenance mode',                       'group' => 'Maintenance',  'dangerous' => false],
+            // Application Maintenance
+            'down'                      => [
+                'cmd' => 'down', 'args' => [], 'dangerous' => true,
+                'label' => 'Enable Maintenance Mode', 
+                'group' => 'Application Maintenance', 
+                'icon' => 'heroicon-o-shield-exclamation',
+                'desc' => 'Put the application into maintenance mode'
+            ],
+            'up'                        => [
+                'cmd' => 'up', 'args' => [], 'dangerous' => false,
+                'label' => 'Disable Maintenance Mode', 
+                'group' => 'Application Maintenance', 
+                'icon' => 'heroicon-o-check-circle',
+                'desc' => 'Bring the application out of maintenance mode'
+            ],
 
-            // Database (dangerous — confirmation required)
-            'migrate'                   => ['cmd' => 'migrate',                    'args' => ['--force' => true], 'label' => 'migrate --force — Run pending migrations',                    'group' => 'Database',     'dangerous' => true],
-            'migrate:status'            => ['cmd' => 'migrate:status',             'args' => [],              'label' => 'migrate:status — Show migration status',                           'group' => 'Database',     'dangerous' => false],
+            // Database Operations
+            'migrate'                   => [
+                'cmd' => 'migrate', 'args' => ['--force' => true], 'dangerous' => true,
+                'label' => 'Run Database Migrations', 
+                'group' => 'Database Operations', 
+                'icon' => 'heroicon-o-circle-stack',
+                'desc' => 'Run all pending database migrations (FORCED)'
+            ],
+            'migrate:status'            => [
+                'cmd' => 'migrate:status', 'args' => [], 'dangerous' => false,
+                'label' => 'Migration Status', 
+                'group' => 'Database Operations', 
+                'icon' => 'heroicon-o-list-bullet',
+                'desc' => 'Show the status of each migration'
+            ],
 
-            // Jobs
-            'queue:failed'              => ['cmd' => 'queue:failed',               'args' => [],              'label' => 'queue:failed — List all failed queue jobs',                        'group' => 'Queue',        'dangerous' => false],
-            'queue:flush'               => ['cmd' => 'queue:flush',                'args' => [],              'label' => 'queue:flush — Flush all failed queue jobs',                        'group' => 'Queue',        'dangerous' => true],
-
-            // Premium expiry job
-            'app:expire-premium'        => ['cmd' => 'app:expire-premium',         'args' => [],              'label' => 'app:expire-premium — Expire overdue premium accounts',             'group' => 'App Jobs',     'dangerous' => false],
+            // Custom Application Commands
+            'app:expire-premium'        => [
+                'cmd' => 'app:expire-premium', 'args' => [], 'dangerous' => false,
+                'label' => 'Process Premium Expiries', 
+                'group' => 'Application Commands', 
+                'icon' => 'heroicon-o-star',
+                'desc' => 'Process and expire overdue premium account subscriptions'
+            ],
         ];
     }
 
@@ -88,17 +233,39 @@ class ArtisanRunner extends Page
         return static::allowedCommands()[$key]['dangerous'] ?? false;
     }
 
-    /** Returns grouped [ 'Group' => ['key' => 'label', ...] ] for the select. */
-    public static function groupedOptions(): array
+    /** Returns grouped [ 'Group' => ['key' => 'def', ...] ] for the UI. */
+    public static function groupedCommands(): array
     {
         $groups = [];
         foreach (static::allowedCommands() as $key => $def) {
-            $groups[$def['group']][$key] = $def['label'];
+            $groups[$def['group']][$key] = $def;
         }
         return $groups;
     }
 
+    public function getFilteredCommands(): array
+    {
+        $commands = static::allowedCommands();
+        if (empty($this->searchQuery)) {
+            return $commands;
+        }
+        
+        $query = strtolower($this->searchQuery);
+        return array_filter($commands, function ($def, $key) use ($query) {
+            return str_contains(strtolower($key), $query) || 
+                   str_contains(strtolower($def['label']), $query) || 
+                   str_contains(strtolower($def['desc']), $query) ||
+                   str_contains(strtolower($def['group']), $query);
+        }, ARRAY_FILTER_USE_BOTH);
+    }
+
     // ── Actions ───────────────────────────────────────────────────────────────
+
+    public function selectCommand(string $key): void
+    {
+        $this->selectedCommand = $key;
+        $this->clearOutput();
+    }
 
     public function runCommand(): void
     {
@@ -110,23 +277,68 @@ class ArtisanRunner extends Page
         }
 
         $def = $allowed[$this->selectedCommand];
+        $this->isRunning = true;
+        $this->ran = false;
+        $this->output = '';
 
-        Artisan::call($def['cmd'], $def['args']);
+        try {
+            Artisan::call($def['cmd'], $def['args']);
 
-        $this->output  = Artisan::output() ?: '(command completed with no output)';
-        $this->exitCode = 0; // Artisan::call() throws on failure; 0 = success
-        $this->ran      = true;
+            $this->output = Artisan::output() ?: '✓ Command completed successfully with no output';
+            $this->exitCode = 0; // Artisan::call() throws on failure; 0 = success
+            $this->ran = true;
+            $this->lastRunAt = now()->format('M j, Y \a\t g:i A');
+            $this->isRunning = false;
 
-        Notification::make()
-            ->title('Command completed: ' . $def['cmd'])
-            ->success()
-            ->send();
+            // Add to recent commands
+            $this->addToRecentCommands($this->selectedCommand);
+
+            Notification::make()
+                ->title('Command completed successfully!')
+                ->body($def['label'])
+                ->success()
+                ->send();
+        } catch (\Exception $e) {
+            $this->output = '❌ Error: ' . $e->getMessage();
+            $this->exitCode = 1;
+            $this->ran = true;
+            $this->isRunning = false;
+
+            Notification::make()
+                ->title('Command failed!')
+                ->body($e->getMessage())
+                ->danger()
+                ->send();
+        }
+    }
+
+    private function addToRecentCommands(string $commandKey): void
+    {
+        $recent = $this->recentCommands;
+        
+        // Remove if already exists
+        $recent = array_filter($recent, fn($item) => $item['key'] !== $commandKey);
+        
+        // Add to beginning
+        array_unshift($recent, [
+            'key' => $commandKey,
+            'label' => static::allowedCommands()[$commandKey]['label'],
+            'ran_at' => now()->format('M j, g:i A')
+        ]);
+        
+        // Keep only 5 most recent
+        $this->recentCommands = array_slice($recent, 0, 5);
+        
+        // Cache for future sessions
+        Cache::put('artisan_recent_' . Auth::id(), $this->recentCommands, now()->addDays(30));
     }
 
     public function clearOutput(): void
     {
-        $this->output  = '';
+        $this->output = '';
         $this->exitCode = 0;
-        $this->ran      = false;
+        $this->ran = false;
+        $this->isRunning = false;
+        $this->lastRunAt = '';
     }
 }
