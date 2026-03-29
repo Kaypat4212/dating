@@ -3,6 +3,14 @@
 @section('content')
 <div class="container py-4">
     <h4 class="fw-bold mb-4"><i class="bi bi-hearts text-danger me-2"></i>My Matches <span class="badge bg-primary">{{ $matches->total() }}</span></h4>
+
+    @if(session('success'))
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle me-2"></i>{{ session('success') }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    @endif
+
     @if($matches->isEmpty())
     <div class="text-center py-5">
         <div class="display-1 mb-3">💔</div>
@@ -40,8 +48,36 @@
                     @else
                     <a href="{{ route('conversations.index') }}" class="btn btn-primary btn-sm flex-fill"><i class="bi bi-chat-heart"></i></a>
                     @endif
+                    <button type="button" class="btn btn-outline-danger btn-sm"
+                            data-bs-toggle="modal"
+                            data-bs-target="#unmatchModal{{ $match->id }}"
+                            title="Unmatch">
+                        <i class="bi bi-heartbreak"></i>
+                    </button>
                 </div>
             </div>
+        </div>
+
+        {{-- Unmatch confirm modal --}}
+        <div class="modal fade" id="unmatchModal{{ $match->id }}" tabindex="-1" aria-hidden="true">
+          <div class="modal-dialog modal-sm">
+            <div class="modal-content">
+              <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title text-danger"><i class="bi bi-heartbreak me-2"></i>Unmatch {{ $other->name }}?</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+              </div>
+              <div class="modal-body pt-2">
+                <p class="text-muted small mb-0">This will end your match and you won't be able to message each other. This cannot be undone.</p>
+              </div>
+              <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <form method="POST" action="{{ route('matches.unmatch', $match->id) }}" class="d-inline">
+                  @csrf @method('DELETE')
+                  <button type="submit" class="btn btn-danger btn-sm"><i class="bi bi-heartbreak me-1"></i>Yes, Unmatch</button>
+                </form>
+              </div>
+            </div>
+          </div>
         </div>
         @endforeach
     </div>

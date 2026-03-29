@@ -31,7 +31,7 @@ class ConversationController extends Controller
         $user  = $request->user();
 
         // Eager-load the match and both users' photos in one go
-        $conversation->load('match.user1.primaryPhoto', 'match.user2.primaryPhoto');
+        $conversation->load('match.user1.primaryPhoto', 'match.user2.primaryPhoto', 'match.travelPlan');
         $match = $conversation->match;
 
         // Authorize: only matched users can see conversation

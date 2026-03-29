@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property int $id
  * @property int $user1_id
  * @property int $user2_id
+ * @property int|null $travel_plan_id
  * @property \Illuminate\Support\Carbon|null $matched_at
  * @property bool $is_active
  * @property \Illuminate\Support\Carbon $created_at
@@ -19,7 +20,7 @@ class UserMatch extends Model
 {
     protected $table = 'matches';
 
-    protected $fillable = ['user1_id', 'user2_id', 'matched_at', 'is_active'];
+    protected $fillable = ['user1_id', 'user2_id', 'matched_at', 'is_active', 'travel_plan_id'];
 
     protected function casts(): array
     {
@@ -42,6 +43,11 @@ class UserMatch extends Model
     public function conversation(): HasOne
     {
         return $this->hasOne(Conversation::class, 'match_id');
+    }
+
+    public function travelPlan(): BelongsTo
+    {
+        return $this->belongsTo(TravelPlan::class, 'travel_plan_id');
     }
 
     /**

@@ -222,6 +222,28 @@ main { padding-bottom: 0 !important; }
     color: #c2185b;
     font-weight: 600;
 }
+/* ── Travel buddy banner ───────────────────────────────── */
+.travel-match-banner {
+    background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 50%, #0369a1 100%);
+    color: #fff;
+    padding: 10px 14px;
+    font-size: .85rem;
+    border-bottom: 2px solid rgba(255,255,255,.2);
+    flex-shrink: 0;
+}
+.travel-match-banner a { color: #bae6fd; text-decoration: underline; }
+.travel-match-banner .travel-banner-row1 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+.travel-match-banner .travel-banner-cta {
+    font-size: .78rem;
+    opacity: .9;
+    line-height: 1.4;
+}
 </style>
 @endpush
 
@@ -276,12 +298,29 @@ main { padding-bottom: 0 !important; }
             </div>
         </a>
 
-        <a href="{{ $other->username ? route('profile.show', $other->username) : '#' }}"
-           class="chat-footer-btn flex-shrink-0"
-           style="text-decoration:none;display:flex;align-items:center;justify-content:center"
-           title="View Profile">
-            <i class="bi bi-person"></i>
-        </a>
+        <div class="dropdown flex-shrink-0">
+            <button class="chat-footer-btn"
+                    style="display:flex;align-items:center;justify-content:center;background:none;border:none;"
+                    data-bs-toggle="dropdown" aria-expanded="false" title="More options">
+                <i class="bi bi-three-dots-vertical"></i>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end">
+                @if($other->username)
+                <li>
+                    <a class="dropdown-item" href="{{ route('profile.show', $other->username) }}">
+                        <i class="bi bi-person me-2"></i>View Profile
+                    </a>
+                </li>
+                <li><hr class="dropdown-divider"></li>
+                @endif
+                <li>
+                    <button type="button" class="dropdown-item text-danger"
+                            data-bs-toggle="modal" data-bs-target="#unmatchModal">
+                        <i class="bi bi-heartbreak me-2"></i>Unmatch
+                    </button>
+                </li>
+            </ul>
+        </div>
     </div>
 
     {{-- -- Matches Stories (Instagram-style) --------------------------------- --}}
@@ -333,6 +372,25 @@ main { padding-bottom: 0 !important; }
                     <span class="story-name">{{ $matchUser->name }}</span>
                 </a>
             @endforeach
+        </div>
+    </div>
+    @endif
+
+    {{-- ── Travel buddy banner ─────────────────────────────────────────────── --}}
+    @if($match->travelPlan && $match->is_active)
+    @php $plan = $match->travelPlan; @endphp
+    <div class="travel-match-banner">
+        <div class="travel-banner-row1">
+            <span style="font-size:1.1rem">✈️</span>
+            <span>Travel Buddy Match — {{ $plan->destination }}, {{ $plan->destination_country }}</span>
+            <a href="{{ route('travel.index') }}" class="ms-auto" style="font-size:.75rem;white-space:nowrap">View plan</a>
+        </div>
+        <div class="travel-banner-cta">
+            📅 {{ $plan->travel_from->format('M j') }} – {{ $plan->travel_to->format('M j, Y') }}
+            @if($plan->travel_type)
+            &nbsp;·&nbsp; {{ ucfirst(str_replace('_', ' ', $plan->travel_type)) }}
+            @endif
+            &nbsp;· Start discussing your trip — accommodation, activities, meeting points and more!
         </div>
     </div>
     @endif
@@ -539,6 +597,31 @@ main { padding-bottom: 0 !important; }
                 <i class="bi bi-send-fill"></i>
             </button>
         </div>
+    </div>
+
+    {{-- ── Unmatch Confirm Modal ─────────────────────────────────────────── --}}
+    <div class="modal fade" id="unmatchModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+          <div class="modal-header border-0 pb-0">
+            <h5 class="modal-title text-danger"><i class="bi bi-heartbreak me-2"></i>Unmatch {{ $other->name }}?</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body pt-2">
+            <p class="text-muted small mb-0">This will end your match and you won't be able to message each other anymore. This action cannot be undone.</p>
+          </div>
+          <div class="modal-footer border-0 pt-0">
+            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+            <form method="POST" action="{{ route('matches.unmatch', $match->id) }}" class="d-inline">
+              @csrf
+              @method('DELETE')
+              <button type="submit" class="btn btn-danger btn-sm">
+                <i class="bi bi-heartbreak me-1"></i>Yes, Unmatch
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
     </div>
 
     {{-- ── Tip Modal ─────────────────────────────────────────────────────── --}}

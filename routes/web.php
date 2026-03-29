@@ -146,6 +146,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         // Matches
         Route::get('/matches',                  [MatchController::class, 'index'])->name('matches.index');
+        Route::delete('/matches/{match}',       [MatchController::class, 'unmatch'])->name('matches.unmatch');
 
         // Conversations & Messages
         Route::get('/messages',                 [ConversationController::class, 'index'])->name('conversations.index');

@@ -168,11 +168,15 @@ class TravelController extends Controller
 
             if (! $match) {
                 $match = UserMatch::create([
-                    'user1_id'   => $planOwnerId,
-                    'user2_id'   => $interestedUserId,
-                    'matched_at' => now(),
-                    'is_active'  => true,
+                    'user1_id'       => $planOwnerId,
+                    'user2_id'       => $interestedUserId,
+                    'matched_at'     => now(),
+                    'is_active'      => true,
+                    'travel_plan_id' => $travelInterest->plan_id,
                 ]);
+            } elseif (! $match->travel_plan_id) {
+                // Existing mutual like match — link the travel plan retroactively
+                $match->update(['travel_plan_id' => $travelInterest->plan_id]);
             }
 
             // Find or create the conversation for this match
