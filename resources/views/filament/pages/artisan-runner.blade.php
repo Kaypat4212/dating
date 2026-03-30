@@ -1,8 +1,8 @@
 <x-filament-panels::page>
     @php
         $grouped = \App\Filament\Pages\ArtisanRunner::groupedCommands();
-        $filteredCommands = \App\Filament\Pages\ArtisanRunner::allowedCommands();
-        
+        $allCommands = \App\Filament\Pages\ArtisanRunner::allowedCommands();
+
         // Apply search filter if needed
         $filteredCommands = $allCommands;
         if (!empty($this->searchQuery)) {
