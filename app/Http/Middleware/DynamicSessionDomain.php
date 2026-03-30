@@ -32,6 +32,9 @@ class DynamicSessionDomain
             if (is_array($allowed) && in_array($requestHost, $allowed, true)) {
                 // Scope the cookie exactly to the current host
                 Config::set('session.domain', $requestHost);
+            } elseif ($this->isEnvTrustedHost($requestHost)) {
+                // Host is trusted via APP_URL / APP_TRUSTED_URLS in .env — allow it
+                Config::set('session.domain', $requestHost);
             } else {
                 // Fall back to the admin-configured primary domain
                 $primary = SiteSetting::get('session_primary_domain', '');
@@ -53,5 +56,30 @@ class DynamicSessionDomain
         }
 
         return $next($request);
+    }
+
+    /**
+     * Returns true if $host is declared as trusted in APP_URL or APP_TRUSTED_URLS.
+     * This lets any domain listed in the .env have a properly scoped session cookie
+     * without requiring a manual DB entry in session_allowed_domains.
+     */
+    private function isEnvTrustedHost(string $host): bool
+    {
+        $candidates = [];
+
+        $appUrlHost = parse_url(config('app.url', ''), PHP_URL_HOST);
+        if ($appUrlHost) {
+            $candidates[] = $appUrlHost;
+        }
+
+        $extra = env('APP_TRUSTED_URLS', '');
+        foreach (array_filter(array_map('trim', explode(',', $extra))) as $url) {
+            $h = parse_url($url, PHP_URL_HOST) ?: $url;
+            if ($h) {
+                $candidates[] = $h;
+            }
+        }
+
+        return in_array($host, $candidates, true);
     }
 }
