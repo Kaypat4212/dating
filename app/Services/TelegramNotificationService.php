@@ -62,29 +62,109 @@ class TelegramNotificationService
     /**
      * Send homepage visit notification
      */
-    public function notifyHomepageVisit(string $ip, ?string $userAgent = null, ?int $userId = null): bool
+    public function notifyHomepageVisit(string $ip, ?string $userAgent = null, ?int $userId = null, ?array $geo = null): bool
     {
         $user = $userId ? \App\Models\User::find($userId) : null;
-        
+
+        // Allow caller to pass pre-resolved geo data to avoid a double lookup
+        if ($geo === null) {
+            $geo = $this->lookupGeoIp($ip);
+        }
+
         $message = "🏠 <b>Homepage Visit</b>\n\n";
         $message .= "⏰ <b>Time:</b> " . now()->format('Y-m-d H:i:s') . "\n";
         $message .= "🌐 <b>IP:</b> <code>{$ip}</code>\n";
-        
+
+        if ($geo) {
+            $flag     = $this->countryFlag($geo['countryCode'] ?? '');
+            $country  = $geo['country']  ?? 'Unknown';
+            $city     = $geo['city']     ?? '';
+            $region   = $geo['regionName'] ?? '';
+            $isp      = $geo['isp']      ?? '';
+            $org      = $geo['org']      ?? '';
+            $isProxy  = $geo['proxy']    ?? false;
+
+            $location = array_filter([$city, $region, $country]);
+            $message .= "📍 <b>Location:</b> {$flag} " . implode(', ', $location) . "\n";
+
+            if ($isp) {
+                $message .= "📡 <b>Network:</b> {$isp}\n";
+            }
+            if ($org && $org !== $isp) {
+                $message .= "🏢 <b>Org:</b> {$org}\n";
+            }
+            if ($isProxy) {
+                $message .= "🔴 <b>Proxy/VPN Detected</b>\n";
+            }
+        }
+
         if ($user) {
             $message .= "👤 <b>User:</b> {$user->name} (#{$user->id})\n";
             $message .= "📧 <b>Email:</b> {$user->email}\n";
         } else {
             $message .= "👤 <b>User:</b> Guest (not logged in)\n";
         }
-        
+
         if ($userAgent) {
             $browser = $this->parseBrowser($userAgent);
             $message .= "💻 <b>Browser:</b> {$browser}\n";
         }
-        
+
         $message .= "\n🔗 <b>URL:</b> " . config('app.url');
 
         return $this->send($message);
+    }
+
+    /**
+     * Lookup geo-IP info using ip-api.com (free, no key required).
+     * Results are cached for 1 hour per IP to avoid repeated lookups.
+     *
+     * @return array|null  Keys: country, countryCode, regionName, city, isp, org, proxy
+     */
+    public function lookupGeoIp(string $ip): ?array
+    {
+        // Skip private/loopback IPs
+        if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false) {
+            return null;
+        }
+
+        $cacheKey = 'geoip_' . md5($ip);
+
+        return \Illuminate\Support\Facades\Cache::remember($cacheKey, now()->addHour(), function () use ($ip) {
+            try {
+                $response = Http::timeout(4)->get(
+                    "http://ip-api.com/json/{$ip}",
+                    ['fields' => 'status,country,countryCode,regionName,city,isp,org,proxy,hosting']
+                );
+
+                if ($response->successful()) {
+                    $data = $response->json();
+                    if (($data['status'] ?? '') === 'success') {
+                        return $data;
+                    }
+                }
+            } catch (\Throwable $e) {
+                Log::warning('GeoIP lookup failed for ' . $ip . ': ' . $e->getMessage());
+            }
+
+            return null;
+        });
+    }
+
+    /**
+     * Convert a 2-letter country code to an emoji flag.
+     */
+    protected function countryFlag(string $code): string
+    {
+        if (strlen($code) !== 2) {
+            return '🌍';
+        }
+        $code = strtoupper($code);
+        return mb_convert_encoding(
+            '&#' . (0x1F1E0 + (ord($code[0]) - ord('A'))) . ';'
+            . '&#' . (0x1F1E0 + (ord($code[1]) - ord('A'))) . ';',
+            'UTF-8', 'HTML-ENTITIES'
+        );
     }
 
     /**

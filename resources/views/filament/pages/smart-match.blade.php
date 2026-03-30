@@ -177,6 +177,13 @@ body {
 
 @php $newUsers = $this->getNewUsers(); @endphp
 
+@if($pageError)
+<div class="alert alert-danger mb-4" style="background: rgba(220,38,38,0.15); border: 1px solid rgba(220,38,38,0.5); border-radius:12px; padding:1rem 1.25rem; color:#fca5a5;">
+    <strong>⚠ Smart Match Error:</strong> {{ $pageError }}
+    <br><small class="text-white-50">Check <code>storage/logs/laravel.log</code> for details.</small>
+</div>
+@endif
+
 {{-- Toast Container --}}
 <div id="toast-container" class="position-fixed top-0 end-0 p-3" style="z-index: 9999;"></div>
 

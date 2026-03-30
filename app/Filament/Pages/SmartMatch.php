@@ -11,6 +11,7 @@ use Filament\Pages\Page;
 use Filament\Notifications\Notification;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Log;
 
 class SmartMatch extends Page
 {
@@ -28,6 +29,9 @@ class SmartMatch extends Page
     /** Cached suggestion rows for the focused user */
     public Collection $suggestions;
 
+    /** Error message shown in the UI (null = no error) */
+    public ?string $pageError = null;
+
     // ── Same-sex match confirmation state ────────────────────────────────
     public bool    $showSameSexModal  = false;
     public ?int    $pendingMatchA     = null;
@@ -38,10 +42,17 @@ class SmartMatch extends Page
     public function mount(): void
     {
         $this->suggestions = collect();
-        $this->focusUserId = (int) request()->query('user_id') ?: null;
+        $this->pageError   = null;
 
-        if ($this->focusUserId) {
-            $this->loadSuggestions($this->focusUserId);
+        try {
+            $this->focusUserId = (int) request()->query('user_id') ?: null;
+
+            if ($this->focusUserId) {
+                $this->loadSuggestions($this->focusUserId);
+            }
+        } catch (\Throwable $e) {
+            Log::error('SmartMatch mount error: ' . $e->getMessage(), ['exception' => $e]);
+            $this->pageError = 'Failed to initialise Smart Match: ' . $e->getMessage();
         }
     }
 
@@ -50,13 +61,18 @@ class SmartMatch extends Page
      */
     public function getNewUsers(): Collection
     {
-        return User::where('profile_complete', true)
-            ->whereNotNull('email_verified_at')
-            ->where('is_banned', false)
-            ->with('primaryPhoto')
-            ->orderByDesc('created_at')
-            ->limit(30)
-            ->get();
+        try {
+            return User::where('profile_complete', true)
+                ->whereNotNull('email_verified_at')
+                ->where('is_banned', false)
+                ->with('primaryPhoto')
+                ->orderByDesc('created_at')
+                ->limit(30)
+                ->get();
+        } catch (\Throwable $e) {
+            Log::error('SmartMatch getNewUsers error: ' . $e->getMessage(), ['exception' => $e]);
+            return collect();
+        }
     }
 
     /**
@@ -112,11 +128,13 @@ class SmartMatch extends Page
      */
     private function getExistingMatchIds(int $userId): array
     {
-        return UserMatch::where('user1_id', $userId)
-            ->orWhere('user2_id', $userId)
+        return UserMatch::where(function ($q) use ($userId) {
+            $q->where('user1_id', $userId)->orWhere('user2_id', $userId);
+        })
             ->get()
             ->flatMap(fn (UserMatch $m): array => [$m->user1_id, $m->user2_id])
             ->unique()
+            ->reject(fn ($id) => $id === $userId)
             ->toArray();
     }
 
@@ -125,8 +143,14 @@ class SmartMatch extends Page
      */
     public function selectUser(int $userId): void
     {
-        $this->focusUserId = $userId;
-        $this->loadSuggestions($userId);
+        $this->pageError = null;
+        try {
+            $this->focusUserId = $userId;
+            $this->loadSuggestions($userId);
+        } catch (\Throwable $e) {
+            Log::error('SmartMatch selectUser error: ' . $e->getMessage(), ['exception' => $e]);
+            $this->pageError = 'Failed to load suggestions: ' . $e->getMessage();
+        }
     }
 
     /**
