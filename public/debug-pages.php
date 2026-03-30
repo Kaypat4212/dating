@@ -5,16 +5,53 @@
  */
 if (($_GET['t'] ?? '') !== 'dbg2026') { http_response_code(403); exit('403'); }
 
-error_reporting(E_ALL);
+// Override ANY Laravel error handler — we handle everything ourselves
+set_exception_handler(null);
+set_error_handler(null);
 ini_set('display_errors', '1');
+ini_set('display_startup_errors', '1');
+error_reporting(E_ALL);
 
 header('Content-Type: text/plain; charset=utf-8');
+echo "=== PROBE v2 STARTED ===\n";
+flush();
 
 $root = dirname(__DIR__);
-require $root . '/vendor/autoload.php';
-$app = require_once $root . '/bootstrap/app.php';
-$kernel = $app->make(\Illuminate\Contracts\Console\Kernel::class);
-$kernel->bootstrap();
+
+echo "=== AUTOLOADER ===\n";
+try {
+    require $root . '/vendor/autoload.php';
+    echo "OK\n";
+} catch (\Throwable $e) {
+    echo "FAILED: " . $e->getMessage() . "\n"; die();
+}
+flush();
+
+echo "=== BOOTSTRAP ===\n";
+$app = null;
+try {
+    $app = require_once $root . '/bootstrap/app.php';
+    echo "OK\n";
+} catch (\Throwable $e) {
+    echo "FAILED: " . get_class($e) . ": " . $e->getMessage() . "\n";
+    echo "  at " . $e->getFile() . ":" . $e->getLine() . "\n";
+    echo $e->getTraceAsString() . "\n";
+    die();
+}
+flush();
+
+echo "=== KERNEL BOOTSTRAP ===\n";
+try {
+    $kernel = $app->make(\Illuminate\Contracts\Console\Kernel::class);
+    $kernel->bootstrap();
+    echo "OK\n";
+} catch (\Throwable $e) {
+    echo "FAILED: " . get_class($e) . ": " . $e->getMessage() . "\n";
+    echo "  at " . $e->getFile() . ":" . $e->getLine() . "\n";
+    echo $e->getTraceAsString() . "\n";
+    die();
+}
+flush();
 
 echo "=== GIT COMMIT ===\n";
 echo shell_exec("cd {$root} && git log --oneline -3 2>&1") . "\n";
