@@ -371,7 +371,7 @@
             <div class="artisan-card">
                 <div class="flex items-center justify-between p-4 border-b border-[var(--border)]">
                     <div class="flex items-center gap-2">
-                        <x-heroicon-o-terminal class="w-5 h-5 text-gray-500"/>
+                        <x-heroicon-o-command-line class="w-5 h-5 text-gray-500"/>
                         <h3 class="text-lg font-semibold text-[var(--text)]">Command Output</h3>
                         <span class="command-badge {{ $exitCode === 0 ? 'badge-safe' : 'badge-dangerous' }}">
                             {{ $exitCode === 0 ? 'Success' : 'Failed' }} (exit {{ $exitCode }})

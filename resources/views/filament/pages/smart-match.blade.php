@@ -1,5 +1,4 @@
 <x-filament-panels::page>
-@php use Illuminate\Support\Str; @endphp
 <div>
 {{-- Include Bootstrap CSS --}}
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -419,7 +418,7 @@ body {
                                         @endif
                                     </div>
                                     @if($focusUser->profile?->headline)
-                                        <p class="text-white-50 fst-italic mb-0 small">"{{ Str::limit($focusUser->profile->headline, 100) }}"</p>
+                                        <p class="text-white-50 fst-italic mb-0 small">"{{ \Illuminate\Support\Str::limit($focusUser->profile->headline, 100) }}"</p>
                                     @endif
                                 </div>
                                 
@@ -443,7 +442,7 @@ body {
                         <div class="d-flex justify-content-between align-items-center mb-4">
                             <div>
                                 <h5 class="text-white fw-bold mb-0">
-                                    <span class="fs-4">{{ $suggestions->count() }}</span> compatibility {{ Str::plural('match', $suggestions->count()) }} found
+                                    <span class="fs-4">{{ $suggestions->count() }}</span> compatibility {{ \Illuminate\Support\Str::plural('match', $suggestions->count()) }} found
                                 </h5>
                             </div>
                             <div class="d-flex gap-3 small text-white-50">
@@ -543,7 +542,7 @@ body {
                                             @endif
 
                                             @if($candidate->profile?->headline)
-                                                <p class="text-white-50 fst-italic small mb-3">"{{ Str::limit($candidate->profile->headline, 60) }}"</p>
+                                                <p class="text-white-50 fst-italic small mb-3">"{{ \Illuminate\Support\Str::limit($candidate->profile->headline, 60) }}"</p>
                                             @endif
 
                                             @if(count($sharedInterests) > 0)
