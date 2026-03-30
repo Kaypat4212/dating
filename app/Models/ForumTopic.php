@@ -25,7 +25,7 @@ class ForumTopic extends Model
 {
     protected $fillable = [
         'category_id', 'user_id', 'title', 'slug', 'content', 'tags',
-        'is_pinned', 'is_locked', 'is_answered',
+        'is_pinned', 'is_locked', 'is_answered', 'is_flagged',
         'views_count', 'replies_count', 'likes_count',
         'last_reply_user_id', 'last_reply_at',
     ];
@@ -37,6 +37,7 @@ class ForumTopic extends Model
             'is_pinned'     => 'boolean',
             'is_locked'     => 'boolean',
             'is_answered'   => 'boolean',
+            'is_flagged'    => 'boolean',
             'last_reply_at' => 'datetime',
         ];
     }
