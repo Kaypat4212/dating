@@ -1,9 +1,6 @@
-<x-filament-panels::page>
-<div>
-{{-- Include Bootstrap CSS --}}
+@pushOnce('styles')
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-
 <style>
 :root {
     --primary-gradient: linear-gradient(135deg, #f43f5e 0%, #a855f7 100%);
@@ -173,6 +170,10 @@ body {
     font-size: 0.75rem;
 }
 </style>
+@endPushOnce
+
+<x-filament-panels::page>
+<div>
 
 @php $newUsers = $this->getNewUsers(); @endphp
 
@@ -603,8 +604,9 @@ body {
     </div>
 </div>
 
-{{-- JavaScript for SmartMatch --}}
+@pushOnce('scripts')
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+@endPushOnce
 
 {{-- ═══════════════════════════════════════════════════════════════════
      Same-Sex Match Confirmation Modal
@@ -651,6 +653,10 @@ body {
     </div>
 </div>
 @endif
+</div>
+</x-filament-panels::page>
+
+@push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Toast notification system
@@ -684,9 +690,8 @@ document.addEventListener('DOMContentLoaded', function() {
         showToast('New Match!', 'A new match has been created successfully.', 'success');
     });
     
-    console.log('✅ SmartMatch features initialized');
+    console.log('SmartMatch features initialized');
 });
 </script>
-</div>
-</x-filament-panels::page>
+@endpush
 
