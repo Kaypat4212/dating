@@ -153,7 +153,7 @@ class VpnDetectionLogResource extends Resource
                     ->query(fn (Builder $query) => $query->where('confidence', '>=', 80)),
                 
                 Tables\Filters\Filter::make('created_at')
-                    ->form([
+                    ->schema([
                         Forms\Components\DatePicker::make('from')->label('From Date'),
                         Forms\Components\DatePicker::make('until')->label('Until Date'),
                     ])
@@ -163,10 +163,10 @@ class VpnDetectionLogResource extends Resource
                             ->when($data['until'], fn ($q, $date) => $q->whereDate('created_at', '<=', $date));
                     }),
             ])
-            ->actions([
+            ->recordActions([
                 ViewAction::make(),
             ])
-            ->bulkActions([
+            ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
                 ]),

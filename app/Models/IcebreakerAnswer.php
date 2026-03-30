@@ -5,6 +5,14 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property int $id
+ * @property int $user_id
+ * @property int $question_id
+ * @property string|null $answer
+ * @property string|null $choice
+ * @property bool $show_on_profile
+ */
 class IcebreakerAnswer extends Model
 {
     protected $fillable = [

@@ -6,6 +6,24 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * @property int $id
+ * @property int $author_id
+ * @property int $category_id
+ * @property string $title
+ * @property string $slug
+ * @property string|null $excerpt
+ * @property string $content
+ * @property string|null $featured_image
+ * @property array|null $tags
+ * @property string $status
+ * @property \Illuminate\Support\Carbon|null $published_at
+ * @property int $views_count
+ * @property int $likes_count
+ * @property int $comments_count
+ * @property bool $allow_comments
+ * @property bool $is_featured
+ */
 class BlogPost extends Model
 {
     protected $fillable = [

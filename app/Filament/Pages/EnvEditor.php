@@ -7,7 +7,6 @@ use Filament\Forms;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Schemas\Components\Section;
-use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
@@ -115,7 +114,7 @@ class EnvEditor extends Page
                         
                         Forms\Components\Toggle::make('app_debug')
                             ->label('Debug Mode')
-                            ->helperText('⚠️ Never enable in production!'),
+                            ->helperText('âš ï¸ Never enable in production!'),
                     ])->columns(2),
                 
                 Section::make('Database Configuration')
@@ -178,31 +177,31 @@ class EnvEditor extends Page
                         
                         Forms\Components\Toggle::make('vpn_detection_check_all')
                             ->label('Check All Users')
-                            ->visible(fn (Get $get) => $get('vpn_detection_enabled')),
+                            ->visible(fn ($get) => $get('vpn_detection_enabled')),
                         
                         Forms\Components\TextInput::make('vpn_confidence_threshold')
                             ->label('Confidence Threshold (%)')
                             ->numeric()
                             ->minValue(0)
                             ->maxValue(100)
-                            ->visible(fn (Get $get) => $get('vpn_detection_enabled')),
+                            ->visible(fn ($get) => $get('vpn_detection_enabled')),
                         
                         Forms\Components\TextInput::make('vpn_cache_duration')
                             ->label('Cache Duration (minutes)')
                             ->numeric()
-                            ->visible(fn (Get $get) => $get('vpn_detection_enabled')),
+                            ->visible(fn ($get) => $get('vpn_detection_enabled')),
                         
                         Forms\Components\TextInput::make('iphub_api_key')
                             ->label('IPHub API Key')
                             ->password()
                             ->revealable()
-                            ->visible(fn (Get $get) => $get('vpn_detection_enabled')),
+                            ->visible(fn ($get) => $get('vpn_detection_enabled')),
                         
                         Forms\Components\TextInput::make('proxycheck_api_key')
                             ->label('ProxyCheck API Key')
                             ->password()
                             ->revealable()
-                            ->visible(fn (Get $get) => $get('vpn_detection_enabled')),
+                            ->visible(fn ($get) => $get('vpn_detection_enabled')),
                     ])->columns(2),
                 
                 Section::make('Telegram Notifications')
@@ -216,12 +215,12 @@ class EnvEditor extends Page
                             ->helperText('Get from @BotFather on Telegram')
                             ->password()
                             ->revealable()
-                            ->visible(fn (Get $get) => $get('telegram_enabled')),
+                            ->visible(fn ($get) => $get('telegram_enabled')),
                         
                         Forms\Components\TextInput::make('telegram_chat_id')
                             ->label('Chat ID')
                             ->helperText('Your chat ID or channel ID')
-                            ->visible(fn (Get $get) => $get('telegram_enabled')),
+                            ->visible(fn ($get) => $get('telegram_enabled')),
                     ])->columns(2),
                 
                 Section::make('System Configuration')
@@ -258,26 +257,13 @@ class EnvEditor extends Page
                             ->numeric(),
                     ])->columns(2),
                 
-                Section::make('⚠️ Important Notes')
+                Section::make('âš ï¸ Important Notes')
                     ->schema([
-                        Forms\Components\Placeholder::make('warnings')
-                            ->content('
-                                **Security Warning:**
-                                - Never share your .env file publicly
-                                - Passwords are not displayed for security
-                                - Database password cannot be changed here (edit .env manually)
-                                - After saving, run `php artisan config:clear` to apply changes
-                                
-                                **Telegram Setup:**
-                                1. Create a bot with @BotFather on Telegram
-                                2. Get your Bot Token
-                                3. Send a message to your bot
-                                4. Get your Chat ID from https://api.telegram.org/bot<YOUR_TOKEN>/getUpdates
-                                
-                                **VPN Detection APIs:**
-                                - IPHub: https://iphub.info (Free: 1,000 requests/day)
-                                - ProxyCheck: https://proxycheck.io (Free: 1,000 requests/day)
-                            ')
+                        \Filament\Forms\Components\Textarea::make('_notes')
+                            ->label(false)
+                            ->default("Security Warning: Never share your .env file publicly. Passwords are not displayed for security. After saving, run: php artisan config:clear\n\nTelegram Setup: Create a bot via @BotFather → get Bot Token → send message → get Chat ID from api.telegram.org/bot<TOKEN>/getUpdates\n\nVPN APIs: IPHub (iphub.info) and ProxyCheck (proxycheck.io) — both offer 1,000 free requests/day.")
+                            ->disabled()
+                            ->rows(7)
                             ->columnSpanFull(),
                     ]),
             ])

@@ -6,6 +6,22 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * @property int $id
+ * @property int $creator_id
+ * @property string $name
+ * @property string $slug
+ * @property string|null $description
+ * @property string|null $avatar
+ * @property string $type
+ * @property int $max_members
+ * @property int $members_count
+ * @property int $messages_count
+ * @property bool $is_active
+ * @property bool $requires_approval
+ * @property array|null $interests
+ * @property string|null $location
+ */
 class ChatRoom extends Model
 {
     protected $fillable = [

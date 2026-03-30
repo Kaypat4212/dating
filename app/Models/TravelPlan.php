@@ -6,6 +6,24 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * @property int $id
+ * @property int $user_id
+ * @property string $destination
+ * @property string $destination_country
+ * @property string|null $origin_country
+ * @property string|null $from_city
+ * @property float|null $destination_lat
+ * @property float|null $destination_lng
+ * @property \Illuminate\Support\Carbon|null $travel_from
+ * @property \Illuminate\Support\Carbon|null $travel_to
+ * @property string|null $travel_type
+ * @property string|null $description
+ * @property array|null $interests
+ * @property string|null $accommodation
+ * @property bool $is_active
+ * @property bool $is_visible
+ */
 class TravelPlan extends Model
 {
     protected $fillable = [

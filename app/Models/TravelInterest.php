@@ -5,6 +5,13 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property int $id
+ * @property int $user_id
+ * @property int $plan_id
+ * @property \Illuminate\Support\Carbon|null $expressed_at
+ * @property string $status
+ */
 class TravelInterest extends Model
 {
     protected $fillable = ['user_id', 'plan_id', 'expressed_at', 'status'];

@@ -11,6 +11,7 @@ use Filament\Schemas\Schema;
 use Filament\Tables\Table;
 use Filament\Resources\Resource;
 use Filament\Tables;
+use Filament\Tables\Actions\BulkAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\Filter;
@@ -184,7 +185,7 @@ class WalletWithdrawalRequestResource extends Resource
                     }),
             ])
             ->toolbarActions([
-                Tables\Actions\BulkAction::make('bulk_approve')
+                BulkAction::make('bulk_approve')
                     ->label('Approve Selected')
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
@@ -208,7 +209,7 @@ class WalletWithdrawalRequestResource extends Resource
                             ->send();
                     }),
 
-                Tables\Actions\BulkAction::make('bulk_reject')
+                BulkAction::make('bulk_reject')
                     ->label('Reject & Refund Selected')
                     ->icon('heroicon-o-x-circle')
                     ->color('danger')

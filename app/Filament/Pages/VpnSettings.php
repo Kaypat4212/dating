@@ -8,7 +8,6 @@ use Filament\Forms;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Schemas\Components\Section;
-use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Illuminate\Support\Facades\Artisan;
 
@@ -71,7 +70,7 @@ class VpnSettings extends Page
                             ->label('Check All Users')
                             ->helperText('When enabled, checks all users (not just new registrations). When disabled, only checks unauthenticated users.')
                             ->default(false)
-                            ->visible(fn (Get $get) => $get('vpn_detection_enabled')),
+                            ->visible(fn ($get) => $get('vpn_detection_enabled')),
                         
                         Forms\Components\TextInput::make('vpn_confidence_threshold')
                             ->label('Confidence Threshold (%)')
@@ -81,7 +80,7 @@ class VpnSettings extends Page
                             ->maxValue(100)
                             ->default(40)
                             ->suffix('%')
-                            ->visible(fn (Get $get) => $get('vpn_detection_enabled')),
+                            ->visible(fn ($get) => $get('vpn_detection_enabled')),
                         
                         Forms\Components\TextInput::make('vpn_cache_duration')
                             ->label('Cache Duration (minutes)')
@@ -91,7 +90,7 @@ class VpnSettings extends Page
                             ->maxValue(10080)
                             ->default(1440)
                             ->suffix('min')
-                            ->visible(fn (Get $get) => $get('vpn_detection_enabled')),
+                            ->visible(fn ($get) => $get('vpn_detection_enabled')),
                     ])
                     ->columns(2),
                 
@@ -121,7 +120,7 @@ class VpnSettings extends Page
                             ->live(),
                     ])
                     ->columns(2)
-                    ->visible(fn (Get $get) => $get('vpn_detection_enabled')),
+                    ->visible(fn ($get) => $get('vpn_detection_enabled')),
                 
                 Section::make('API Configuration')
                     ->description('Configure third-party API keys for VPN detection services')
@@ -132,7 +131,7 @@ class VpnSettings extends Page
                             ->password()
                             ->revealable()
                             ->placeholder('Enter IPHub API key')
-                            ->visible(fn (Get $get) => $get('vpn_enable_iphub')),
+                            ->visible(fn ($get) => $get('vpn_enable_iphub')),
                         
                         Forms\Components\TextInput::make('vpn_proxycheck_api_key')
                             ->label('ProxyCheck API Key')
@@ -140,41 +139,17 @@ class VpnSettings extends Page
                             ->password()
                             ->revealable()
                             ->placeholder('Enter ProxyCheck API key')
-                            ->visible(fn (Get $get) => $get('vpn_enable_proxycheck')),
+                            ->visible(fn ($get) => $get('vpn_enable_proxycheck')),
                     ])
                     ->columns(1)
-                    ->visible(fn (Get $get) => 
+                    ->visible(fn ($get) => 
                         $get('vpn_detection_enabled') && 
                         ($get('vpn_enable_iphub') || $get('vpn_enable_proxycheck'))
                     ),
                 
                 Section::make('Information')
-                    ->description('How VPN detection works')
-                    ->schema([
-                        Forms\Components\Placeholder::make('info')
-                            ->content('
-                                **Detection Process:**
-                                
-                                1. **IP Range Check**: Compares against known VPN provider IP ranges
-                                2. **DNS Analysis**: Checks reverse DNS for VPN-related patterns
-                                3. **IPHub API**: Queries IPHub.info database (requires API key)
-                                4. **ProxyCheck API**: Queries ProxyCheck.io database (requires API key)
-                                5. **IP Quality Heuristics**: Analyzes IP characteristics and patterns
-                                
-                                **How It Works:**
-                                - Multiple detection methods are combined for accuracy
-                                - Each method contributes to overall confidence score
-                                - Users are blocked if confidence exceeds your threshold
-                                - Detection results are cached to improve performance
-                                - All detections are logged for review
-                                
-                                **Recommended Settings:**
-                                - Threshold: 40-60% for strict blocking, 70-80% for moderate
-                                - Cache: 1440 minutes (24 hours) for optimal performance
-                                - Enable all methods for best accuracy
-                            ')
-                            ->columnSpanFull(),
-                    ])
+                    ->description('Detection process: IP Range Check → DNS Analysis → IPHub API → ProxyCheck API → IP Quality Heuristics. Multiple methods are combined; users are blocked when confidence exceeds your threshold. Results are cached for performance. Recommended: Threshold 40-60% (strict) or 70-80% (moderate), Cache 1440 min (24h).')
+                    ->schema([])
                     ->collapsible()
                     ->collapsed(),
             ])

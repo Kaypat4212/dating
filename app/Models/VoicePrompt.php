@@ -5,6 +5,16 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property int $id
+ * @property int $user_id
+ * @property int $question_id
+ * @property string $audio_path
+ * @property string $audio_url
+ * @property int|null $duration_seconds
+ * @property bool $show_on_profile
+ * @property int $plays_count
+ */
 class VoicePrompt extends Model
 {
     protected $fillable = [
