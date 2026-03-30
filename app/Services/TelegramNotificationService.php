@@ -259,6 +259,44 @@ class TelegramNotificationService
     }
 
     /**
+     * Alert admin when a new deposit request arrives.
+     */
+    public function notifyNewDepositRequest(int $userId, int $amount, ?string $txid = null): bool
+    {
+        $user = \App\Models\User::find($userId);
+        $message = "💳 <b>New Deposit Request</b>\n\n" .
+            "👤 <b>User:</b> " . ($user?->name ?? 'Unknown') . " (#$userId)\n" .
+            "📧 <b>Email:</b> " . ($user?->email ?? '—') . "\n" .
+            "💰 <b>Amount:</b> {$amount} credits\n" .
+            "🔑 <b>TXID:</b> " . ($txid ?? '—') . "\n" .
+            "⏰ " . now()->format('Y-m-d H:i') . "\n\n" .
+            "🔗 " . url('/admin/wallet-funding-requests');
+
+        return $this->send($message);
+    }
+
+    /**
+     * Alert admin when a new withdrawal request arrives.
+     */
+    public function notifyNewWithdrawalRequest(int $userId, int $amount, ?string $destination = null, ?string $currency = null, ?string $network = null): bool
+    {
+        $user  = \App\Models\User::find($userId);
+        $rate  = max(1, (float) \App\Models\SiteSetting::get('credits_per_usd', 10));
+        $usd   = number_format($amount / $rate, 2);
+
+        $message = "🏧 <b>New Withdrawal Request</b>\n\n" .
+            "👤 <b>User:</b> " . ($user?->name ?? 'Unknown') . " (#$userId)\n" .
+            "📧 <b>Email:</b> " . ($user?->email ?? '—') . "\n" .
+            "💸 <b>Amount:</b> {$amount} credits (≈ \${$usd} USD)\n" .
+            "📬 <b>Address:</b> " . ($destination ?? '—') .
+                ($currency ? " ({$currency}" . ($network ? " / {$network}" : '') . ")" : "") . "\n" .
+            "⏰ " . now()->format('Y-m-d H:i') . "\n\n" .
+            "🔗 " . url('/admin/wallet-withdrawal-requests');
+
+        return $this->send($message);
+    }
+
+    /**
      * Parse browser from user agent
      */
     protected function parseBrowser(string $userAgent): string

@@ -3,7 +3,11 @@
 namespace App\Providers;
 
 use App\Models\Message;
+use App\Models\WalletFundingRequest;
+use App\Models\WalletWithdrawalRequest;
 use App\Observers\MessageObserver;
+use App\Observers\WalletFundingRequestObserver;
+use App\Observers\WalletWithdrawalRequestObserver;
 use App\Services\MailSettingsService;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
@@ -35,6 +39,8 @@ class AppServiceProvider extends ServiceProvider
     {
         // Register model observers
         Message::observe(MessageObserver::class);
+        WalletFundingRequest::observe(WalletFundingRequestObserver::class);
+        WalletWithdrawalRequest::observe(WalletWithdrawalRequestObserver::class);
 
         // Apply admin-configured mail settings from the database (cache-backed).
         try {
