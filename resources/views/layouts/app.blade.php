@@ -239,6 +239,7 @@
                         <li><a class="dropdown-item" href="{{ route('extras.pets') }}"><i class="bi bi-heart-fill me-2 text-warning"></i>My Pets</a></li>
                         <li><a class="dropdown-item" href="{{ route('icebreaker.index') }}"><i class="bi bi-snow2 me-2 text-info"></i>Icebreakers</a></li>
                         <li><a class="dropdown-item" href="{{ route('account.show') }}"><i class="bi bi-gear me-2 text-secondary"></i>Settings</a></li>
+                        <li><a class="dropdown-item" href="{{ route('invite.index') }}"><i class="bi bi-gift me-2 text-danger"></i>Invite Friends</a></li>
                         {{-- Verification link --}}
                         @if(auth()->user()->is_verified)
                         <li><span class="dropdown-item-text small text-success"><i class="bi bi-patch-check-fill me-2"></i>Verified ✅</span></li>

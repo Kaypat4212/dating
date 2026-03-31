@@ -8,6 +8,20 @@
 
     <form method="POST" action="{{ route('register') }}">
         @csrf
+        {{-- Preserve referral code through form submission --}}
+        @if(session('referral_code'))
+        <input type="hidden" name="ref" value="{{ session('referral_code') }}">
+        @elseif(request()->filled('ref'))
+        <input type="hidden" name="ref" value="{{ request('ref') }}">
+        @endif
+
+        {{-- Referral banner --}}
+        @if(session('ref_note') || session('referral_code') || request()->filled('ref'))
+        <div class="alert d-flex align-items-center gap-2 py-2 px-3 mb-3" style="background:rgba(244,143,177,.18);border:1px solid rgba(244,143,177,.4);border-radius:.85rem;color:#fff;font-size:.875rem">
+            <i class="bi bi-gift-fill" style="color:#f48fb1"></i>
+            <span>You were invited by a friend — welcome!</span>
+        </div>
+        @endif
 
         <div class="mb-3">
             <x-input-label for="name" :value="__('Full Name')" />

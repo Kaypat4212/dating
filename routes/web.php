@@ -8,6 +8,7 @@ use App\Http\Controllers\AiController;
 use App\Http\Controllers\BlogController;
 use App\Http\Controllers\ChatRoomController;
 use App\Http\Controllers\ForumController;
+use App\Http\Controllers\InviteController;
 use App\Http\Controllers\IcebreakerController;
 use App\Http\Controllers\ProfileExtrasController;
 use App\Http\Controllers\TravelController;
@@ -74,6 +75,11 @@ Route::get('/install', function () {
     return redirect()->route('pwa.install');
 });
 
+// ─── Referral tracking (public — no auth required) ───────────────────────────
+Route::get('/ref/{code}', [InviteController::class, 'track'])
+    ->name('invite.track')
+    ->where('code', '[A-Za-z0-9]{4,12}');
+
 // Signed one-click admin funding actions (approve/reject from email/Telegram)
 Route::get('/admin/funding-actions/{payment}/{action}/{admin}', [FundingActionController::class, 'handle'])
     ->whereIn('action', ['approve', 'reject'])
@@ -128,6 +134,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         // Dashboard
         Route::get('/dashboard',                [DashboardController::class, 'index'])->name('dashboard');
+
+        // Invite friends / referral
+        Route::get('/invite',                   [InviteController::class, 'index'])->name('invite.index');
 
         // Match preferences (reachable by completed users)
         Route::get('/preferences',              [ProfileSetupController::class, 'editPreferences'])->name('preferences.edit');

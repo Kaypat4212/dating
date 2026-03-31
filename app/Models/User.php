@@ -59,6 +59,7 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser, Has
         'credit_balance',
         'location_filter_uses',
         'registration_ip', 'last_login_ip', 'last_login_at',
+        'referral_code', 'referred_by',
     ];
 
     protected $hidden = [
@@ -117,6 +118,23 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser, Has
             'totp_recovery_codes'   => 'array',
             'location_filter_uses'  => 'integer',
         ];
+    }
+
+    // ---- Referral relationships ----
+
+    public function referrals(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Referral::class, 'referrer_id');
+    }
+
+    public function referredByUser(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(User::class, 'referred_by');
+    }
+
+    public function referralRecord(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(Referral::class, 'referred_id');
     }
 
     // ---- Relationships ----
