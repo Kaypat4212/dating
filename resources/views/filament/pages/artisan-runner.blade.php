@@ -416,7 +416,7 @@
             </div>
             <div>
                 <div class="ar-stat-v" style="{{ $ran ? ($exitCode===0 ? 'color:#22c55e' : 'color:#ef4444') : 'color:var(--t3)' }}">
-                    {{ $ran ? ($exitCode===0 ? 'OK' : 'Err') : 'â€”' }}
+                    {{ $ran ? ($exitCode===0 ? 'OK' : 'Err') : '--' }}
                 </div>
                 <div class="ar-stat-l">{{ $ran ? ($exitCode===0 ? 'Succeeded' : 'Failed') : 'No run yet' }}</div>
             </div>
@@ -431,7 +431,7 @@
             </div>
             <div>
                 <div class="ar-stat-v" style="font-size:{{ $lastRunAt ? '.95rem' : '1.75rem' }};letter-spacing:0;line-height:1.2">
-                    {{ $lastRunAt ?: 'â€”' }}
+                    {{ $lastRunAt ?: '--' }}
                 </div>
                 <div class="ar-stat-l">Last Executed</div>
             </div>
@@ -443,6 +443,48 @@
 
         {{-- â–‘ LEFT â€” command library â–‘ --}}
         <div class="lg:col-span-2 space-y-4 ar-in ar-d2">
+
+            {{-- Custom Command --}}
+            <div class="ar-card ar-in" style="border-color:rgba(34,197,94,.3)">
+                <div class="ar-card-hd" style="background:linear-gradient(90deg,rgba(34,197,94,.07) 0%,transparent 65%)">
+                    <x-heroicon-o-command-line style="color:#22c55e"/>
+                    <span class="ar-card-hd-title">Custom Command</span>
+                    <span class="ar-badge" style="background:rgba(239,68,68,.1);color:#ef4444;border-color:rgba(239,68,68,.2);margin-left:auto">superadmin only</span>
+                </div>
+                <div class="ar-card-bd">
+                    <div style="display:flex;gap:.5rem;align-items:stretch">
+                        <div style="display:flex;align-items:center;flex:1;background:#0d1117;border:1.5px solid #30363d;border-radius:10px;overflow:hidden;transition:border-color .2s">
+                            <span style="padding:.7rem .375rem .7rem .875rem;color:#22c55e;font-family:'Cascadia Code','Fira Code',ui-monospace,monospace;font-size:.8rem;user-select:none;white-space:nowrap;flex-shrink:0">$ php artisan</span>
+                            <input
+                                type="text"
+                                wire:model="customCommand"
+                                wire:keydown.enter="runCustomCommand"
+                                placeholder="cache:clear"
+                                style="flex:1;background:transparent;border:none;outline:none;color:#e6edf3;font-family:'Cascadia Code','Fira Code',ui-monospace,monospace;font-size:.8rem;padding:.7rem .5rem .7rem .25rem;min-width:0"
+                                autocomplete="off"
+                                spellcheck="false"
+                            />
+                        </div>
+                        <button
+                            type="button"
+                            wire:click="runCustomCommand"
+                            wire:loading.attr="disabled"
+                            wire:target="runCustomCommand"
+                            class="ar-btn ar-btn-primary"
+                            style="width:auto;padding:.7rem 1.1rem;flex-shrink:0"
+                        >
+                            @if($isRunning)
+                                <x-heroicon-o-arrow-path class="ar-spinner"/>
+                            @else
+                                <x-heroicon-o-play/>
+                            @endif
+                        </button>
+                    </div>
+                    <div style="font-size:.72rem;color:#4d5566;margin-top:.5rem">
+                        Type any artisan command (without "php artisan") and press Enter or Run
+                    </div>
+                </div>
+            </div>
 
             {{-- Search --}}
             <div class="ar-card">
@@ -457,7 +499,7 @@
                         <input
                             type="text"
                             wire:model.live.debounce.300ms="searchQuery"
-                            placeholder="Search commands by name, description or groupâ€¦"
+                            placeholder="Search commands by name, description or group..."
                             class="ar-search"
                         />
                     </div>

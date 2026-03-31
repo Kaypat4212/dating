@@ -55,6 +55,7 @@ class ArtisanRunner extends Page
     public string $searchQuery = '';
     public array $recentCommands = [];
     public array $terminalHistory = [];
+    public string $customCommand = '';
 
     public function mount(): void
     {
@@ -267,6 +268,65 @@ class ArtisanRunner extends Page
                 ->body($e->getMessage())
                 ->danger()
                 ->send();
+        }
+    }
+
+    public function runCustomCommand(): void
+    {
+        $raw = trim($this->customCommand);
+
+        if (empty($raw)) {
+            Notification::make()->title('Please enter a command.')->warning()->send();
+            return;
+        }
+
+        // Block shell-injection characters — only artisan-safe chars allowed
+        if (preg_match('/[;&|`><\\\\]/', $raw)) {
+            Notification::make()
+                ->title('Invalid characters in command.')
+                ->body('Shell metacharacters are not allowed.')
+                ->danger()
+                ->send();
+            return;
+        }
+
+        $this->isRunning = true;
+        $this->ran = false;
+        $this->output = '';
+
+        try {
+            $this->exitCode = Artisan::call($raw);
+            $this->output = Artisan::output() ?: 'Command completed successfully';
+            $this->ran = true;
+            $this->lastRunAt = now()->format('M j, Y \\a\\t g:i A');
+            $this->isRunning = false;
+
+            array_unshift($this->terminalHistory, [
+                'cmd'     => 'php artisan ' . $raw,
+                'output'  => $this->output,
+                'exit'    => $this->exitCode,
+                'at'      => now()->format('H:i:s'),
+                'success' => $this->exitCode === 0,
+            ]);
+            $this->terminalHistory = array_slice($this->terminalHistory, 0, 8);
+
+            Notification::make()->title('Command completed!')->success()->send();
+        } catch (\Throwable $e) {
+            $this->output = 'Error: ' . $e->getMessage();
+            $this->exitCode = 1;
+            $this->ran = true;
+            $this->isRunning = false;
+
+            array_unshift($this->terminalHistory, [
+                'cmd'     => 'php artisan ' . $raw,
+                'output'  => $this->output,
+                'exit'    => 1,
+                'at'      => now()->format('H:i:s'),
+                'success' => false,
+            ]);
+            $this->terminalHistory = array_slice($this->terminalHistory, 0, 8);
+
+            Notification::make()->title('Command failed!')->body($e->getMessage())->danger()->send();
         }
     }
 
