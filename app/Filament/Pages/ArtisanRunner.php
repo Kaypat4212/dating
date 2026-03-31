@@ -156,6 +156,15 @@ class ArtisanRunner extends Page
                 'icon' => 'heroicon-o-link',
                 'desc' => 'Create symbolic link for storage',
             ],
+            'seed:blog-posts' => [
+                'cmd' => 'db:seed',
+                'args' => ['--class' => 'Database\\Seeders\\BlogPostSeeder', '--force' => true],
+                'dangerous' => false,
+                'label' => 'Seed Blog Posts',
+                'group' => 'Database Operations',
+                'icon' => 'heroicon-o-document-text',
+                'desc' => 'Insert the 5 starter blog posts (safe to re-run — uses updateOrCreate)',
+            ],
         ];
     }
 
