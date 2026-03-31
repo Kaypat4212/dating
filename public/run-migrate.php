@@ -44,6 +44,7 @@ if ($cmd === 'migrate') {
         'Database\\Seeders\\CommunityDataSeeder',
         'Database\\Seeders\\CountryForumSeeder',
         'Database\\Seeders\\DatabaseSeeder',
+        'Database\\Seeders\\BlogPostSeeder',
     ];
     if (! in_array($seeder, $allowedSeeders, true)) {
         die('Seeder not allowed. Allowed: ' . implode(', ', $allowedSeeders));
