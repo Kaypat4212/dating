@@ -109,6 +109,11 @@ class ReferralResource extends Resource
 
     public static function getNavigationBadge(): ?string
     {
-        return (string) static::getModel()::count() ?: null;
+        try {
+            $count = static::getModel()::count();
+            return $count > 0 ? (string) $count : null;
+        } catch (\Exception) {
+            return null;
+        }
     }
 }
