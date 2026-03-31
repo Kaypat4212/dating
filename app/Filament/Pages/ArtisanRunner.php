@@ -54,6 +54,7 @@ class ArtisanRunner extends Page
     public string $lastRunAt = '';
     public string $searchQuery = '';
     public array $recentCommands = [];
+    public array $terminalHistory = [];
 
     public function mount(): void
     {
@@ -224,26 +225,42 @@ class ArtisanRunner extends Page
         $this->output = '';
 
         try {
-            Artisan::call($def['cmd'], $def['args']);
-
+            $this->exitCode = Artisan::call($def['cmd'], $def['args']);
             $this->output = Artisan::output() ?: '✓ Command completed successfully';
-            $this->exitCode = 0;
             $this->ran = true;
             $this->lastRunAt = now()->format('M j, Y \a\t g:i A');
             $this->isRunning = false;
 
             $this->addToRecentCommands($this->selectedCommand);
 
+            array_unshift($this->terminalHistory, [
+                'cmd'     => "php artisan {$this->selectedCommand}",
+                'output'  => $this->output,
+                'exit'    => $this->exitCode,
+                'at'      => now()->format('H:i:s'),
+                'success' => $this->exitCode === 0,
+            ]);
+            $this->terminalHistory = array_slice($this->terminalHistory, 0, 8);
+
             Notification::make()
-                ->title('Command completed successfully!')
+                ->title('Command completed!')
                 ->body($def['label'])
                 ->success()
                 ->send();
         } catch (\Exception $e) {
-            $this->output = '❌ Error: ' . $e->getMessage();
+            $this->output = 'Error: ' . $e->getMessage();
             $this->exitCode = 1;
             $this->ran = true;
             $this->isRunning = false;
+
+            array_unshift($this->terminalHistory, [
+                'cmd'     => "php artisan {$this->selectedCommand}",
+                'output'  => $this->output,
+                'exit'    => $this->exitCode,
+                'at'      => now()->format('H:i:s'),
+                'success' => false,
+            ]);
+            $this->terminalHistory = array_slice($this->terminalHistory, 0, 8);
 
             Notification::make()
                 ->title('Command failed!')
@@ -285,5 +302,11 @@ class ArtisanRunner extends Page
         $this->ran = false;
         $this->isRunning = false;
         $this->lastRunAt = '';
+    }
+
+    public function clearTerminal(): void
+    {
+        $this->terminalHistory = [];
+        $this->clearOutput();
     }
 }

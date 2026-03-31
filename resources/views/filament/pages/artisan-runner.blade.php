@@ -265,6 +265,7 @@
 }
 .ar-btn::after {
     content:''; position:absolute; inset:0;
+    pointer-events:none;
     background:linear-gradient(120deg,transparent 30%,rgba(255,255,255,.22) 50%,transparent 70%);
     background-size:200% 100%; background-position:-200% center;
     transition:background-position .6s ease;
@@ -347,6 +348,49 @@
     transition:background .15s ease, color .15s ease, border-color .15s ease;
 }
 .ar-clear:hover { background:var(--s2); color:var(--t1); border-color:var(--a1) }
+
+/* ── Terminal section ──────────────────────────────────────────────── */
+.ar-term-hd {
+    background:#161b22 !important; border-bottom:1px solid #21262d !important;
+}
+.ar-term-body {
+    background:#0d1117;
+    padding:1rem 1.25rem;
+    font-family:'Cascadia Code','Fira Code',ui-monospace,monospace;
+    font-size:.79rem; line-height:1.75;
+    max-height:420px; overflow-y:auto;
+    border-radius:0 0 16px 16px;
+}
+.ar-term-body::-webkit-scrollbar { width:5px }
+.ar-term-body::-webkit-scrollbar-track { background:transparent }
+.ar-term-body::-webkit-scrollbar-thumb { background:#374151; border-radius:3px }
+.ar-term-row {
+    display:flex; align-items:baseline; flex-wrap:wrap; gap:.375rem;
+    padding:.05rem 0;
+}
+.ar-term-ps { color:#79c0ff; user-select:none; flex-shrink:0 }
+.ar-term-cmd { color:#e6edf3; word-break:break-all; flex:1 }
+.ar-term-idle { color:#4d5566; font-style:italic }
+.ar-term-out {
+    margin:.375rem 0 .35rem 0; padding:.625rem .875rem;
+    border-left:2px solid #30363d; color:#8b949e;
+    white-space:pre-wrap; word-break:break-word; font-size:.775rem;
+}
+.ar-term-out.is-ok  { border-left-color:rgba(34,197,94,.5);  color:#7ee787 }
+.ar-term-out.is-err { border-left-color:rgba(239,68,68,.5);  color:#f87171 }
+.ar-term-meta {
+    display:flex; align-items:center; gap:.5rem;
+    font-size:.7rem; color:#6e7681; margin-bottom:.5rem;
+}
+.ar-term-sep { color:#30363d; font-size:.7rem; margin:.625rem 0 .375rem; letter-spacing:.04em; user-select:none }
+.ar-term-hist-entry { margin:.1rem 0 }
+.ar-term-hint { color:#4d5566; font-style:italic; font-size:.77rem; margin-top:.25rem }
+.ar-term-blink {
+    display:inline-block; width:.55em; height:1.1em; vertical-align:text-bottom;
+    background:#6366f1; border-radius:1px;
+    animation:ar-blink 1.1s step-end infinite;
+}
+@keyframes ar-blink { 0%,100%{opacity:1} 50%{opacity:0} }
 </style>
 
 {{-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• --}}
@@ -372,7 +416,7 @@
             </div>
             <div>
                 <div class="ar-stat-v" style="{{ $ran ? ($exitCode===0 ? 'color:#22c55e' : 'color:#ef4444') : 'color:var(--t3)' }}">
-                    {{ $ran ? ($exitCode===0 ? 'âœ“' : 'âœ—') : 'â€”' }}
+                    {{ $ran ? ($exitCode===0 ? 'OK' : 'Err') : 'â€”' }}
                 </div>
                 <div class="ar-stat-l">{{ $ran ? ($exitCode===0 ? 'Succeeded' : 'Failed') : 'No run yet' }}</div>
             </div>
@@ -521,25 +565,29 @@
                                 </div>
                             </div>
                             <button
+                                type="button"
                                 wire:click="runCommand"
-                                wire:confirm="âš ï¸ DANGEROUS operation â€” this may affect production data. Proceed?"
+                                wire:target="runCommand"
+                                wire:confirm="DANGEROUS: This operation may affect production data. Proceed?"
                                 wire:loading.attr="disabled"
                                 class="ar-btn ar-btn-danger"
                             >
                                 @if($isRunning)
-                                    <x-heroicon-o-arrow-path class="ar-spinner"/>Executingâ€¦
+                                    <x-heroicon-o-arrow-path class="ar-spinner"/>Executing...
                                 @else
                                     <x-heroicon-o-exclamation-triangle/>Run Dangerous Command
                                 @endif
                             </button>
                         @else
                             <button
+                                type="button"
                                 wire:click="runCommand"
                                 wire:loading.attr="disabled"
+                                wire:target="runCommand"
                                 class="ar-btn ar-btn-primary"
                             >
                                 @if($isRunning)
-                                    <x-heroicon-o-arrow-path class="ar-spinner"/>Executingâ€¦
+                                    <x-heroicon-o-arrow-path class="ar-spinner"/>Executing...
                                 @else
                                     <x-heroicon-o-play/>Execute Command
                                 @endif
@@ -580,23 +628,87 @@
     </div>
 
     {{-- â–“â–“  OUTPUT  â–“â–“ --}}
-    @if($ran)
-        <div class="ar-card ar-output">
-            <div class="ar-card-hd" style="justify-content:space-between">
-                <div style="display:flex;align-items:center;gap:.625rem">
-                    <x-heroicon-o-command-line style="color:var(--t3);width:1.125rem;height:1.125rem"/>
-                    <span class="ar-card-hd-title">Output</span>
+    {{-- TERMINAL --}}
+    <div class="ar-card ar-output">
+        <div class="ar-card-hd ar-term-hd" style="justify-content:space-between">
+            <div style="display:flex;align-items:center;gap:.625rem">
+                <x-heroicon-o-command-line style="color:#22c55e;width:1.125rem;height:1.125rem"/>
+                <span class="ar-card-hd-title" style="color:#c9d1d9">Terminal</span>
+                @if($isRunning)
+                    <span class="ar-badge" style="background:rgba(251,191,36,.1);color:#fbbf24;border-color:rgba(251,191,36,.25)">Running</span>
+                @elseif($ran)
                     <span class="ar-badge {{ $exitCode===0 ? 'ar-ok' : 'ar-err' }}">
                         {{ $exitCode===0 ? 'Success' : 'Error' }} &middot; exit {{ $exitCode }}
                     </span>
-                </div>
-                <button wire:click="clearOutput" class="ar-clear">Clear</button>
+                @else
+                    <span class="ar-badge ar-info">Idle</span>
+                @endif
             </div>
-            <div class="ar-card-bd">
-                <pre class="ar-pre {{ $exitCode===0 ? 'ar-ok-bg' : 'ar-err-bg' }}">{{ $output }}</pre>
+            <div style="display:flex;gap:.375rem;align-items:center">
+                @if($ran)
+                    <button type="button" wire:click="clearOutput" wire:target="clearOutput" class="ar-clear" style="color:#6e7681;border-color:#30363d;font-size:.72rem">Clear</button>
+                @endif
+                @if(!empty($terminalHistory))
+                    <button type="button" wire:click="clearTerminal" wire:target="clearTerminal" class="ar-clear" style="color:#6e7681;border-color:#30363d;font-size:.72rem">Clear All</button>
+                @endif
             </div>
         </div>
-    @endif
+        <div class="ar-term-body">
+
+            {{-- Prompt line --}}
+            <div class="ar-term-row">
+                <span class="ar-term-ps">~/heartsconnect $</span>
+                <span class="ar-term-cmd">
+                    @if($selectedCommand)
+                        php artisan {{ $selectedCommand }}@foreach($allCommands[$selectedCommand]['args'] ?? [] as $flag => $val) {{ is_bool($val) ? $flag : "$flag=$val" }}@endforeach
+                    @else
+                        <span class="ar-term-idle">select a command...</span>
+                    @endif
+                </span>
+                @if(!$selectedCommand)
+                    <span class="ar-term-blink"></span>
+                @endif
+            </div>
+
+            {{-- Running / output / hints --}}
+            @if($isRunning)
+                <div class="ar-term-row" style="color:#fbbf24;margin-top:.25rem">
+                    <x-heroicon-o-arrow-path class="ar-spinner" style="width:.85rem;height:.85rem;flex-shrink:0"/>
+                    <span>Executing...</span>
+                </div>
+            @elseif($ran)
+                <div class="ar-term-out {{ $exitCode===0 ? 'is-ok' : 'is-err' }}">{{ $output }}</div>
+                <div class="ar-term-meta">
+                    <span>{{ $lastRunAt }}</span>
+                    <span class="ar-badge {{ $exitCode===0 ? 'ar-ok' : 'ar-err' }}" style="font-size:.6rem;padding:.1rem .35rem">exit {{ $exitCode }}</span>
+                </div>
+            @elseif(!$selectedCommand)
+                <div class="ar-term-hint">Select a command from the left panel to get started.</div>
+            @else
+                <div class="ar-term-hint">Command ready &mdash; click Execute to run.</div>
+            @endif
+
+            {{-- History --}}
+            @if(!empty($terminalHistory))
+                <div class="ar-term-sep">&#x2500;&#x2500; history &#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;</div>
+                @foreach($terminalHistory as $hist)
+                    <div class="ar-term-hist-entry">
+                        <div class="ar-term-row" style="opacity:.65">
+                            <span class="ar-term-ps" style="color:#4d6a8a">$</span>
+                            <span class="ar-term-cmd" style="color:#8b949e">{{ $hist['cmd'] }}</span>
+                            <span class="ar-badge {{ $hist['success'] ? 'ar-ok' : 'ar-err' }}" style="font-size:.6rem;padding:.1rem .35rem;margin-left:auto">{{ $hist['at'] }}</span>
+                        </div>
+                    </div>
+                @endforeach
+            @endif
+
+            {{-- Empty state --}}
+            @if(!$ran && !$isRunning && empty($terminalHistory))
+                <div class="ar-term-hint" style="margin-top:.5rem">No commands executed yet in this session.</div>
+            @endif
+
+        </div>
+    </div>
 
 </div>
 {{-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• --}}
