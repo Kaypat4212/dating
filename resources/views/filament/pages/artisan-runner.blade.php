@@ -1,411 +1,605 @@
-<x-filament-panels::page>
-    @php
-        $grouped = \App\Filament\Pages\ArtisanRunner::groupedCommands();
-        $allCommands = \App\Filament\Pages\ArtisanRunner::allowedCommands();
+﻿<x-filament-panels::page>
+@php
+    $grouped = \App\Filament\Pages\ArtisanRunner::groupedCommands();
+    $allCommands = \App\Filament\Pages\ArtisanRunner::allowedCommands();
+    $filteredCommands = $allCommands;
+    if (!empty($this->searchQuery)) {
+        $q = strtolower($this->searchQuery);
+        $filteredCommands = array_filter($allCommands, fn($def, $key) =>
+            str_contains(strtolower($key), $q) ||
+            str_contains(strtolower($def['label']), $q) ||
+            str_contains(strtolower($def['desc']), $q) ||
+            str_contains(strtolower($def['group']), $q),
+        ARRAY_FILTER_USE_BOTH);
+    }
+@endphp
 
-        // Apply search filter if needed
-        $filteredCommands = $allCommands;
-        if (!empty($this->searchQuery)) {
-            $query = strtolower($this->searchQuery);
-            $filteredCommands = array_filter($allCommands, function ($def, $key) use ($query) {
-                return str_contains(strtolower($key), $query) || 
-                       str_contains(strtolower($def['label']), $query) || 
-                       str_contains(strtolower($def['desc']), $query) ||
-                       str_contains(strtolower($def['group']), $query);
-            }, ARRAY_FILTER_USE_BOTH);
-        }
-    @endphp
+<style>
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   ARTISAN RUNNER â€” Complete Design System
+   All colours hardcoded (theme() only works in compiled CSS)
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 
-    <style>
-        /* ── Light mode variables (hardcoded – theme() only works in compiled CSS) ── */
-        .artisan-runner {
-            --primary:       #2563eb; /* blue-600  */
-            --primary-hover: #1d4ed8; /* blue-700  */
-            --danger:        #dc2626; /* red-600   */
-            --danger-hover:  #b91c1c; /* red-700   */
-            --success:       #16a34a; /* green-600 */
-            --warning:       #d97706; /* amber-600 */
-            --surface:       #ffffff;
-            --surface-hover: #f9fafb; /* gray-50   */
-            --border:        #e5e7eb; /* gray-200  */
-            --text:          #111827; /* gray-900  */
-            --text-muted:    #4b5563; /* gray-600  */
-            --text-subtle:   #6b7280; /* gray-500  */
-        }
+/* â”€â”€ Token map â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+.ar {
+    /* surfaces */
+    --s0: #ffffff;          /* card bg       */
+    --s1: #f8fafc;          /* page bg       */
+    --s2: #f1f5f9;          /* input / code  */
+    --s3: #e2e8f0;          /* border        */
+    /* text */
+    --t1: #0f172a;          /* primary text  */
+    --t2: #475569;          /* secondary     */
+    --t3: #94a3b8;          /* muted         */
+    /* accent */
+    --a1: #6366f1;          /* indigo-500    */
+    --a2: #4f46e5;          /* indigo-600    */
+    --a-glow: rgba(99,102,241,.14);
+    /* status */
+    --ok: #16a34a;
+    --err: #dc2626;
+    /* shadows */
+    --sh:  0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+    --shm: 0 4px 16px rgba(0,0,0,.08), 0 2px 6px rgba(0,0,0,.05);
+    --shl: 0 10px 32px rgba(0,0,0,.1), 0 4px 12px rgba(0,0,0,.06);
+}
 
-        /* ── Dark mode overrides ───────────────────────────────────────────── */
-        .dark .artisan-runner {
-            --surface:       #111827; /* gray-900  */
-            --surface-hover: #1f2937; /* gray-800  */
-            --border:        #374151; /* gray-700  */
-            --text:          #f3f4f6; /* gray-100  */
-            --text-muted:    #d1d5db; /* gray-300  */
-            --text-subtle:   #9ca3af; /* gray-400  */
-        }
+/* Dark mode (Filament sets .dark on <html>) */
+.dark .ar {
+    --s0: #161b27;
+    --s1: #0d1117;
+    --s2: #1e2536;
+    --s3: #2a3349;
+    --t1: #f1f5f9;
+    --t2: #94a3b8;
+    --t3: #4b5563;
+    --a1: #818cf8;
+    --a2: #6366f1;
+    --a-glow: rgba(129,140,248,.12);
+    --ok: #22c55e;
+    --err: #f87171;
+    --sh:  0 1px 3px rgba(0,0,0,.3),  0 1px 2px rgba(0,0,0,.2);
+    --shm: 0 4px 16px rgba(0,0,0,.35), 0 2px 6px rgba(0,0,0,.25);
+    --shl: 0 10px 32px rgba(0,0,0,.45), 0 4px 12px rgba(0,0,0,.3);
+}
 
-        /* ── Cards ─────────────────────────────────────────────────────────── */
-        .artisan-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 0.75rem;
-            transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
-        }
+/* â”€â”€ Keyframes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+@keyframes ar-in     { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
+@keyframes ar-in-r   { from{opacity:0;transform:translateX(14px)} to{opacity:1;transform:translateX(0)} }
+@keyframes ar-spin   { to{transform:rotate(360deg)} }
+@keyframes ar-pulse  { 0%,100%{opacity:.9} 50%{opacity:.3} }
+@keyframes ar-glow   { 0%,100%{box-shadow:0 0 0 0 rgba(99,102,241,0)} 50%{box-shadow:0 0 22px 4px rgba(99,102,241,.2)} }
+@keyframes ar-out-dn { from{opacity:0;transform:translateY(-10px)} to{opacity:1;transform:translateY(0)} }
+@keyframes ar-shimmer{
+    0%  { background-position:-200% center }
+    100%{ background-position: 200% center }
+}
 
-        .artisan-card:hover {
-            background: var(--surface-hover);
-            border-color: var(--primary);
-            box-shadow: 0 4px 12px rgba(0,0,0,.08);
-        }
+/* â”€â”€ Animation helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+.ar-in    { animation: ar-in   .45s cubic-bezier(.16,1,.3,1) both }
+.ar-in-r  { animation: ar-in-r .45s cubic-bezier(.16,1,.3,1) both }
+.ar-d1 { animation-delay:.05s }
+.ar-d2 { animation-delay:.12s }
+.ar-d3 { animation-delay:.19s }
+.ar-d4 { animation-delay:.26s }
+.ar-spinner { animation: ar-spin .85s linear infinite }
 
-        /* ── Command grid + cards ───────────────────────────────────────────── */
-        .command-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 0.875rem;
-        }
+/* â”€â”€ Reset â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+.ar *,
+.ar *::before,
+.ar *::after { box-sizing:border-box; margin:0; padding:0 }
 
-        .command-card {
-            position: relative;
-            padding: 1rem;
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 0.625rem;
-            cursor: pointer;
-            transition: border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
-        }
+/* â”€â”€ Page background â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+.ar { background:var(--s1) }
 
-        .command-card:hover {
-            border-color: var(--primary);
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(0,0,0,.08);
-        }
+/* â”€â”€ Stat cards â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+.ar-stat {
+    display:flex; align-items:center; gap:1rem;
+    background:var(--s0);
+    border:1px solid var(--s3);
+    border-radius:16px;
+    padding:1.25rem 1.5rem;
+    box-shadow:var(--sh);
+    position:relative; overflow:hidden;
+    transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease;
+}
+.ar-stat::after {
+    content:''; position:absolute; inset:0;
+    background:linear-gradient(135deg,rgba(255,255,255,.05) 0%,transparent 55%);
+    pointer-events:none;
+}
+.ar-stat:hover { transform:translateY(-3px); box-shadow:var(--shm); border-color:var(--a1) }
+.ar-stat-ico {
+    width:3rem; height:3rem; border-radius:14px;
+    display:flex; align-items:center; justify-content:center; flex-shrink:0;
+}
+.ar-stat-ico svg { width:1.375rem; height:1.375rem }
+.ar-stat-v { font-size:1.75rem; font-weight:800; letter-spacing:-.04em; line-height:1; color:var(--t1) }
+.ar-stat-l { font-size:.75rem; font-weight:500; color:var(--t2); margin-top:.3rem; text-transform:uppercase; letter-spacing:.04em }
+.ar-dot {
+    position:absolute; right:1.25rem; top:1.25rem;
+    width:.55rem; height:.55rem; border-radius:9999px;
+    animation: ar-pulse 2.2s ease-in-out infinite;
+}
 
-        .command-card.selected {
-            border-color: var(--primary);
-            background: rgba(37,99,235,.05);
-        }
+/* â”€â”€ Cards â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+.ar-card {
+    background:var(--s0);
+    border:1px solid var(--s3);
+    border-radius:16px;
+    box-shadow:var(--sh);
+    overflow:hidden;
+    transition: box-shadow .25s ease, border-color .25s ease;
+}
+.ar-card-hd {
+    display:flex; align-items:center; gap:.625rem;
+    padding:.95rem 1.25rem;
+    border-bottom:1px solid var(--s3);
+}
+.ar-card-hd svg { width:1.125rem; height:1.125rem; flex-shrink:0 }
+.ar-card-hd-title { font-size:.9rem; font-weight:700; color:var(--t1); flex:1 }
+.ar-card-bd { padding:1.125rem 1.25rem }
 
-        .command-card.dangerous {
-            border-left: 3px solid var(--danger);
-        }
+/* group header */
+.ar-group-hd {
+    display:flex; align-items:center; gap:.625rem;
+    padding:.875rem 1.25rem;
+    border-bottom:1px solid var(--s3);
+    background:linear-gradient(90deg,rgba(99,102,241,.04) 0%,transparent 60%);
+}
+.dark .ar-group-hd { background:linear-gradient(90deg,rgba(129,140,248,.05) 0%,transparent 60%) }
+.ar-group-hd svg { width:1.125rem; height:1.125rem; flex-shrink:0 }
+.ar-group-hd-name { font-size:.875rem; font-weight:700; color:var(--t1); flex:1 }
+.ar-group-cnt {
+    font-size:.68rem; font-weight:700; padding:.15rem .55rem;
+    border-radius:9999px; background:var(--s2); color:var(--t2);
+    border:1px solid var(--s3); letter-spacing:.03em;
+}
 
-        /* ── Icons: force consistent sizing ────────────────────────────────── */
-        .artisan-runner svg {
-            display: inline-block;
-            flex-shrink: 0;
-        }
+/* â”€â”€ Command grid â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+.ar-grid {
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(260px,1fr));
+    gap:.875rem;
+    padding:1rem;
+}
+.ar-cmd {
+    position:relative;
+    padding:1rem;
+    background:var(--s0);
+    border:1.5px solid var(--s3);
+    border-radius:12px;
+    cursor:pointer;
+    animation: ar-in .4s cubic-bezier(.16,1,.3,1) both;
+    transition: border-color .18s ease, transform .18s ease, box-shadow .18s ease, background .18s ease;
+}
+.ar-cmd:hover {
+    border-color:var(--a1);
+    transform:translateY(-2px);
+    box-shadow:var(--shm);
+    background:var(--s2);
+}
+.ar-cmd.is-sel {
+    border-color:var(--a1);
+    background:var(--s2);
+    box-shadow:var(--a-glow), var(--shm);
+    animation: ar-in .4s cubic-bezier(.16,1,.3,1) both, ar-glow 2.5s ease-in-out infinite;
+}
+.ar-cmd.is-danger { border-left:3px solid #ef4444 }
+.ar-cmd svg.ar-ico { width:1.125rem; height:1.125rem; flex-shrink:0; margin-top:1px }
+.ar-cmd svg.ar-chk { width:1.125rem; height:1.125rem }
+.ar-cmd-title { font-size:.8375rem; font-weight:600; color:var(--t1) }
+.ar-cmd-desc  { font-size:.775rem; color:var(--t2); line-height:1.5; margin-top:.25rem }
+.ar-mono {
+    display:inline-block; margin-top:.5rem;
+    padding:.2rem .5rem;
+    background:var(--s2); border:1px solid var(--s3);
+    border-radius:6px;
+    font-size:.68rem; color:var(--t3);
+    font-family:'Cascadia Code','Fira Code',ui-monospace,monospace;
+}
+.dark .ar-mono { background:#0d1117; border-color:#30363d }
 
-        /* stat-card icon wrappers */
-        .stat-icon { width: 1.5rem; height: 1.5rem; }   /* w-6 h-6  */
-        .cmd-icon  { width: 1.25rem; height: 1.25rem; }  /* w-5 h-5  */
-        .sm-icon   { width: 1rem; height: 1rem; }         /* w-4 h-4  */
+/* â”€â”€ Badge â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+.ar-badge {
+    display:inline-flex; align-items:center;
+    padding:.15rem .45rem;
+    border-radius:9999px;
+    font-size:.65rem; font-weight:700; letter-spacing:.04em; text-transform:uppercase; white-space:nowrap;
+}
+.ar-ok   { background:rgba(34,197,94,.1);  color:#15803d; border:1px solid rgba(34,197,94,.2) }
+.ar-err  { background:rgba(239,68,68,.1);  color:#b91c1c; border:1px solid rgba(239,68,68,.2) }
+.ar-info { background:rgba(99,102,241,.1); color:#4338ca; border:1px solid rgba(99,102,241,.2) }
+.dark .ar-ok   { color:#4ade80; border-color:rgba(74,222,128,.25) }
+.dark .ar-err  { color:#f87171; border-color:rgba(248,113,113,.25) }
+.dark .ar-info { color:#a5b4fc; border-color:rgba(165,180,252,.25) }
 
-        /* ── Spinner ────────────────────────────────────────────────────────── */
-        .spinner { animation: ar-spin 1s linear infinite; }
+/* â”€â”€ Search â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+.ar-search-wrap { position:relative }
+.ar-search-ico { position:absolute; left:.875rem; top:50%; transform:translateY(-50%); width:1rem; height:1rem; color:var(--t3); pointer-events:none }
+.ar-search {
+    width:100%;
+    padding:.7rem 1rem .7rem 2.75rem;
+    background:var(--s2); border:1.5px solid var(--s3);
+    border-radius:10px; color:var(--t1); font-size:.875rem;
+    outline:none;
+    transition: border-color .2s ease, box-shadow .2s ease;
+}
+.ar-search::placeholder { color:var(--t3) }
+.ar-search:focus { border-color:var(--a1); box-shadow:0 0 0 3px rgba(99,102,241,.12) }
 
-        @keyframes ar-spin {
-            from { transform: rotate(0deg); }
-            to   { transform: rotate(360deg); }
-        }
+/* â”€â”€ Exec panel â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+.ar-exec-panel {
+    background:var(--s0); border:1px solid var(--s3);
+    border-radius:16px; box-shadow:var(--sh); overflow:hidden;
+    animation: ar-in-r .38s cubic-bezier(.16,1,.3,1) both;
+}
+.ar-exec-hd {
+    display:flex; align-items:center; gap:.625rem;
+    padding:.95rem 1.25rem; border-bottom:1px solid var(--s3);
+    background:linear-gradient(90deg,rgba(99,102,241,.06) 0%,transparent 65%);
+}
+.dark .ar-exec-hd { background:linear-gradient(90deg,rgba(129,140,248,.07) 0%,transparent 65%) }
+.ar-exec-hd svg { width:1.125rem; height:1.125rem; flex-shrink:0 }
+.ar-exec-preview {
+    background:var(--s2); border:1px solid var(--s3); border-radius:10px; padding:1rem;
+}
+.ar-exec-title { font-weight:600; font-size:.875rem; color:var(--t1); margin-bottom:.3rem }
+.ar-exec-desc  { font-size:.79rem; color:var(--t2); line-height:1.55; margin-bottom:.75rem }
+.ar-terminal {
+    background:#0d1117; border:1px solid #30363d; border-radius:8px;
+    padding:.75rem 1rem;
+    font-family:'Cascadia Code','Fira Code',ui-monospace,monospace;
+    font-size:.78rem; color:#7ee787; overflow-x:auto;
+}
+.ar-terminal-ps { color:#79c0ff; margin-right:.25rem; user-select:none }
 
-        /* ── Badges ─────────────────────────────────────────────────────────── */
-        .command-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.25rem;
-            padding: 0.2rem 0.5rem;
-            border-radius: 9999px;
-            font-size: 0.7rem;
-            font-weight: 600;
-            letter-spacing: .03em;
-            text-transform: uppercase;
-            white-space: nowrap;
-        }
+/* â”€â”€ Buttons â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+.ar-btn {
+    width:100%; display:inline-flex; align-items:center; justify-content:center; gap:.5rem;
+    padding:.8rem 1.25rem; border-radius:10px;
+    font-size:.875rem; font-weight:600; letter-spacing:.01em;
+    border:none; cursor:pointer; color:#fff;
+    position:relative; overflow:hidden;
+    transition: transform .15s ease, box-shadow .15s ease, opacity .15s ease;
+}
+.ar-btn::after {
+    content:''; position:absolute; inset:0;
+    background:linear-gradient(120deg,transparent 30%,rgba(255,255,255,.22) 50%,transparent 70%);
+    background-size:200% 100%; background-position:-200% center;
+    transition:background-position .6s ease;
+}
+.ar-btn:hover::after   { background-position:200% center }
+.ar-btn:hover          { transform:translateY(-2px) }
+.ar-btn:active         { transform:translateY(0) }
+.ar-btn:disabled       { opacity:.5; cursor:not-allowed; transform:none }
+.ar-btn svg { width:1rem; height:1rem; flex-shrink:0 }
+.ar-btn-primary {
+    background:linear-gradient(135deg,#6366f1 0%,#4f46e5 100%);
+    box-shadow:0 2px 12px rgba(99,102,241,.35);
+}
+.ar-btn-primary:hover  { box-shadow:0 4px 20px rgba(99,102,241,.45) }
+.ar-btn-danger {
+    background:linear-gradient(135deg,#ef4444 0%,#dc2626 100%);
+    box-shadow:0 2px 12px rgba(239,68,68,.3);
+}
+.ar-btn-danger:hover   { box-shadow:0 4px 20px rgba(239,68,68,.4) }
 
-        .badge-safe {
-            background: rgba(34,197,94,.12);
-            color: #15803d; /* green-700 */
-        }
+/* â”€â”€ Warning banner â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+.ar-warn {
+    display:flex; gap:.625rem;
+    padding:.875rem 1rem;
+    background:rgba(239,68,68,.07);
+    border:1px solid rgba(239,68,68,.22);
+    border-radius:10px;
+}
+.ar-warn svg { width:1.125rem; height:1.125rem; flex-shrink:0; margin-top:1px; color:#ef4444 }
+.ar-warn-t { font-size:.8375rem; font-weight:600; color:#dc2626 }
+.ar-warn-b { font-size:.77rem; color:#ef4444; margin-top:.2rem; line-height:1.45 }
+.dark .ar-warn-t { color:#f87171 }
+.dark .ar-warn-b { color:#fca5a5 }
 
-        .badge-dangerous {
-            background: rgba(239,68,68,.12);
-            color: #b91c1c; /* red-700   */
-        }
+/* â”€â”€ Recent row â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+.ar-recent {
+    display:flex; align-items:center; gap:.75rem;
+    padding:.625rem .75rem; border-radius:8px; cursor:pointer;
+    transition:background .15s ease;
+}
+.ar-recent:hover { background:var(--s2) }
+.ar-recent svg { width:.875rem; height:.875rem; color:var(--t3); flex-shrink:0 }
+.ar-recent-l { font-size:.82rem; font-weight:500; color:var(--t1); overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+.ar-recent-t { font-size:.7rem; color:var(--t3); margin-top:1px }
 
-        .dark .badge-safe      { color: #4ade80; /* green-400 */ }
-        .dark .badge-dangerous { color: #f87171; /* red-400   */ }
+/* â”€â”€ Empty state â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+.ar-empty { text-align:center; padding:3rem 2rem }
+.ar-empty svg { width:2.5rem; height:2.5rem; color:var(--t3); margin:0 auto .875rem; display:block }
+.ar-empty-t { font-size:.9375rem; font-weight:600; color:var(--t1); margin-bottom:.375rem }
+.ar-empty-b { font-size:.8125rem; color:var(--t2) }
 
-        /* ── Misc ───────────────────────────────────────────────────────────── */
-        .artisan-runner code {
-            font-family: 'Cascadia Code', 'Fira Code', ui-monospace, monospace;
-        }
-    </style>
+/* â”€â”€ Placeholder sidebar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+.ar-placeholder {
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; padding:2.5rem 1.5rem; gap:.75rem;
+}
+.ar-placeholder svg { width:2.5rem; height:2.5rem; color:var(--t3); display:block }
+.ar-placeholder p { font-size:.8375rem; color:var(--t2); line-height:1.55 }
 
-    <div class="artisan-runner space-y-6">
-        
-        {{-- Header Stats --}}
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div class="artisan-card p-4">
-                <div class="flex items-center gap-3">
-                    <div class="p-2 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
-                        <x-heroicon-o-command-line class="stat-icon text-blue-600 dark:text-blue-400"/>
-                    </div>
-                    <div>
-                        <p class="text-2xl font-bold text-[var(--text)]">{{ count(\App\Filament\Pages\ArtisanRunner::allowedCommands()) }}</p>
-                        <p class="text-sm text-[var(--text-muted)]">Available Commands</p>
-                    </div>
-                </div>
+/* â”€â”€ Output terminal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+.ar-output { animation: ar-out-dn .4s cubic-bezier(.16,1,.3,1) both }
+.ar-pre {
+    background:#0d1117; border:1px solid #30363d;
+    border-radius:12px; padding:1.25rem;
+    font-family:'Cascadia Code','Fira Code',ui-monospace,monospace;
+    font-size:.79rem; line-height:1.75; color:#e6edf3;
+    white-space:pre-wrap; word-break:break-word;
+    max-height:420px; overflow-y:auto; overflow-x:auto;
+}
+.ar-pre.ar-ok-bg  { border-color:rgba(34,197,94,.35);  color:#7ee787 }
+.ar-pre.ar-err-bg { border-color:rgba(239,68,68,.35);  color:#f87171 }
+.ar-pre::-webkit-scrollbar { width:5px; height:5px }
+.ar-pre::-webkit-scrollbar-track { background:transparent }
+.ar-pre::-webkit-scrollbar-thumb { background:#374151; border-radius:3px }
+
+.ar-clear {
+    font-size:.78rem; padding:.35rem .75rem; border-radius:7px;
+    color:var(--t2); background:transparent;
+    border:1px solid var(--s3); cursor:pointer;
+    transition:background .15s ease, color .15s ease, border-color .15s ease;
+}
+.ar-clear:hover { background:var(--s2); color:var(--t1); border-color:var(--a1) }
+</style>
+
+{{-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• --}}
+<div class="ar space-y-5">
+
+    {{-- â–“â–“  STAT STRIP  â–“â–“ --}}
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+
+        <div class="ar-stat ar-in ar-d1">
+            <div class="ar-stat-ico" style="background:rgba(99,102,241,.12)">
+                <x-heroicon-o-command-line style="color:#6366f1"/>
             </div>
-
-            <div class="artisan-card p-4">
-                <div class="flex items-center gap-3">
-                    <div class="p-2 bg-green-100 dark:bg-green-900/20 rounded-lg">
-                        <x-heroicon-o-check-circle class="stat-icon text-green-600 dark:text-green-400"/>
-                    </div>
-                    <div>
-                        <p class="text-2xl font-bold text-[var(--text)]">{{ $exitCode === 0 && $ran ? '✓' : '—' }}</p>
-                        <p class="text-sm text-[var(--text-muted)]">Last Status</p>
-                    </div>
-                </div>
+            <div>
+                <div class="ar-stat-v">{{ count($allCommands) }}</div>
+                <div class="ar-stat-l">Commands</div>
             </div>
-
-            <div class="artisan-card p-4">
-                <div class="flex items-center gap-3">
-                    <div class="p-2 bg-purple-100 dark:bg-purple-900/20 rounded-lg">
-                        <x-heroicon-o-clock class="stat-icon text-purple-600 dark:text-purple-400"/>
-                    </div>
-                    <div>
-                        <p class="text-sm font-medium text-[var(--text)]">{{ $lastRunAt ?: 'Never' }}</p>
-                        <p class="text-sm text-[var(--text-muted)]">Last Execution</p>
-                    </div>
-                </div>
-            </div>
+            <span class="ar-dot" style="background:#6366f1"></span>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {{-- Left Column: Commands --}}
-            <div class="lg:col-span-2 space-y-4">
-                
-                {{-- Search Bar --}}
-                <div class="artisan-card p-4">
-                    <div class="flex items-center gap-3 mb-4">
-                        <x-heroicon-o-magnifying-glass class="cmd-icon text-[var(--text-subtle)]"/>
-                        <h3 class="text-lg font-semibold text-[var(--text)]">Search Commands</h3>
-                    </div>
-                    <input
-                        type="text"
-                        wire:model.live.debounce.300ms="searchQuery"
-                        placeholder="Search by command name, description, or group..."
-                        class="w-full px-4 py-2 border border-[var(--border)] rounded-lg bg-[var(--surface)] text-[var(--text)] placeholder:text-[var(--text-subtle)] focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    />
+        <div class="ar-stat ar-in ar-d2">
+            <div class="ar-stat-ico" style="background:rgba(34,197,94,.12)">
+                <x-heroicon-o-check-circle style="color:#22c55e"/>
+            </div>
+            <div>
+                <div class="ar-stat-v" style="{{ $ran ? ($exitCode===0 ? 'color:#22c55e' : 'color:#ef4444') : 'color:var(--t3)' }}">
+                    {{ $ran ? ($exitCode===0 ? 'âœ“' : 'âœ—') : 'â€”' }}
                 </div>
-
-                {{-- Commands by Group --}}
-                @if(empty($filteredCommands))
-                    <div class="artisan-card p-8 text-center">
-                        <x-heroicon-o-magnifying-glass class="cmd-icon text-[var(--text-subtle)] mx-auto mb-3" style="width:2.5rem;height:2.5rem"/>
-                        <h3 class="text-lg font-medium text-[var(--text)]">No commands found</h3>
-                        <p class="text-[var(--text-muted)]">Try adjusting your search query.</p>
-                    </div>
-                @else
-                    @foreach($grouped as $groupName => $commands)
-                        @php
-                            $groupCommands = array_intersect_key($commands, $filteredCommands);
-                        @endphp
-                        
-                        @if(!empty($groupCommands))
-                            <div class="artisan-card">
-                                <div class="p-4 border-b border-[var(--border)]">
-                                    <h3 class="text-lg font-semibold text-[var(--text)] flex items-center gap-2">
-                                        @switch($groupName)
-                                            @case('Cache Management')
-                                                <x-heroicon-o-arrow-path class="cmd-icon text-blue-500"/>
-                                                @break
-                                            @case('Database Operations')
-                                                <x-heroicon-o-circle-stack class="cmd-icon text-green-500"/>
-                                                @break
-                                            @case('Queue Management')
-                                                <x-heroicon-o-queue-list class="cmd-icon text-purple-500"/>
-                                                @break
-                                            @case('Application Maintenance')
-                                                <x-heroicon-o-shield-exclamation class="cmd-icon text-red-500"/>
-                                                @break
-                                            @default
-                                                <x-heroicon-o-squares-2x2 class="cmd-icon text-gray-500"/>
-                                        @endswitch
-                                        {{ $groupName }}
-                                        <span class="text-xs bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-full text-[var(--text-subtle)]">
-                                            {{ count($groupCommands) }}
-                                        </span>
-                                    </h3>
-                                </div>
-                                <div class="p-4">
-                                    <div class="command-grid">
-                                        @foreach($groupCommands as $key => $def)
-                                            <div 
-                                                wire:click="selectCommand('{{ $key }}')"
-                                                class="command-card {{ $selectedCommand === $key ? 'selected' : '' }} {{ $def['dangerous'] ? 'dangerous' : '' }}"
-                                            >
-                                                <div class="flex items-start gap-3">
-                                                    @if($def['icon'] ?? null)
-                                                        <x-dynamic-component 
-                                                            :component="$def['icon']" 
-                                                            class="cmd-icon mt-0.5 text-blue-600 dark:text-blue-400 flex-shrink-0"
-                                                        />
-                                                    @endif
-                                                    <div class="flex-1 min-w-0">
-                                                        <div class="flex items-center gap-2 mb-2">
-                                                            <h4 class="font-medium text-[var(--text)] truncate">{{ $def['label'] }}</h4>
-                                                            <span class="command-badge {{ $def['dangerous'] ? 'badge-dangerous' : 'badge-safe' }}">
-                                                                {{ $def['dangerous'] ? 'Dangerous' : 'Safe' }}
-                                                            </span>
-                                                        </div>
-                                                        <p class="text-sm text-[var(--text-muted)] leading-relaxed">{{ $def['desc'] }}</p>
-                                                        <code class="inline-block mt-2 px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded text-xs text-[var(--text-subtle)] font-mono">
-                                                            php artisan {{ $key }}
-                                                        </code>
-                                                    </div>
-                                                </div>
-                                                
-                                                @if($selectedCommand === $key)
-                                                    <div class="absolute top-3 right-3">
-                                                        <x-heroicon-s-check-circle class="cmd-icon text-blue-600 dark:text-blue-400"/>
-                                                    </div>
-                                                @endif
-                                            </div>
-                                        @endforeach
-                                    </div>
-                                </div>
-                            </div>
-                        @endif
-                    @endforeach
-                @endif
+                <div class="ar-stat-l">{{ $ran ? ($exitCode===0 ? 'Succeeded' : 'Failed') : 'No run yet' }}</div>
             </div>
-
-            {{-- Right Column: Selected Command & Recent Commands --}}
-            <div class="space-y-4">
-                
-                {{-- Selected Command Action --}}
-                @if($selectedCommand)
-                    @php
-                        $def = \App\Filament\Pages\ArtisanRunner::allowedCommands()[$selectedCommand];
-                    @endphp
-                    
-                    <div class="artisan-card">
-                        <div class="p-4 border-b border-[var(--border)]">
-                            <h3 class="text-lg font-semibold text-[var(--text)] flex items-center gap-2">
-                                <x-heroicon-o-play class="cmd-icon text-blue-600 dark:text-blue-400"/>
-                                Execute Command
-                            </h3>
-                        </div>
-                        <div class="p-4 space-y-4">
-                            <div class="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4">
-                                <h4 class="font-medium text-[var(--text)] mb-2">{{ $def['label'] }}</h4>
-                                <p class="text-sm text-[var(--text-muted)] mb-3">{{ $def['desc'] }}</p>
-                                <code class="block bg-gray-900 text-green-400 p-3 rounded text-sm font-mono">
-                                    php artisan {{ $selectedCommand }}
-                                    @foreach($def['args'] as $flag => $val)
-                                        {{ is_bool($val) ? $flag : "$flag=$val" }}
-                                    @endforeach
-                                </code>
-                            </div>
-                            
-                            @if($def['dangerous'])
-                                <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-lg p-4">
-                                    <div class="flex items-center gap-2 text-red-700 dark:text-red-400">
-                                        <x-heroicon-o-exclamation-triangle class="cmd-icon"/>
-                                        <span class="font-medium">Dangerous Command</span>
-                                    </div>
-                                    <p class="text-sm text-red-600 dark:text-red-400 mt-1">
-                                        This command can affect your application. Please confirm before proceeding.
-                                    </p>
-                                </div>
-                            @endif
-
-                            @if($def['dangerous'])
-                                <button
-                                    wire:click="runCommand"
-                                    wire:confirm="⚠️ This is a DANGEROUS command that could affect your application. Are you absolutely sure you want to run it?"
-                                    wire:loading.attr="disabled"
-                                    class="w-full inline-flex items-center justify-center gap-2 px-4 py-3 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50"
-                                >
-                                    @if($isRunning)
-                                        <x-heroicon-o-arrow-path class="sm-icon spinner"/>
-                                        Executing...
-                                    @else
-                                        <x-heroicon-o-exclamation-triangle class="sm-icon"/>
-                                        Run Dangerous Command
-                                    @endif
-                                </button>
-                            @else
-                                <button
-                                    wire:click="runCommand"
-                                    wire:loading.attr="disabled"
-                                    class="w-full inline-flex items-center justify-center gap-2 px-4 py-3 bg-[var(--primary)] hover:bg-[var(--primary-hover)] text-white font-medium rounded-lg transition-colors disabled:opacity-50"
-                                >
-                                    @if($isRunning)
-                                        <x-heroicon-o-arrow-path class="sm-icon spinner"/>
-                                        Executing...
-                                    @else
-                                        <x-heroicon-o-play class="sm-icon"/>
-                                        Execute Command
-                                    @endif
-                                </button>
-                            @endif
-                        </div>
-                    </div>
-                @endif
-
-                {{-- Recent Commands --}}
-                @if(!empty($recentCommands))
-                    <div class="artisan-card">
-                        <div class="p-4 border-b border-[var(--border)]">
-                            <h3 class="text-lg font-semibold text-[var(--text)] flex items-center gap-2">
-                                <x-heroicon-o-clock class="cmd-icon text-gray-500"/>
-                                Recent Commands
-                            </h3>
-                        </div>
-                        <div class="p-4 space-y-2">
-                            @foreach($recentCommands as $recent)
-                                <div 
-                                    wire:click="selectCommand('{{ $recent['key'] }}')"
-                                    class="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer transition-colors"
-                                >
-                                    <div class="flex-1 min-w-0">
-                                        <p class="font-medium text-[var(--text)] truncate">{{ $recent['label'] }}</p>
-                                        <p class="text-xs text-[var(--text-subtle)]">{{ $recent['ran_at'] }}</p>
-                                    </div>
-                                    <x-heroicon-o-arrow-right class="sm-icon text-gray-400"/>
-                                </div>
-                            @endforeach
-                        </div>
-                    </div>
-                @endif
-            </div>
+            @if($ran)
+                <span class="ar-dot" style="background:{{ $exitCode===0 ? '#22c55e' : '#ef4444' }}"></span>
+            @endif
         </div>
 
-        {{-- Output Section --}}
-        @if($ran)
-            <div class="artisan-card">
-                <div class="flex items-center justify-between p-4 border-b border-[var(--border)]">
-                    <div class="flex items-center gap-2">
-                        <x-heroicon-o-command-line class="cmd-icon text-gray-500"/>
-                        <h3 class="text-lg font-semibold text-[var(--text)]">Command Output</h3>
-                        <span class="command-badge {{ $exitCode === 0 ? 'badge-safe' : 'badge-dangerous' }}">
-                            {{ $exitCode === 0 ? 'Success' : 'Failed' }} (exit {{ $exitCode }})
-                        </span>
-                    </div>
-                    <button
-                        wire:click="clearOutput"
-                        class="text-sm px-3 py-1 text-[var(--text-subtle)] hover:text-[var(--text)] transition-colors"
-                    >
-                        Clear Output
-                    </button>
-                </div>
-                <div class="p-4">
-                    <pre class="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto text-sm font-mono whitespace-pre-wrap max-h-96 overflow-y-auto border">{{ $output }}</pre>
-                </div>
+        <div class="ar-stat ar-in ar-d3">
+            <div class="ar-stat-ico" style="background:rgba(168,85,247,.12)">
+                <x-heroicon-o-clock style="color:#a855f7"/>
             </div>
-        @endif
+            <div>
+                <div class="ar-stat-v" style="font-size:{{ $lastRunAt ? '.95rem' : '1.75rem' }};letter-spacing:0;line-height:1.2">
+                    {{ $lastRunAt ?: 'â€”' }}
+                </div>
+                <div class="ar-stat-l">Last Executed</div>
+            </div>
+        </div>
     </div>
+
+    {{-- â–“â–“  MAIN GRID  â–“â–“ --}}
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+
+        {{-- â–‘ LEFT â€” command library â–‘ --}}
+        <div class="lg:col-span-2 space-y-4 ar-in ar-d2">
+
+            {{-- Search --}}
+            <div class="ar-card">
+                <div class="ar-card-hd">
+                    <x-heroicon-o-squares-2x2 style="color:var(--a1)"/>
+                    <span class="ar-card-hd-title">Command Library</span>
+                    <span class="ar-badge ar-info">{{ count($allCommands) }} available</span>
+                </div>
+                <div class="ar-card-bd">
+                    <div class="ar-search-wrap">
+                        <x-heroicon-o-magnifying-glass class="ar-search-ico"/>
+                        <input
+                            type="text"
+                            wire:model.live.debounce.300ms="searchQuery"
+                            placeholder="Search commands by name, description or groupâ€¦"
+                            class="ar-search"
+                        />
+                    </div>
+                </div>
+            </div>
+
+            {{-- Empty state --}}
+            @if(empty($filteredCommands))
+                <div class="ar-card ar-in">
+                    <div class="ar-empty">
+                        <x-heroicon-o-magnifying-glass/>
+                        <div class="ar-empty-t">No commands found</div>
+                        <div class="ar-empty-b">Try a different keyword, or clear the search box to see everything.</div>
+                    </div>
+                </div>
+            @else
+                @foreach($grouped as $groupName => $groupCmds)
+                    @php $gc = array_intersect_key($groupCmds, $filteredCommands) @endphp
+                    @if(!empty($gc))
+                        <div class="ar-card ar-in">
+                            {{-- group header --}}
+                            <div class="ar-group-hd">
+                                @switch($groupName)
+                                    @case('Cache Management')
+                                        <x-heroicon-o-arrow-path style="color:#6366f1"/>@break
+                                    @case('Database Operations')
+                                        <x-heroicon-o-circle-stack style="color:#22c55e"/>@break
+                                    @case('Queue Management')
+                                        <x-heroicon-o-queue-list style="color:#a855f7"/>@break
+                                    @case('Application Maintenance')
+                                        <x-heroicon-o-shield-exclamation style="color:#ef4444"/>@break
+                                    @default
+                                        <x-heroicon-o-cog-6-tooth style="color:var(--t3)"/>
+                                @endswitch
+                                <span class="ar-group-hd-name">{{ $groupName }}</span>
+                                <span class="ar-group-cnt">{{ count($gc) }}</span>
+                            </div>
+                            {{-- command cards grid --}}
+                            <div class="ar-grid">
+                                @foreach($gc as $key => $def)
+                                    <div
+                                        wire:click="selectCommand('{{ $key }}')"
+                                        class="ar-cmd {{ $selectedCommand===$key ? 'is-sel' : '' }} {{ $def['dangerous'] ? 'is-danger' : '' }}"
+                                        style="animation-delay:{{ $loop->index * .045 }}s"
+                                    >
+                                        <div style="display:flex;align-items:flex-start;gap:.75rem">
+                                            @if($def['icon'] ?? null)
+                                                <x-dynamic-component
+                                                    :component="$def['icon']"
+                                                    class="ar-ico"
+                                                    style="color:{{ $def['dangerous'] ? '#ef4444' : '#6366f1' }}"
+                                                />
+                                            @endif
+                                            <div style="flex:1;min-width:0">
+                                                <div style="display:flex;align-items:center;gap:.375rem;flex-wrap:wrap;margin-bottom:.3rem">
+                                                    <span class="ar-cmd-title">{{ $def['label'] }}</span>
+                                                    <span class="ar-badge {{ $def['dangerous'] ? 'ar-err' : 'ar-ok' }}">
+                                                        {{ $def['dangerous'] ? 'Danger' : 'Safe' }}
+                                                    </span>
+                                                </div>
+                                                <div class="ar-cmd-desc">{{ $def['desc'] }}</div>
+                                                <code class="ar-mono">php artisan {{ $key }}</code>
+                                            </div>
+                                        </div>
+                                        @if($selectedCommand === $key)
+                                            <div style="position:absolute;top:.625rem;right:.625rem">
+                                                <x-heroicon-s-check-circle class="ar-chk" style="color:var(--a1)"/>
+                                            </div>
+                                        @endif
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
+                @endforeach
+            @endif
+        </div>
+
+        {{-- â–‘ RIGHT â€” run panel â–‘ --}}
+        <div class="space-y-4 ar-in ar-d3">
+
+            @if($selectedCommand)
+                @php $def = $allCommands[$selectedCommand] @endphp
+                <div class="ar-exec-panel">
+                    <div class="ar-exec-hd">
+                        <x-heroicon-o-bolt style="color:#6366f1"/>
+                        <span class="ar-card-hd-title">Execute Command</span>
+                    </div>
+                    <div class="ar-card-bd space-y-3">
+                        {{-- preview --}}
+                        <div class="ar-exec-preview">
+                            <div class="ar-exec-title">{{ $def['label'] }}</div>
+                            <div class="ar-exec-desc">{{ $def['desc'] }}</div>
+                            <div class="ar-terminal">
+                                <span class="ar-terminal-ps">$</span>php artisan {{ $selectedCommand }}@foreach($def['args'] as $flag => $val) {{ is_bool($val) ? $flag : "$flag=$val" }}@endforeach
+                            </div>
+                        </div>
+
+                        @if($def['dangerous'])
+                            <div class="ar-warn">
+                                <x-heroicon-o-exclamation-triangle/>
+                                <div>
+                                    <div class="ar-warn-t">Dangerous Command</div>
+                                    <div class="ar-warn-b">This can affect your live application. Double-check before proceeding.</div>
+                                </div>
+                            </div>
+                            <button
+                                wire:click="runCommand"
+                                wire:confirm="âš ï¸ DANGEROUS operation â€” this may affect production data. Proceed?"
+                                wire:loading.attr="disabled"
+                                class="ar-btn ar-btn-danger"
+                            >
+                                @if($isRunning)
+                                    <x-heroicon-o-arrow-path class="ar-spinner"/>Executingâ€¦
+                                @else
+                                    <x-heroicon-o-exclamation-triangle/>Run Dangerous Command
+                                @endif
+                            </button>
+                        @else
+                            <button
+                                wire:click="runCommand"
+                                wire:loading.attr="disabled"
+                                class="ar-btn ar-btn-primary"
+                            >
+                                @if($isRunning)
+                                    <x-heroicon-o-arrow-path class="ar-spinner"/>Executingâ€¦
+                                @else
+                                    <x-heroicon-o-play/>Execute Command
+                                @endif
+                            </button>
+                        @endif
+                    </div>
+                </div>
+            @else
+                <div class="ar-card">
+                    <div class="ar-placeholder">
+                        <x-heroicon-o-cursor-arrow-rays/>
+                        <p>Click any command card on the left to preview and run it here.</p>
+                    </div>
+                </div>
+            @endif
+
+            {{-- Recent commands --}}
+            @if(!empty($recentCommands))
+                <div class="ar-card ar-in ar-d4">
+                    <div class="ar-card-hd">
+                        <x-heroicon-o-clock style="color:var(--t3)"/>
+                        <span class="ar-card-hd-title">Recent Commands</span>
+                    </div>
+                    <div class="ar-card-bd" style="padding:.5rem .75rem">
+                        @foreach($recentCommands as $recent)
+                            <div wire:click="selectCommand('{{ $recent['key'] }}')" class="ar-recent">
+                                <div style="flex:1;min-width:0">
+                                    <div class="ar-recent-l">{{ $recent['label'] }}</div>
+                                    <div class="ar-recent-t">{{ $recent['ran_at'] }}</div>
+                                </div>
+                                <x-heroicon-o-arrow-right/>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            @endif
+        </div>
+    </div>
+
+    {{-- â–“â–“  OUTPUT  â–“â–“ --}}
+    @if($ran)
+        <div class="ar-card ar-output">
+            <div class="ar-card-hd" style="justify-content:space-between">
+                <div style="display:flex;align-items:center;gap:.625rem">
+                    <x-heroicon-o-command-line style="color:var(--t3);width:1.125rem;height:1.125rem"/>
+                    <span class="ar-card-hd-title">Output</span>
+                    <span class="ar-badge {{ $exitCode===0 ? 'ar-ok' : 'ar-err' }}">
+                        {{ $exitCode===0 ? 'Success' : 'Error' }} &middot; exit {{ $exitCode }}
+                    </span>
+                </div>
+                <button wire:click="clearOutput" class="ar-clear">Clear</button>
+            </div>
+            <div class="ar-card-bd">
+                <pre class="ar-pre {{ $exitCode===0 ? 'ar-ok-bg' : 'ar-err-bg' }}">{{ $output }}</pre>
+            </div>
+        </div>
+    @endif
+
+</div>
+{{-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• --}}
+
 </x-filament-panels::page>
+
