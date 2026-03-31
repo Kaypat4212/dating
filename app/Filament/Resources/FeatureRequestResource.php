@@ -73,14 +73,14 @@ class FeatureRequestResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('type')
                     ->badge()
-                    ->formatStateUsing(fn (string $s) => $s === 'bug' ? '🐛 Bug' : '💡 Feature')
-                    ->color(fn (string $s) => $s === 'bug' ? 'danger' : 'info'),
+                    ->formatStateUsing(fn (string $state) => $state === 'bug' ? '🐛 Bug' : '💡 Feature')
+                    ->color(fn (string $state) => $state === 'bug' ? 'danger' : 'info'),
                 Tables\Columns\TextColumn::make('title')->searchable()->limit(50),
                 Tables\Columns\TextColumn::make('name')->searchable()->label('Submitted by'),
                 Tables\Columns\TextColumn::make('email')->searchable()->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('status')
                     ->badge()
-                    ->color(fn (string $s) => match ($s) {
+                    ->color(fn (string $state) => match ($state) {
                         'open'        => 'primary',
                         'in_progress' => 'warning',
                         'resolved'    => 'success',
