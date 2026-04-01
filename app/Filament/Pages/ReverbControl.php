@@ -40,69 +40,101 @@ class ReverbControl extends Page
 
     public function checkServerStatus(): void
     {
-        // Check if exec() is available
-        if (!function_exists('exec') || in_array('exec', array_map('trim', explode(',', ini_get('disable_functions'))))) {
-            $this->serverStatus = 'unavailable';
-            $this->output = "⚠️ The exec() function is disabled on this server.\nPlease enable it in php.ini or contact your hosting provider.\n\nYou can still start Reverb manually from SSH:\nphp artisan reverb:start";
-            return;
-        }
+        // Try to check if Reverb process is running using proc_open (works even when exec is disabled)
+        $descriptorspec = [
+            0 => ['pipe', 'r'],  // stdin
+            1 => ['pipe', 'w'],  // stdout
+            2 => ['pipe', 'w'],  // stderr
+        ];
 
-        // Check if Reverb process is running
-        if (stripos(PHP_OS, 'WIN') === 0) {
-            // Windows
-            @exec('tasklist /FI "IMAGENAME eq php.exe" /FO CSV 2>NUL | findstr /I "reverb"', $output, $returnCode);
-        } else {
-            // Linux/Mac
-            @exec('ps aux | grep "reverb:start" | grep -v grep', $output, $returnCode);
-        }
+        try {
+            if (stripos(PHP_OS, 'WIN') === 0) {
+                // Windows
+                $cmd = 'tasklist /FI "IMAGENAME eq php.exe" /FO CSV 2>&1 | findstr /I "reverb"';
+            } else {
+                // Linux/Mac
+                $cmd = 'ps aux | grep "reverb:start" | grep -v grep';
+            }
 
-        $this->isRunning = !empty($output);
-        $this->serverStatus = $this->isRunning ? 'running' : 'stopped';
+            $process = proc_open($cmd, $descriptorspec, $pipes);
+
+            if (is_resource($process)) {
+                fclose($pipes[0]);
+                $output = stream_get_contents($pipes[1]);
+                fclose($pipes[1]);
+                fclose($pipes[2]);
+                proc_close($process);
+
+                $this->isRunning = !empty(trim($output));
+                $this->serverStatus = $this->isRunning ? 'running' : 'stopped';
+            } else {
+                $this->serverStatus = 'unknown';
+            }
+        } catch (\Exception $e) {
+            $this->serverStatus = 'unknown';
+            $this->output = "Status check error: " . $e->getMessage();
+        }
     }
 
     public function startServer(): void
     {
         try {
-            // Check if exec() is available
-            if (!function_exists('exec') || in_array('exec', array_map('trim', explode(',', ini_get('disable_functions'))))) {
-                $this->output = "❌ Cannot start server: exec() function is disabled.\nPlease enable it in php.ini or start Reverb manually via SSH:\nphp artisan reverb:start";
-                \Filament\Notifications\Notification::make()
-                    ->title('Server Control Unavailable')
-                    ->danger()
-                    ->body('exec() function is disabled on this server')
-                    ->send();
-                return;
-            }
-
             if ($this->isRunning) {
                 $this->output = "⚠️ Reverb server is already running.\n";
                 return;
             }
 
-            $reverbHost = env('REVERB_HOST', 'localhost');
+            $reverbHost = env('REVERB_HOST', '0.0.0.0');
             $reverbPort = env('REVERB_PORT', 8080);
+            $artisanPath = base_path('artisan');
+            $logPath = storage_path('logs/reverb.log');
+
+            // Use proc_open to start Reverb in background
+            $descriptorspec = [
+                0 => ['pipe', 'r'],  // stdin
+                1 => ['file', $logPath, 'a'],  // stdout to log file
+                2 => ['file', $logPath, 'a'],  // stderr to log file
+            ];
 
             if (stripos(PHP_OS, 'WIN') === 0) {
                 // Windows - Start in background
-                @pclose(@popen('start /B php ' . base_path('artisan') . ' reverb:start --host=' . $reverbHost . ' --port=' . $reverbPort . ' 2>&1', 'r'));
-                $this->output = "🚀 Starting Reverb server on {$reverbHost}:{$reverbPort}...\n";
+                $cmd = 'start /B php "' . $artisanPath . '" reverb:start --host=' . $reverbHost . ' --port=' . $reverbPort;
+                $process = proc_open($cmd, $descriptorspec, $pipes);
             } else {
-                // Linux/Mac - Start in background
-                @exec('php ' . base_path('artisan') . ' reverb:start --host=' . $reverbHost . ' --port=' . $reverbPort . ' > /dev/null 2>&1 &');
-                $this->output = "🚀 Starting Reverb server on {$reverbHost}:{$reverbPort}...\n";
+                // Linux/Mac - Start in background with nohup
+                $cmd = 'nohup php "' . $artisanPath . '" reverb:start --host=' . $reverbHost . ' --port=' . $reverbPort . ' > "' . $logPath . '" 2>&1 &';
+                $process = proc_open($cmd, $descriptorspec, $pipes);
             }
 
-            sleep(2); // Wait for server to start
-            $this->checkServerStatus();
+            if (is_resource($process)) {
+                fclose($pipes[0]);
+                // Don't wait for the process - let it run in background
+                proc_close($process);
+                
+                $this->output = "🚀 Starting Reverb server on {$reverbHost}:{$reverbPort}...\n";
+                $this->output .= "📝 Logs: {$logPath}\n\n";
+                
+                // Wait a moment then check status
+                sleep(2);
+                $this->checkServerStatus();
 
-            if ($this->isRunning) {
-                $this->output .= "✅ Reverb server started successfully!\n";
-                \Filament\Notifications\Notification::make()
-                    ->title('Reverb Server Started')
-                    ->success()
-                    ->send();
+                if ($this->isRunning) {
+                    $this->output .= "✅ Reverb server started successfully!\n";
+                    \Filament\Notifications\Notification::make()
+                        ->title('Reverb Server Started')
+                        ->success()
+                        ->body("Server running on {$reverbHost}:{$reverbPort}")
+                        ->send();
+                } else {
+                    $this->output .= "⏳ Server is starting... Refresh in a few seconds.\n";
+                    \Filament\Notifications\Notification::make()
+                        ->title('Server Starting')
+                        ->warning()
+                        ->body('Check status in a moment')
+                        ->send();
+                }
             } else {
-                $this->output .= "⚠️ Server may be starting. Check logs if not responding.\n";
+                throw new \Exception('Failed to start Reverb process');
             }
         } catch (\Exception $e) {
             $this->output = "❌ Error starting server: " . $e->getMessage() . "\n";
@@ -117,44 +149,50 @@ class ReverbControl extends Page
     public function stopServer(): void
     {
         try {
-            // Check if exec() is available
-            if (!function_exists('exec') || in_array('exec', array_map('trim', explode(',', ini_get('disable_functions'))))) {
-                $this->output = "❌ Cannot stop server: exec() function is disabled.\nPlease enable it in php.ini or stop Reverb manually via SSH or task manager.";
-                \Filament\Notifications\Notification::make()
-                    ->title('Server Control Unavailable')
-                    ->danger()
-                    ->body('exec() function is disabled on this server')
-                    ->send();
-                return;
-            }
-
             if (!$this->isRunning) {
                 $this->output = "⚠️ Reverb server is not running.\n";
                 return;
             }
 
+            $descriptorspec = [
+                0 => ['pipe', 'r'],
+                1 => ['pipe', 'w'],
+                2 => ['pipe', 'w'],
+            ];
+
             if (stripos(PHP_OS, 'WIN') === 0) {
                 // Windows - Kill php processes running reverb
-                @exec('taskkill /F /FI "WINDOWTITLE eq *reverb*" 2>NUL', $output, $returnCode);
-                // Alternative: kill all php.exe with reverb in command line (more aggressive)
-                @exec('wmic process where "commandline like \'%reverb:start%\'" delete 2>NUL', $output2);
+                $cmd = 'wmic process where "commandline like \'%reverb:start%\'" delete 2>&1';
             } else {
                 // Linux/Mac
-                @exec('pkill -f "reverb:start"');
+                $cmd = 'pkill -f "reverb:start"';
             }
 
-            $this->output = "🛑 Stopping Reverb server...\n";
-            sleep(1);
-            $this->checkServerStatus();
+            $process = proc_open($cmd, $descriptorspec, $pipes);
 
-            if (!$this->isRunning) {
-                $this->output .= "✅ Reverb server stopped successfully!\n";
-                \Filament\Notifications\Notification::make()
-                    ->title('Reverb Server Stopped')
-                    ->success()
-                    ->send();
+            if (is_resource($process)) {
+                fclose($pipes[0]);
+                $killOutput = stream_get_contents($pipes[1]);
+                fclose($pipes[1]);
+                fclose($pipes[2]);
+                proc_close($process);
+
+                $this->output = "🛑 Stopping Reverb server...\n";
+                
+                sleep(1);
+                $this->checkServerStatus();
+
+                if (!$this->isRunning) {
+                    $this->output .= "✅ Reverb server stopped successfully!\n";
+                    \Filament\Notifications\Notification::make()
+                        ->title('Reverb Server Stopped')
+                        ->success()
+                        ->send();
+                } else {
+                    $this->output .= "⚠️ Server may still be stopping. Refresh to check.\n";
+                }
             } else {
-                $this->output .= "⚠️ Server may still be stopping. Check task manager.\n";
+                throw new \Exception('Failed to stop Reverb process');
             }
         } catch (\Exception $e) {
             $this->output = "❌ Error stopping server: " . $e->getMessage() . "\n";

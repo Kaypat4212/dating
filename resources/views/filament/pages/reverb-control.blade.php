@@ -182,11 +182,6 @@ body {
                             <i class="bi bi-x-circle-fill"></i>
                             Server Stopped
                         </div>
-                    @elseif($serverStatus === 'unavailable')
-                        <div class="status-badge status-unavailable">
-                            <i class="bi bi-exclamation-triangle-fill"></i>
-                            Control Unavailable
-                        </div>
                     @else
                         <div class="status-badge status-unknown">
                             <i class="bi bi-question-circle-fill"></i>
@@ -200,7 +195,7 @@ body {
                     <button wire:click="startServer" 
                             class="control-btn btn-start"
                             wire:loading.attr="disabled"
-                            {{ ($isRunning || $serverStatus === 'unavailable') ? 'disabled' : '' }}>
+                            {{ $isRunning ? 'disabled' : '' }}>
                         <i class="bi bi-play-fill me-2"></i>
                         Start Server
                     </button>
@@ -208,15 +203,14 @@ body {
                     <button wire:click="stopServer" 
                             class="control-btn btn-stop"
                             wire:loading.attr="disabled"
-                            {{ (!$isRunning || $serverStatus === 'unavailable') ? 'disabled' : '' }}>
+                            {{ !$isRunning ? 'disabled' : '' }}>
                         <i class="bi bi-stop-fill me-2"></i>
                         Stop Server
                     </button>
 
                     <button wire:click="restartServer" 
                             class="control-btn btn-restart"
-                            wire:loading.attr="disabled"
-                            {{ $serverStatus === 'unavailable' ? 'disabled' : '' }}>
+                            wire:loading.attr="disabled">
                         <i class="bi bi-arrow-repeat me-2"></i>
                         Restart Server
                     </button>
@@ -283,10 +277,22 @@ body {
                         <li>Typing indicators</li>
                         <li>Live match updates</li>
                     </ul>
-                    <p class="mb-1"><strong>Manual Command:</strong></p>
-                    <code class="text-success d-block p-2 rounded" style="background: rgba(0,0,0,0.3);">
+                    
+                    <div class="alert alert-info p-2 mb-3" style="background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 8px;">
+                        <p class="mb-2"><strong><i class="bi bi-lightbulb-fill me-1"></i> Quick Access</strong></p>
+                        <p class="mb-0" style="font-size: 0.85rem;">You can also start Reverb from the <a href="/admin/artisan-runner" class="text-info">Artisan Runner</a> page under "Reverb WebSocket" commands.</p>
+                    </div>
+                    
+                    <p class="mb-1"><strong>Alternative Methods:</strong></p>
+                    <code class="text-success d-block p-2 rounded mb-2" style="background: rgba(0,0,0,0.3); font-size: 0.8rem;">
                         php artisan reverb:start
                     </code>
+                    
+                    <p class="mb-0">
+                        <a href="/REVERB-DEPLOYMENT.md" target="_blank" class="text-warning text-decoration-none">
+                            <i class="bi bi-book me-1"></i> View Deployment Guide
+                        </a>
+                    </p>
                 </div>
             </div>
         </div>

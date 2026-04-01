@@ -65,7 +65,7 @@ $robocopyArgs = @(
         (Join-Path $src "storage\logs"),
     "/XF",
         ".env", ".env.bak", "mailtest.php", "phpunit.xml", "build-cpanel.ps1",
-        "DEPLOY.md", "build-cpanel.ps1", "setup.php",
+        "setup.php",
     "/NFL", "/NDL", "/NJH", "/NJS"
 )
 $ErrorActionPreference = "Continue"
@@ -129,4 +129,11 @@ Write-Host "6. php artisan migrate --force"
 Write-Host "7. php artisan storage:link"
 Write-Host "8. chmod -R 775 storage bootstrap/cache"
 Write-Host "9. php artisan optimize:clear"
+Write-Host ""
+Write-Host "--- Reverb WebSocket Server (Real-time Features) ---" -ForegroundColor Yellow
+Write-Host "10. chmod +x start-reverb.sh stop-reverb.sh reverb-watchdog.sh"
+Write-Host "11. ./start-reverb.sh  (start WebSocket server via SSH)"
+Write-Host "12. Set up cron: */5 * * * * /path/to/reverb-watchdog.sh"
+Write-Host ""
+Write-Host "📘 See DEPLOY.md and REVERB-DEPLOYMENT.md for detailed instructions" -ForegroundColor Cyan
 Write-Host "-------------------------------" -ForegroundColor Cyan

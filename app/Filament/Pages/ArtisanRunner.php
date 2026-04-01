@@ -178,6 +178,25 @@ class ArtisanRunner extends Page
                 'icon' => 'heroicon-o-document-text',
                 'desc' => 'Insert the 5 starter blog posts (safe to re-run — uses updateOrCreate)',
             ],
+            'reverb:start' => [
+                'cmd' => 'reverb:start',
+                'args' => ['--host' => env('REVERB_HOST', '0.0.0.0'), '--port' => env('REVERB_PORT', 8080)],
+                'dangerous' => false,
+                'label' => '🚀 Start Reverb Server',
+                'group' => 'Reverb WebSocket',
+                'icon' => 'heroicon-o-signal',
+                'desc' => 'Start the WebSocket server for real-time features (runs in background)',
+                'background' => true, // Special flag to run in background
+            ],
+            'reverb:restart' => [
+                'cmd' => 'reverb:restart',
+                'args' => [],
+                'dangerous' => false,
+                'label' => '🔄 Restart Reverb Server',
+                'group' => 'Reverb WebSocket',
+                'icon' => 'heroicon-o-arrow-path',
+                'desc' => 'Restart the WebSocket server',
+            ],
         ];
     }
 
@@ -232,6 +251,13 @@ class ArtisanRunner extends Page
         }
 
         $def = $allowed[$this->selectedCommand];
+        
+        // Check if this is a background command (like reverb:start)
+        if (isset($def['background']) && $def['background'] === true) {
+            $this->runBackgroundCommand($def);
+            return;
+        }
+        
         $this->isRunning = true;
         $this->ran = false;
         $this->output = '';
@@ -276,6 +302,88 @@ class ArtisanRunner extends Page
 
             Notification::make()
                 ->title('Command failed!')
+                ->body($e->getMessage())
+                ->danger()
+                ->send();
+        }
+    }
+    
+    /**
+     * Run background commands like reverb:start using proc_open
+     */
+    private function runBackgroundCommand(array $def): void
+    {
+        try {
+            $artisanPath = base_path('artisan');
+            $logPath = storage_path('logs/' . str_replace(':', '-', $def['cmd']) . '.log');
+            
+            // Build command string
+            $cmdParts = [$def['cmd']];
+            foreach ($def['args'] as $key => $value) {
+                if (is_numeric($key)) {
+                    $cmdParts[] = $value;
+                } else {
+                    $cmdParts[] = "--{$key}=" . escapeshellarg($value);
+                }
+            }
+            $artisanCommand = implode(' ', $cmdParts);
+            
+            // Prepare descriptors for background process
+            $descriptorspec = [
+                0 => ['pipe', 'r'],  // stdin
+                1 => ['file', $logPath, 'a'],  // stdout to log file
+                2 => ['file', $logPath, 'a'],  // stderr to log file
+            ];
+            
+            if (stripos(PHP_OS, 'WIN') === 0) {
+                // Windows - Start in background
+                $cmd = 'start /B php "' . $artisanPath . '" ' . $artisanCommand;
+            } else {
+                // Linux/Mac - Start in background with nohup
+                $cmd = 'nohup php "' . $artisanPath . '" ' . $artisanCommand . ' >> "' . $logPath . '" 2>&1 &';
+            }
+            
+            $process = proc_open($cmd, $descriptorspec, $pipes);
+            
+            if (is_resource($process)) {
+                fclose($pipes[0]);
+                proc_close($process);
+                
+                $this->output = "🚀 Background command started: {$artisanCommand}\n";
+                $this->output .= "📝 Logs: {$logPath}\n";
+                $this->output .= "\n⏳ Process is running in the background.\n";
+                $this->output .= "Check the Reverb Control page for server status.\n";
+                
+                $this->ran = true;
+                $this->exitCode = 0;
+                $this->lastRunAt = now()->format('M j, Y \a\t g:i A');
+                
+                $this->addToRecentCommands($this->selectedCommand);
+                
+                array_unshift($this->terminalHistory, [
+                    'cmd'     => "php artisan {$artisanCommand}",
+                    'output'  => $this->output,
+                    'exit'    => 0,
+                    'at'      => now()->format('H:i:s'),
+                    'success' => true,
+                ]);
+                $this->terminalHistory = array_slice($this->terminalHistory, 0, 8);
+                
+                Notification::make()
+                    ->title('Background Process Started')
+                    ->body($def['label'])
+                    ->success()
+                    ->send();
+            } else {
+                throw new \Exception('Failed to start background process');
+            }
+        } catch (\Exception $e) {
+            $this->output = "❌ Error starting background process: " . $e->getMessage();
+            $this->exitCode = 1;
+            $this->ran = true;
+            
+            Notification::make()
+                ->title('Background Process Failed')
                 ->body($e->getMessage())
                 ->danger()
                 ->send();

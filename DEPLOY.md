@@ -170,3 +170,107 @@ php artisan view:cache
 ```
 
 After running these commands, reload the site — the error will be gone.
+
+---
+
+## 10. Laravel Reverb WebSocket Server (Real-time Features)
+
+Laravel Reverb provides real-time WebSocket functionality for:
+- Live online status
+- Instant notifications
+- Real-time messaging
+- Typing indicators
+- PWA badge updates
+
+### ⚠️ Important: exec() Limitation on cPanel
+
+The **Reverb Control** page in the admin panel uses PHP's `exec()` function, which is **disabled on most cPanel shared hosting** for security.
+
+**You'll see this error:**
+```
+⚠️ The exec() function is disabled on this server.
+Please enable it in php.ini or contact your hosting provider.
+```
+
+### ✅ Solution: Deploy via SSH
+
+**See the comprehensive guide:** [REVERB-DEPLOYMENT.md](REVERB-DEPLOYMENT.md)
+
+**Quick Start:**
+
+1. Upload `start-reverb.sh`, `stop-reverb.sh`, and `reverb-watchdog.sh` to your project root
+
+2. Make them executable via SSH:
+   ```bash
+   cd /home/yourusername/dating
+   chmod +x start-reverb.sh stop-reverb.sh reverb-watchdog.sh
+   ```
+
+3. Start Reverb server:
+   ```bash
+   ./start-reverb.sh
+   ```
+
+4. Set up auto-restart cron job (optional but recommended):
+   ```bash
+   # Add to crontab: check every 5 minutes
+   */5 * * * * /home/yourusername/dating/reverb-watchdog.sh >> /home/yourusername/dating/storage/logs/reverb-watchdog.log 2>&1
+   ```
+
+### Configuration
+
+Ensure these values are in your `.env`:
+
+```env
+# Broadcasting Configuration
+BROADCAST_CONNECTION=reverb
+
+# Reverb Server Settings
+REVERB_APP_ID=dating-app
+REVERB_APP_KEY=your-reverb-key
+REVERB_APP_SECRET=your-reverb-secret
+REVERB_HOST=0.0.0.0
+REVERB_PORT=8080
+REVERB_SCHEME=ws    # Use 'wss' for SSL
+
+# Client-side configuration (for JavaScript)
+VITE_REVERB_APP_KEY="${REVERB_APP_KEY}"
+VITE_REVERB_HOST=heartsconnect.cc    # Your domain
+VITE_REVERB_PORT=8080
+VITE_REVERB_SCHEME=ws    # Use 'wss' for SSL
+```
+
+### Testing Real-time Features
+
+**From browser console:**
+```javascript
+const ws = new WebSocket('ws://heartsconnect.cc:8080/app/dating-app');
+ws.onopen = () => console.log('✅ Connected to Reverb!');
+ws.onerror = (err) => console.error('❌ Connection failed:', err);
+```
+
+### Monitoring
+
+**Check if Reverb is running:**
+```bash
+ps aux | grep reverb
+```
+
+**View live logs:**
+```bash
+tail -f storage/logs/reverb.log
+```
+
+**View watchdog logs:**
+```bash
+tail -f storage/logs/reverb-watchdog.log
+```
+
+**Stop Reverb:**
+```bash
+./stop-reverb.sh
+# or manually:
+pkill -f "reverb:start"
+```
+
+For detailed troubleshooting, SSL configuration, and advanced setup options, see [REVERB-DEPLOYMENT.md](REVERB-DEPLOYMENT.md).
