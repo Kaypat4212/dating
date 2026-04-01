@@ -429,8 +429,13 @@
             const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
             
             if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
-                document.getElementById('wsUrl').value = `${protocol}//${hostname}:8080/app/dating-app`;
-                log(`ℹ️ Auto-detected URL: ${protocol}//${hostname}:8080/app/dating-app`, 'info');
+                // Production: use Apache reverse proxy path (no port = standard 443/80)
+                document.getElementById('wsUrl').value = `${protocol}//${hostname}/app/dating-app`;
+                log(`ℹ️ Auto-detected URL: ${protocol}//${hostname}/app/dating-app (via Apache proxy)`, 'info');
+            } else {
+                // Local dev: connect directly to Reverb port
+                document.getElementById('wsUrl').value = `ws://localhost:8080/app/dating-app`;
+                log(`ℹ️ Local dev URL: ws://localhost:8080/app/dating-app (direct)`, 'info');
             }
         });
     </script>
