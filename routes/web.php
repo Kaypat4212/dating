@@ -27,6 +27,7 @@ use App\Http\Controllers\DiscoverController;
 use App\Http\Controllers\LikeController;
 use App\Http\Controllers\VerificationController;
 use App\Http\Controllers\MatchController;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\NotificationController;
@@ -128,7 +129,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/step/{step}',             [ProfileSetupController::class, 'store'])->name('store');
     });
     // States AJAX — available during setup (before profile.complete)
-    Route::get('/api/states', function (\Illuminate\Http\Request $request) {
+    Route::get('/api/states', function (Request $request) {
         $country = $request->input('country', '');
         $states  = \App\Helpers\StateHelper::forCountry($country);
         return response()->json($states);
@@ -253,8 +254,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/verify',                  [VerificationController::class, 'store'])->name('verify.store');
 
         // ── API: Unread Messages Count (for PWA badge) ────────────────────────
-        Route::get('/api/unread-messages-count', function () {
-            $uid = auth()->id();
+        Route::get('/api/unread-messages-count', function (Request $request) {
+            $uid = $request->user()->id;
             $count = \App\Models\Message::whereHas('conversation.match', function ($q) use ($uid) {
                 $q->where('user1_id', $uid)->orWhere('user2_id', $uid);
             })->where('sender_id', '!=', $uid)->whereNull('read_at')->count();
