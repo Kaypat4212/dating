@@ -2,8 +2,6 @@
 DirectoryIndex index.php
 
 # ── cPanel / shared-hosting SSL proxy detection ─────────────────────────────
-# cPanel terminates SSL and passes x-https:1 instead of X-Forwarded-Proto.
-# This sets HTTPS=on so PHP / Laravel URL generator uses https:// for assets.
 <IfModule mod_rewrite.c>
     RewriteEngine On
     RewriteCond %{HTTP:X-Https} 1
@@ -14,24 +12,15 @@ DirectoryIndex index.php
     RewriteEngine On
     RewriteBase /
 
-    # ── WebSocket proxy for Laravel Reverb ────────────────────────────────
-    # Only activates when mod_proxy_wstunnel is available — safe to leave in
-    # even if the module is absent; site loads normally without it.
-    <IfModule mod_proxy_wstunnel.c>
-        RewriteCond %{HTTP:Upgrade} websocket [NC]
-        RewriteCond %{HTTP:Connection} upgrade [NC]
-        RewriteRule ^app/(.*) ws://127.0.0.1:8080/app/$1 [P,L]
-    </IfModule>
-
-    # Static assets that physically live inside public/ (build, storage, css, fonts…)
+    # Static assets that physically live inside public/
     RewriteCond %{DOCUMENT_ROOT}/public%{REQUEST_URI} -f
     RewriteRule ^(.*)$ public/$1 [L,QSA]
 
-    # Let real root-level files pass through as-is (robots.txt, sw.js, etc.)
+    # Let real root-level files pass through
     RewriteCond %{REQUEST_FILENAME} -f [OR]
     RewriteCond %{REQUEST_FILENAME} -d
     RewriteRule ^ - [L]
 
-    # Everything else goes to the root index.php front controller
+    # Everything else goes to the root index.php
     RewriteRule ^ index.php [L,QSA]
 </IfModule>
