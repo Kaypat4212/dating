@@ -11,6 +11,8 @@ use Illuminate\Support\Facades\Cache;
 
 class ArtisanRunner extends Page
 {
+    protected static ?string $slug = 'artisan-runner';
+    
     protected string $view = 'filament.pages.artisan-runner';
 
     public static function getNavigationIcon(): ?string

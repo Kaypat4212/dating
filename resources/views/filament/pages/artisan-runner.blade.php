@@ -1,4 +1,6 @@
-﻿<x-filament-panels::page>
+<x-filament-panels::page>
+
+<div>
 @php
     $grouped = \App\Filament\Pages\ArtisanRunner::groupedCommands();
     $allCommands = \App\Filament\Pages\ArtisanRunner::allowedCommands();
@@ -15,12 +17,12 @@
 @endphp
 
 <style>
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-   ARTISAN RUNNER â€” Complete Design System
+/* ========================================================================
+   ARTISAN RUNNER - Complete Design System
    All colours hardcoded (theme() only works in compiled CSS)
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+======================================================================== */
 
-/* â”€â”€ Token map â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* -- Token map -------------------------------------------------------- */
 .ar {
     /* surfaces */
     --s0: #ffffff;          /* card bg       */
@@ -63,7 +65,7 @@
     --shl: 0 10px 32px rgba(0,0,0,.45), 0 4px 12px rgba(0,0,0,.3);
 }
 
-/* â”€â”€ Keyframes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* -- Keyframes -------------------------------------------------------- */
 @keyframes ar-in     { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
 @keyframes ar-in-r   { from{opacity:0;transform:translateX(14px)} to{opacity:1;transform:translateX(0)} }
 @keyframes ar-spin   { to{transform:rotate(360deg)} }
@@ -74,8 +76,9 @@
     0%  { background-position:-200% center }
     100%{ background-position: 200% center }
 }
+@keyframes ar-blink { 0%,100%{opacity:1} 50%{opacity:0} }
 
-/* â”€â”€ Animation helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* -- Animation helpers ------------------------------------------------ */
 .ar-in    { animation: ar-in   .45s cubic-bezier(.16,1,.3,1) both }
 .ar-in-r  { animation: ar-in-r .45s cubic-bezier(.16,1,.3,1) both }
 .ar-d1 { animation-delay:.05s }
@@ -84,15 +87,15 @@
 .ar-d4 { animation-delay:.26s }
 .ar-spinner { animation: ar-spin .85s linear infinite }
 
-/* â”€â”€ Reset â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* -- Reset ------------------------------------------------------------ */
 .ar *,
 .ar *::before,
 .ar *::after { box-sizing:border-box; margin:0; padding:0 }
 
-/* â”€â”€ Page background â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* -- Page background -------------------------------------------------- */
 .ar { background:var(--s1) }
 
-/* â”€â”€ Stat cards â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* -- Stat cards ------------------------------------------------------- */
 .ar-stat {
     display:flex; align-items:center; gap:1rem;
     background:var(--s0);
@@ -122,7 +125,7 @@
     animation: ar-pulse 2.2s ease-in-out infinite;
 }
 
-/* â”€â”€ Cards â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* -- Cards ------------------------------------------------------------ */
 .ar-card {
     background:var(--s0);
     border:1px solid var(--s3);
@@ -156,7 +159,7 @@
     border:1px solid var(--s3); letter-spacing:.03em;
 }
 
-/* â”€â”€ Command grid â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* -- Command grid ---------------------------------------------------- */
 .ar-grid {
     display:grid;
     grid-template-columns:repeat(auto-fill, minmax(260px,1fr));
@@ -200,7 +203,7 @@
 }
 .dark .ar-mono { background:#0d1117; border-color:#30363d }
 
-/* â”€â”€ Badge â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* -- Badge ------------------------------------------------------------ */
 .ar-badge {
     display:inline-flex; align-items:center;
     padding:.15rem .45rem;
@@ -214,7 +217,7 @@
 .dark .ar-err  { color:#f87171; border-color:rgba(248,113,113,.25) }
 .dark .ar-info { color:#a5b4fc; border-color:rgba(165,180,252,.25) }
 
-/* â”€â”€ Search â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* -- Search ---------------------------------------------------------- */
 .ar-search-wrap { position:relative }
 .ar-search-ico { position:absolute; left:.875rem; top:50%; transform:translateY(-50%); width:1rem; height:1rem; color:var(--t3); pointer-events:none }
 .ar-search {
@@ -228,7 +231,7 @@
 .ar-search::placeholder { color:var(--t3) }
 .ar-search:focus { border-color:var(--a1); box-shadow:0 0 0 3px rgba(99,102,241,.12) }
 
-/* â”€â”€ Exec panel â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* -- Exec panel ------------------------------------------------------ */
 .ar-exec-panel {
     background:var(--s0); border:1px solid var(--s3);
     border-radius:16px; box-shadow:var(--sh); overflow:hidden;
@@ -254,7 +257,7 @@
 }
 .ar-terminal-ps { color:#79c0ff; margin-right:.25rem; user-select:none }
 
-/* â”€â”€ Buttons â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* -- Buttons ---------------------------------------------------------- */
 .ar-btn {
     width:100%; display:inline-flex; align-items:center; justify-content:center; gap:.5rem;
     padding:.8rem 1.25rem; border-radius:10px;
@@ -286,7 +289,7 @@
 }
 .ar-btn-danger:hover   { box-shadow:0 4px 20px rgba(239,68,68,.4) }
 
-/* â”€â”€ Warning banner â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* -- Warning banner --------------------------------------------------- */
 .ar-warn {
     display:flex; gap:.625rem;
     padding:.875rem 1rem;
@@ -300,7 +303,7 @@
 .dark .ar-warn-t { color:#f87171 }
 .dark .ar-warn-b { color:#fca5a5 }
 
-/* â”€â”€ Recent row â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* -- Recent row ------------------------------------------------------- */
 .ar-recent {
     display:flex; align-items:center; gap:.75rem;
     padding:.625rem .75rem; border-radius:8px; cursor:pointer;
@@ -311,13 +314,13 @@
 .ar-recent-l { font-size:.82rem; font-weight:500; color:var(--t1); overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
 .ar-recent-t { font-size:.7rem; color:var(--t3); margin-top:1px }
 
-/* â”€â”€ Empty state â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* -- Empty state ------------------------------------------------------ */
 .ar-empty { text-align:center; padding:3rem 2rem }
 .ar-empty svg { width:2.5rem; height:2.5rem; color:var(--t3); margin:0 auto .875rem; display:block }
 .ar-empty-t { font-size:.9375rem; font-weight:600; color:var(--t1); margin-bottom:.375rem }
 .ar-empty-b { font-size:.8125rem; color:var(--t2) }
 
-/* â”€â”€ Placeholder sidebar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* -- Placeholder sidebar ---------------------------------------------- */
 .ar-placeholder {
     display:flex; flex-direction:column; align-items:center; justify-content:center;
     text-align:center; padding:2.5rem 1.5rem; gap:.75rem;
@@ -325,7 +328,7 @@
 .ar-placeholder svg { width:2.5rem; height:2.5rem; color:var(--t3); display:block }
 .ar-placeholder p { font-size:.8375rem; color:var(--t2); line-height:1.55 }
 
-/* â”€â”€ Output terminal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* -- Output terminal -------------------------------------------------- */
 .ar-output { animation: ar-out-dn .4s cubic-bezier(.16,1,.3,1) both }
 .ar-pre {
     background:#0d1117; border:1px solid #30363d;
@@ -349,7 +352,7 @@
 }
 .ar-clear:hover { background:var(--s2); color:var(--t1); border-color:var(--a1) }
 
-/* ── Terminal section ──────────────────────────────────────────────── */
+/* -- Terminal section ------------------------------------------------- */
 .ar-term-hd {
     background:#161b22 !important; border-bottom:1px solid #21262d !important;
 }
@@ -390,13 +393,12 @@
     background:#6366f1; border-radius:1px;
     animation:ar-blink 1.1s step-end infinite;
 }
-@keyframes ar-blink { 0%,100%{opacity:1} 50%{opacity:0} }
 </style>
 
-{{-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• --}}
+{{-- ======================================================================== --}}
 <div class="ar space-y-5">
 
-    {{-- â–“â–“  STAT STRIP  â–“â–“ --}}
+    {{-- STAT STRIP --}}
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
 
         <div class="ar-stat ar-in ar-d1">
@@ -438,10 +440,10 @@
         </div>
     </div>
 
-    {{-- â–“â–“  MAIN GRID  â–“â–“ --}}
+    {{-- MAIN GRID --}}
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
 
-        {{-- â–‘ LEFT â€” command library â–‘ --}}
+        {{-- LEFT - command library --}}
         <div class="lg:col-span-2 space-y-4 ar-in ar-d2">
 
             {{-- Custom Command --}}
@@ -578,7 +580,7 @@
             @endif
         </div>
 
-        {{-- â–‘ RIGHT â€” run panel â–‘ --}}
+        {{-- RIGHT - run panel --}}
         <div class="space-y-4 ar-in ar-d3">
 
             @if($selectedCommand)
@@ -669,7 +671,7 @@
         </div>
     </div>
 
-    {{-- â–“â–“  OUTPUT  â–“â–“ --}}
+    {{-- OUTPUT --}}
     {{-- TERMINAL --}}
     <div class="ar-card ar-output">
         <div class="ar-card-hd ar-term-hd" style="justify-content:space-between">
@@ -732,7 +734,7 @@
 
             {{-- History --}}
             @if(!empty($terminalHistory))
-                <div class="ar-term-sep">&#x2500;&#x2500; history &#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;</div>
+                <div class="ar-term-sep">-- history -----------------------------------------------</div>
                 @foreach($terminalHistory as $hist)
                     <div class="ar-term-hist-entry">
                         <div class="ar-term-row" style="opacity:.65">
@@ -753,7 +755,8 @@
     </div>
 
 </div>
-{{-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• --}}
+{{-- ======================================================================== --}}
+
+</div>
 
 </x-filament-panels::page>
-
