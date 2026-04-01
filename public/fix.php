@@ -1,82 +1,62 @@
 <?php
 /**
- * Emergency debug — DELETE after use!
+ * Emergency cache buster — DELETE after use!
  * Visit: https://heartsconnect.cc/fix.php
+ * NO Laravel bootstrap — works even when site is down.
  */
 error_reporting(E_ALL);
 ini_set('display_errors', '1');
 ini_set('display_startup_errors', '1');
+set_time_limit(10);
 header('Content-Type: text/plain; charset=utf-8');
 
 $root = dirname(__DIR__);
 
-echo "=== STEP 1: .env file ===\n";
+echo "=== STEP 0: Delete stale bootstrap cache ===\n";
+$cacheFiles = [
+    $root . '/bootstrap/cache/config.php',
+    $root . '/bootstrap/cache/packages.php',
+    $root . '/bootstrap/cache/services.php',
+    $root . '/bootstrap/cache/routes-v7.php',
+    $root . '/bootstrap/cache/events.php',
+    $root . '/bootstrap/cache/filament/pages.php',
+    $root . '/bootstrap/cache/filament/resources.php',
+    $root . '/bootstrap/cache/filament/widgets.php',
+];
+foreach ($cacheFiles as $f) {
+    if (file_exists($f)) {
+        unlink($f) ? print("✅ Deleted: $f\n") : print("❌ Could not delete: $f\n");
+    } else {
+        echo "   (not found) $f\n";
+    }
+}
+
+echo "\n=== STEP 2: .env check (no Laravel) ===\n";
 $envPath = $root . '/.env';
 if (!file_exists($envPath)) {
-    echo "❌ .env NOT FOUND at: $envPath\n";
-    echo "   → You need to rename env.production.txt to .env in File Manager!\n\n";
+    echo "❌ .env NOT FOUND — rename env.production.txt to .env in File Manager!\n";
 } else {
-    echo "✅ .env exists\n\n";
-
-    echo "=== Key .env values ===\n";
+    echo "✅ .env exists\n";
     $env = parse_ini_file($envPath);
-    $show = ['APP_ENV','APP_URL','APP_DEBUG','DB_HOST','DB_DATABASE','DB_USERNAME','SESSION_DOMAIN','SESSION_SECURE_COOKIE','REVERB_HOST'];
+    $show = ['APP_ENV','APP_URL','BROADCAST_CONNECTION','REDIS_CLIENT','CACHE_STORE','QUEUE_CONNECTION'];
     foreach ($show as $k) {
-        $v = $env[$k] ?? '(not set)';
-        if (in_array($k, ['DB_PASSWORD','APP_KEY'])) $v = '***masked***';
-        echo "  $k = $v\n";
+        echo "  $k = " . ($env[$k] ?? '(not set)') . "\n";
     }
-    echo "\n";
 }
 
-echo "=== STEP 2: vendor/autoload.php ===\n";
-if (!file_exists($root . '/vendor/autoload.php')) {
-    echo "❌ vendor/autoload.php MISSING — composer install was never run!\n\n";
-    exit;
-}
-require $root . '/vendor/autoload.php';
-echo "✅ autoload OK\n\n";
-
-echo "=== STEP 3: Bootstrap Laravel ===\n";
-try {
-    $app = require_once $root . '/bootstrap/app.php';
-    echo "✅ bootstrap/app.php OK\n\n";
-} catch (\Throwable $e) {
-    echo "❌ BOOTSTRAP FAILED!\n";
-    echo "   Error  : " . $e->getMessage() . "\n";
-    echo "   File   : " . $e->getFile() . ':' . $e->getLine() . "\n";
-    exit;
+echo "\n=== STEP 3: Cache files on disk ===\n";
+$check = [
+    $root . '/bootstrap/cache/config.php',
+    $root . '/bootstrap/cache/routes-v7.php',
+    $root . '/bootstrap/cache/packages.php',
+    $root . '/bootstrap/cache/services.php',
+];
+foreach ($check as $f) {
+    echo (file_exists($f) ? "⚠️ EXISTS (stale!): " : "✅ Gone: ") . basename($f) . "\n";
 }
 
-echo "=== STEP 4: Config load ===\n";
-try {
-    $kernel = $app->make(\Illuminate\Contracts\Console\Kernel::class);
-    $kernel->bootstrap();
-    echo "✅ Config loaded OK\n\n";
-} catch (\Throwable $e) {
-    echo "❌ CONFIG FAILED!\n";
-    echo "   Error  : " . $e->getMessage() . "\n";
-    echo "   File   : " . $e->getFile() . ':' . $e->getLine() . "\n";
-    exit;
-}
-
-echo "=== STEP 5: Database connection ===\n";
-try {
-    \Illuminate\Support\Facades\DB::connection()->getPdo();
-    echo "✅ Database connected OK\n\n";
-} catch (\Throwable $e) {
-    echo "❌ DATABASE FAILED!\n";
-    echo "   Error  : " . $e->getMessage() . "\n\n";
-}
-
-echo "=== STEP 6: Clear all caches ===\n";
-try {
-    \Illuminate\Support\Facades\Artisan::call('optimize:clear');
-    echo "✅ Cache cleared!\n\n";
-} catch (\Throwable $e) {
-    echo "⚠️ Cache clear failed: " . $e->getMessage() . "\n\n";
-}
-
-echo "=== DONE ===\n";
-echo "All checks complete. If all steps show ✅, refresh your site.\n";
-echo "DELETE this file from public/ after diagnosis!\n";
+echo "\n=== DONE ===\n";
+echo "If any cache files show ⚠️ EXISTS above, they are causing the 504.\n";
+echo "All stale files were deleted in Step 0 above.\n";
+echo "Now visit https://heartsconnect.cc — it should load.\n";
+echo "DELETE this file after use!\n";
