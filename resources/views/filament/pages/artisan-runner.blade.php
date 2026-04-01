@@ -754,6 +754,109 @@
         </div>
     </div>
 
+    {{-- SHELL TERMINAL - General cPanel Commands --}}
+    <div class="ar-card ar-output" style="margin-top:1.5rem;border-color:rgba(251,191,36,.3)">
+        <div class="ar-card-hd ar-term-hd" style="justify-content:space-between;background:linear-gradient(90deg,rgba(251,191,36,.08) 0%,transparent 65%)">
+            <div style="display:flex;align-items:center;gap:.625rem">
+                <x-heroicon-o-code-bracket style="color:#fbbf24;width:1.125rem;height:1.125rem"/>
+                <span class="ar-card-hd-title" style="color:#c9d1d9">Shell Terminal</span>
+                <span class="ar-badge" style="background:rgba(251,191,36,.1);color:#fbbf24;border-color:rgba(251,191,36,.25);font-size:.65rem">cPanel Commands</span>
+                @if($shellIsRunning)
+                    <span class="ar-badge" style="background:rgba(251,191,36,.1);color:#fbbf24;border-color:rgba(251,191,36,.25)">Running</span>
+                @elseif($shellRan)
+                    <span class="ar-badge {{ $shellExitCode===0 ? 'ar-ok' : 'ar-err' }}">
+                        {{ $shellExitCode===0 ? 'Success' : 'Error' }} &middot; exit {{ $shellExitCode }}
+                    </span>
+                @else
+                    <span class="ar-badge ar-info">Idle</span>
+                @endif
+            </div>
+            <div style="display:flex;gap:.375rem;align-items:center">
+                @if($shellRan)
+                    <button type="button" wire:click="clearShellOutput" class="ar-clear" style="color:#6e7681;border-color:#30363d;font-size:.72rem">Clear</button>
+                @endif
+                @if(!empty($shellHistory))
+                    <button type="button" wire:click="clearShellTerminal" class="ar-clear" style="color:#6e7681;border-color:#30363d;font-size:.72rem">Clear All</button>
+                @endif
+            </div>
+        </div>
+        <div class="ar-card-bd" style="background:#0d1117;padding:1rem 1.25rem">
+            {{-- Command Input --}}
+            <div style="display:flex;gap:.5rem;align-items:stretch;margin-bottom:1rem">
+                <div style="display:flex;align-items:center;flex:1;background:#161b22;border:1.5px solid #30363d;border-radius:10px;overflow:hidden;transition:border-color .2s">
+                    <span style="padding:.7rem .375rem .7rem .875rem;color:#fbbf24;font-family:'Cascadia Code','Fira Code',ui-monospace,monospace;font-size:.8rem;user-select:none;white-space:nowrap;flex-shrink:0">$</span>
+                    <input
+                        type="text"
+                        wire:model="shellCommand"
+                        wire:keydown.enter="runShellCommand"
+                        placeholder="git pull, composer install, npm run build, etc."
+                        style="flex:1;background:transparent;border:none;outline:none;color:#e6edf3;font-family:'Cascadia Code','Fira Code',ui-monospace,monospace;font-size:.8rem;padding:.7rem .5rem .7rem .25rem;min-width:0"
+                        autocomplete="off"
+                        spellcheck="false"
+                    />
+                </div>
+                <button
+                    type="button"
+                    wire:click="runShellCommand"
+                    wire:loading.attr="disabled"
+                    wire:target="runShellCommand"
+                    class="ar-btn"
+                    style="width:auto;padding:.7rem 1.1rem;flex-shrink:0;background:linear-gradient(135deg,#fbbf24 0%,#f59e0b 100%);box-shadow:0 2px 12px rgba(251,191,36,.35)"
+                >
+                    @if($shellIsRunning)
+                        <x-heroicon-o-arrow-path class="ar-spinner"/>
+                    @else
+                        <x-heroicon-o-play/>
+                    @endif
+                </button>
+            </div>
+
+            <div class="ar-warn" style="margin-bottom:1rem;background:rgba(251,191,36,.07);border-color:rgba(251,191,36,.22)">
+                <x-heroicon-o-exclamation-triangle style="color:#fbbf24"/>
+                <div>
+                    <div class="ar-warn-t" style="color:#f59e0b">⚠️ DANGER ZONE - Superadmin Only</div>
+                    <div class="ar-warn-b" style="color:#fbbf24">This terminal can run ANY shell command. Use with extreme caution. Commands like git, composer, npm, php are allowed.</div>
+                </div>
+            </div>
+        </div>
+        <div class="ar-term-body">
+            {{-- Output --}}
+            @if($shellIsRunning)
+                <div class="ar-term-row" style="color:#fbbf24;margin-top:.25rem">
+                    <x-heroicon-o-arrow-path class="ar-spinner" style="width:.85rem;height:.85rem;flex-shrink:0"/>
+                    <span>Executing shell command...</span>
+                </div>
+            @elseif($shellRan)
+                <div class="ar-term-out {{ $shellExitCode===0 ? 'is-ok' : 'is-err' }}">{{ $shellOutput }}</div>
+                <div class="ar-term-meta">
+                    <span>{{ $shellLastRunAt }}</span>
+                    <span class="ar-badge {{ $shellExitCode===0 ? 'ar-ok' : 'ar-err' }}" style="font-size:.6rem;padding:.1rem .35rem">exit {{ $shellExitCode }}</span>
+                </div>
+            @else
+                <div class="ar-term-hint">Type a shell command above and press Enter or click Run. Examples: git pull, composer install, php -v</div>
+            @endif
+
+            {{-- History --}}
+            @if(!empty($shellHistory))
+                <div class="ar-term-sep">-- shell history -----------------------------------------</div>
+                @foreach($shellHistory as $hist)
+                    <div class="ar-term-hist-entry">
+                        <div class="ar-term-row" style="opacity:.65">
+                            <span class="ar-term-ps" style="color:#4d6a8a">$</span>
+                            <span class="ar-term-cmd" style="color:#8b949e">{{ $hist['cmd'] }}</span>
+                            <span class="ar-badge {{ $hist['success'] ? 'ar-ok' : 'ar-err' }}" style="font-size:.6rem;padding:.1rem .35rem;margin-left:auto">{{ $hist['at'] }}</span>
+                        </div>
+                    </div>
+                @endforeach
+            @endif
+
+            {{-- Empty state --}}
+            @if(!$shellRan && !$shellIsRunning && empty($shellHistory))
+                <div class="ar-term-hint" style="margin-top:.5rem">No shell commands executed yet in this session.</div>
+            @endif
+        </div>
+    </div>
+
 </div>
 {{-- ======================================================================== --}}
 

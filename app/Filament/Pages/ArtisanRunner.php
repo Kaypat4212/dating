@@ -58,6 +58,15 @@ class ArtisanRunner extends Page
     public array $recentCommands = [];
     public array $terminalHistory = [];
     public string $customCommand = '';
+    
+    // Shell Terminal State
+    public string $shellCommand = '';
+    public string $shellOutput = '';
+    public int $shellExitCode = 0;
+    public bool $shellRan = false;
+    public bool $shellIsRunning = false;
+    public string $shellLastRunAt = '';
+    public array $shellHistory = [];
 
     public function mount(): void
     {
@@ -370,5 +379,117 @@ class ArtisanRunner extends Page
     {
         $this->terminalHistory = [];
         $this->clearOutput();
+    }
+
+    // ── Shell Command Methods ───────────────────────────────────────────
+
+    public function runShellCommand(): void
+    {
+        $raw = trim($this->shellCommand);
+
+        if (empty($raw)) {
+            Notification::make()->title('Please enter a command.')->warning()->send();
+            return;
+        }
+
+        // Blocklist of dangerous commands
+        $dangerousCommands = ['rm -rf /', 'mkfs', 'dd if=', ':(){:|:&};:', 'chmod -R 777 /', 'chown -R'];
+        foreach ($dangerousCommands as $dangerous) {
+            if (str_contains(strtolower($raw), strtolower($dangerous))) {
+                Notification::make()
+                    ->title('Blocked: Dangerous command detected')
+                    ->body('This command has been blocked for safety reasons.')
+                    ->danger()
+                    ->send();
+                return;
+            }
+        }
+
+        $this->shellIsRunning = true;
+        $this->shellRan = false;
+        $this->shellOutput = '';
+
+        try {
+            // Change to the project root directory
+            $projectRoot = base_path();
+            
+            // Execute the command
+            $descriptorspec = [
+                0 => ['pipe', 'r'],  // stdin
+                1 => ['pipe', 'w'],  // stdout
+                2 => ['pipe', 'w'],  // stderr
+            ];
+
+            $process = proc_open("cd {$projectRoot} && {$raw} 2>&1", $descriptorspec, $pipes);
+
+            if (is_resource($process)) {
+                // Close stdin
+                fclose($pipes[0]);
+
+                // Read stdout
+                $output = stream_get_contents($pipes[1]);
+                fclose($pipes[1]);
+
+                // Read stderr (already combined with stdout via 2>&1)
+                fclose($pipes[2]);
+
+                // Get exit code
+                $this->shellExitCode = proc_close($process);
+                $this->shellOutput = $output ?: 'Command completed (no output)';
+            } else {
+                throw new \Exception('Failed to execute command');
+            }
+
+            $this->shellRan = true;
+            $this->shellLastRunAt = now()->format('M j, Y \a\t g:i A');
+            $this->shellIsRunning = false;
+
+            // Add to history
+            array_unshift($this->shellHistory, [
+                'cmd'     => $raw,
+                'output'  => $this->shellOutput,
+                'exit'    => $this->shellExitCode,
+                'at'      => now()->format('H:i:s'),
+                'success' => $this->shellExitCode === 0,
+            ]);
+            $this->shellHistory = array_slice($this->shellHistory, 0, 10);
+
+            if ($this->shellExitCode === 0) {
+                Notification::make()->title('Command executed successfully!')->success()->send();
+            } else {
+                Notification::make()->title('Command finished with errors')->warning()->send();
+            }
+        } catch (\Throwable $e) {
+            $this->shellOutput = 'Error: ' . $e->getMessage();
+            $this->shellExitCode = 1;
+            $this->shellRan = true;
+            $this->shellIsRunning = false;
+
+            array_unshift($this->shellHistory, [
+                'cmd'     => $raw,
+                'output'  => $this->shellOutput,
+                'exit'    => 1,
+                'at'      => now()->format('H:i:s'),
+                'success' => false,
+            ]);
+            $this->shellHistory = array_slice($this->shellHistory, 0, 10);
+
+            Notification::make()->title('Command failed!')->body($e->getMessage())->danger()->send();
+        }
+    }
+
+    public function clearShellOutput(): void
+    {
+        $this->shellOutput = '';
+        $this->shellExitCode = 0;
+        $this->shellRan = false;
+        $this->shellIsRunning = false;
+        $this->shellLastRunAt = '';
+    }
+
+    public function clearShellTerminal(): void
+    {
+        $this->shellHistory = [];
+        $this->clearShellOutput();
     }
 }

@@ -525,5 +525,12 @@
     });
 })();
 </script>
+
+@auth
+{{-- PWA Badge API for message notifications --}}
+<meta name="user-id" content="{{ auth()->id() }}">
+<script src="{{ asset('js/pwa-badge.js') }}"></script>
+@endauth
+
 </body>
 </html>

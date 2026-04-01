@@ -62,6 +62,10 @@ Route::get('/manifest.json', function () {
         'icons'            => [
             ['src' => asset('favicon.svg'), 'sizes' => 'any', 'type' => 'image/svg+xml'],
         ],
+        // Badge display support (Chromium, Android, some iOS PWAs)
+        'display_override' => ['window-controls-overlay', 'standalone'],
+        'categories'       => ['social', 'lifestyle'],
+        'prefer_related_applications' => false,
     ])->header('Content-Type', 'application/manifest+json')
       ->header('Cache-Control', 'public, max-age=3600');
 })->name('pwa.manifest');
@@ -247,6 +251,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // ── Identity Verification ─────────────────────────────────────────────
         Route::get('/verify',                   [VerificationController::class, 'show'])->name('verify.show');
         Route::post('/verify',                  [VerificationController::class, 'store'])->name('verify.store');
+
+        // ── API: Unread Messages Count (for PWA badge) ────────────────────────
+        Route::get('/api/unread-messages-count', function () {
+            $uid = auth()->id();
+            $count = \App\Models\Message::whereHas('conversation.match', function ($q) use ($uid) {
+                $q->where('user1_id', $uid)->orWhere('user2_id', $uid);
+            })->where('sender_id', '!=', $uid)->whereNull('read_at')->count();
+            
+            return response()->json(['count' => $count]);
+        })->name('api.unread-messages');
 
         // ── Admin: serve private verification documents (admin only) ──────────
         Route::get('/admin-verify-doc/{verification}/{type}', function (\App\Models\UserVerification $verification, string $type) {
