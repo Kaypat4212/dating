@@ -57,9 +57,11 @@
                 margin-top: 6px !important;
                 transform: none !important;
                 box-shadow: none !important;
+                max-height: 65vh;
+                overflow-y: auto;
             }
         }
-        /* Desktop: absolute right-aligned under the button */
+        /* Desktop: absolute right-aligned under the button, never goes off-screen */
         @media (min-width: 992px) {
             .dropdown .navbar-dropdown-menu {
                 position: absolute !important;
@@ -69,6 +71,8 @@
                 transform: none !important;
                 min-width: 260px;
                 z-index: 1050;
+                max-height: calc(100vh - 80px);
+                overflow-y: auto;
             }
         }
         /* Unread message blinking dot on bottom nav */
@@ -507,8 +511,8 @@
 (function () {
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', function () {
-            navigator.serviceWorker.register('{{ asset('sw.js') }}', {
-                scope: '{{ rtrim(request()->getBasePath(), '/') }}/'
+            navigator.serviceWorker.register('/sw.js', {
+                scope: '/'
             }).catch(function (err) {
                 console.warn('Service Worker registration failed:', err);
             });
