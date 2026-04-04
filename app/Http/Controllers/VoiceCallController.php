@@ -9,6 +9,7 @@ use App\Models\VoiceCall;
 use App\Services\AgoraTokenService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\View\View;
 
 class VoiceCallController extends Controller
@@ -164,25 +165,40 @@ class VoiceCallController extends Controller
             ->orderByDesc('created_at')
             ->paginate(30);
 
-        // Mark all missed calls as "seen" so the badge resets
-        VoiceCall::where('callee_id', $user->id)
-            ->where('status', 'missed')
-            ->whereNull('seen_at')
-            ->update(['seen_at' => now()]);
+        // Mark all missed calls as "seen" so the badge resets (only if column exists)
+        if (\Illuminate\Support\Facades\Schema::hasColumn('voice_calls', 'seen_at')) {
+            VoiceCall::where('callee_id', $user->id)
+                ->where('status', 'missed')
+                ->whereNull('seen_at')
+                ->update(['seen_at' => now()]);
+        }
 
         return view('calls.history', compact('calls'));
     }
 
     /**
      * Return the count of unseen missed calls — used by the nav badge.
+     * Returns 0 gracefully if the voice_calls table or seen_at column doesn't exist yet.
      */
     public function missedCount(Request $request): JsonResponse
     {
-        $count = VoiceCall::where('callee_id', $request->user()->id)
-            ->where('status', 'missed')
-            ->whereNull('seen_at')
-            ->count();
+        try {
+            // Check the table and column exist before querying
+            if (! \Illuminate\Support\Facades\Schema::hasTable('voice_calls')) {
+                return response()->json(['count' => 0]);
+            }
 
-        return response()->json(['count' => $count]);
+            $query = VoiceCall::where('callee_id', $request->user()->id)
+                ->where('status', 'missed');
+
+            // Only filter by seen_at if the column exists (migration may not be run yet)
+            if (\Illuminate\Support\Facades\Schema::hasColumn('voice_calls', 'seen_at')) {
+                $query->whereNull('seen_at');
+            }
+
+            return response()->json(['count' => $query->count()]);
+        } catch (\Throwable $e) {
+            return response()->json(['count' => 0]);
+        }
     }
 }
