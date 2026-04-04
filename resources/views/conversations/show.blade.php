@@ -906,9 +906,12 @@ const voiceCall = (() => {
             callId = data.call_id;
             await joinChannel(data.app_id, data.channel_name, data.token, data.uid);
         } catch (e) {
-            console.error('Call initiate failed', e);
+            let msg = 'Call failed';
+            try { msg = JSON.parse(e.message).error ?? msg; } catch (_) {}
+            console.error('Call initiate failed:', msg, e);
             hideAll();
             document.getElementById('callBtn').disabled = false;
+            alert('Call failed: ' + msg);
         }
     }
 

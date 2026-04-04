@@ -19,45 +19,59 @@ class VoiceCallController extends Controller
      */
     public function initiate(Request $request, Conversation $conversation): JsonResponse
     {
-        $caller = $request->user();
-        $match  = $conversation->match;
+        try {
+            $caller = $request->user();
+            $match  = $conversation->match;
 
-        // Authorise: caller must be in this conversation
-        abort_unless(
-            $match->user1_id === $caller->id || $match->user2_id === $caller->id,
-            403
-        );
+            // Authorise: caller must be in this conversation
+            abort_unless(
+                $match->user1_id === $caller->id || $match->user2_id === $caller->id,
+                403
+            );
 
-        $callee = $match->getOtherUser($caller->id);
+            $callee = $match->getOtherUser($caller->id);
 
-        // Cancel any pre-existing ringing call for this conversation
-        VoiceCall::where('conversation_id', $conversation->id)
-            ->where('status', 'ringing')
-            ->update(['status' => 'missed', 'ended_at' => now()]);
+            // Cancel any pre-existing ringing call for this conversation
+            VoiceCall::where('conversation_id', $conversation->id)
+                ->where('status', 'ringing')
+                ->update(['status' => 'missed', 'ended_at' => now()]);
 
-        $channelName = 'call-' . $conversation->id . '-' . time();
+            $channelName = 'call-' . $conversation->id . '-' . time();
 
-        $call = VoiceCall::create([
-            'conversation_id' => $conversation->id,
-            'caller_id'       => $caller->id,
-            'callee_id'       => $callee->id,
-            'channel_name'    => $channelName,
-            'status'          => 'ringing',
-        ]);
+            $call = VoiceCall::create([
+                'conversation_id' => $conversation->id,
+                'caller_id'       => $caller->id,
+                'callee_id'       => $callee->id,
+                'channel_name'    => $channelName,
+                'status'          => 'ringing',
+            ]);
 
-        // Generate token for the caller
-        $callerToken = $this->agora->generateRtcToken($channelName, $caller->id);
+            // Generate token for the caller
+            $callerToken = $this->agora->generateRtcToken($channelName, $caller->id);
 
-        // Notify the callee via Reverb
-        broadcast(new IncomingCallEvent($call));
+            // Notify the callee via Reverb (non-fatal — call works even if Reverb is down)
+            try {
+                broadcast(new IncomingCallEvent($call));
+            } catch (\Throwable $broadcastErr) {
+                \Illuminate\Support\Facades\Log::warning('IncomingCallEvent broadcast failed: ' . $broadcastErr->getMessage());
+            }
 
-        return response()->json([
-            'call_id'      => $call->id,
-            'channel_name' => $channelName,
-            'token'        => $callerToken,
-            'app_id'       => config('services.agora.app_id'),
-            'uid'          => $caller->id,
-        ]);
+            return response()->json([
+                'call_id'      => $call->id,
+                'channel_name' => $channelName,
+                'token'        => $callerToken,
+                'app_id'       => config('services.agora.app_id'),
+                'uid'          => $caller->id,
+            ]);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('VoiceCall initiate failed', [
+                'conversation_id' => $conversation->id,
+                'error'           => $e->getMessage(),
+                'file'            => $e->getFile(),
+                'line'            => $e->getLine(),
+            ]);
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
     }
 
     /**
@@ -74,8 +88,12 @@ class VoiceCallController extends Controller
 
         $token = $this->agora->generateRtcToken($call->channel_name, $user->id);
 
-        // Tell the caller their call was answered
-        broadcast(new CallStatusChangedEvent($call, $call->caller_id));
+        // Tell the caller their call was answered (non-fatal)
+        try {
+            broadcast(new CallStatusChangedEvent($call, $call->caller_id));
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('CallStatusChangedEvent broadcast failed: ' . $e->getMessage());
+        }
 
         return response()->json([
             'call_id'      => $call->id,
@@ -97,7 +115,11 @@ class VoiceCallController extends Controller
 
         $call->update(['status' => 'rejected', 'ended_at' => now()]);
 
-        broadcast(new CallStatusChangedEvent($call, $call->caller_id));
+        try {
+            broadcast(new CallStatusChangedEvent($call, $call->caller_id));
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('CallStatusChangedEvent broadcast failed: ' . $e->getMessage());
+        }
 
         return response()->json(['status' => 'rejected']);
     }
@@ -117,9 +139,13 @@ class VoiceCallController extends Controller
         $newStatus = $call->status === 'ringing' ? 'missed' : 'ended';
         $call->update(['status' => $newStatus, 'ended_at' => now()]);
 
-        // Notify the other participant
+        // Notify the other participant (non-fatal)
         $otherUserId = $call->caller_id === $user->id ? $call->callee_id : $call->caller_id;
-        broadcast(new CallStatusChangedEvent($call, $otherUserId));
+        try {
+            broadcast(new CallStatusChangedEvent($call, $otherUserId));
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('CallStatusChangedEvent broadcast failed: ' . $e->getMessage());
+        }
 
         return response()->json(['status' => $newStatus]);
     }
