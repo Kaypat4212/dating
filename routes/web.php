@@ -19,6 +19,7 @@ use App\Http\Controllers\BoostController;
 use App\Http\Controllers\DailyMatchController;
 use App\Http\Controllers\MessageReactionController;
 use App\Http\Controllers\StoryController;
+use App\Http\Controllers\VoiceCallController;
 use App\Http\Controllers\WaveController;
 use App\Http\Controllers\ConversationController;
 use App\Http\Controllers\DashboardController;
@@ -181,6 +182,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/messages/{conversation}',  [ConversationController::class, 'show'])->name('conversations.show');
         Route::post('/messages/{conversation}', [MessageController::class, 'store'])->name('messages.store');
         Route::post('/messages/{conversation}/typing', [MessageController::class, 'typing'])->name('messages.typing');
+
+        // Voice Calls
+        Route::post('/calls/{conversation}/initiate', [VoiceCallController::class, 'initiate'])->name('calls.initiate');
+        Route::post('/calls/{call}/answer',           [VoiceCallController::class, 'answer'])->name('calls.answer');
+        Route::post('/calls/{call}/reject',           [VoiceCallController::class, 'reject'])->name('calls.reject');
+        Route::post('/calls/{call}/end',              [VoiceCallController::class, 'end'])->name('calls.end');
 
         // AI Assistant
         Route::post('/ai/suggest',              [AiController::class, 'suggest'])->name('ai.suggest');

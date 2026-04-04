@@ -35,6 +35,11 @@ return [
         ],
     ],
 
+    'agora' => [
+        'app_id'          => env('AGORA_APP_ID', ''),
+        'app_certificate' => env('AGORA_APP_CERTIFICATE', ''),
+    ],
+
     'iphub' => [
         'api_key' => env('IPHUB_API_KEY'),
         'enabled' => env('VPN_ENABLE_IPHUB', true),

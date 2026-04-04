@@ -299,6 +299,14 @@ main { padding-bottom: 0 !important; }
         </a>
 
         <div class="dropdown flex-shrink-0">
+            {{-- Voice call button --}}
+            <button id="callBtn"
+                    class="chat-footer-btn me-1"
+                    style="display:flex;align-items:center;justify-content:center;background:none;border:none;color:#10b981;"
+                    title="Voice call"
+                    onclick="voiceCall.initiate()">
+                <i class="bi bi-telephone-fill"></i>
+            </button>
             <button class="chat-footer-btn"
                     style="display:flex;align-items:center;justify-content:center;background:none;border:none;"
                     data-bs-toggle="dropdown" aria-expanded="false" title="More options">
@@ -689,6 +697,304 @@ main { padding-bottom: 0 !important; }
     </div>
 
 </div>
+
+{{-- ═══════════════════════════════════════════════════════════════════════
+     VOICE CALL — Incoming call overlay (shown to callee)
+═══════════════════════════════════════════════════════════════════════ --}}
+<div id="incomingCallOverlay" style="display:none;position:fixed;inset:0;z-index:1000;
+     background:rgba(0,0,0,.72);backdrop-filter:blur(6px);
+     display:none;align-items:center;justify-content:center;flex-direction:column;gap:20px;">
+    <div style="background:#1a1a2e;border-radius:28px;padding:40px 32px;text-align:center;
+                max-width:320px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,.5);">
+        <div id="incomingCallerAvatar" style="width:88px;height:88px;border-radius:50%;
+             background:linear-gradient(135deg,#f43f5e,#a855f7);margin:0 auto 16px;
+             display:flex;align-items:center;justify-content:center;
+             font-size:2.2rem;font-weight:700;color:#fff;overflow:hidden;">
+        </div>
+        <div id="incomingCallerName" style="color:#fff;font-size:1.25rem;font-weight:700;margin-bottom:6px;"></div>
+        <div style="color:#9ca3af;font-size:.9rem;margin-bottom:32px;">Incoming voice call…</div>
+        <div style="display:flex;gap:20px;justify-content:center;">
+            <button onclick="voiceCall.reject()" style="width:64px;height:64px;border-radius:50%;
+                    border:none;background:#ef4444;color:#fff;font-size:1.5rem;cursor:pointer;
+                    box-shadow:0 4px 16px rgba(239,68,68,.5);transition:transform .15s;"
+                    onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform=''">
+                <i class="bi bi-telephone-x-fill"></i>
+            </button>
+            <button onclick="voiceCall.answer()" style="width:64px;height:64px;border-radius:50%;
+                    border:none;background:#10b981;color:#fff;font-size:1.5rem;cursor:pointer;
+                    box-shadow:0 4px 16px rgba(16,185,129,.5);transition:transform .15s;"
+                    onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform=''">
+                <i class="bi bi-telephone-fill"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+{{-- ═══════════════════════════════════════════════════════════════════════
+     VOICE CALL — Active in-call screen
+═══════════════════════════════════════════════════════════════════════ --}}
+<div id="activeCallOverlay" style="display:none;position:fixed;inset:0;z-index:1000;
+     background:linear-gradient(160deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%);
+     align-items:center;justify-content:center;flex-direction:column;gap:0;">
+    <div style="text-align:center;padding:40px 24px 0;">
+        <div id="activeCallAvatar" style="width:100px;height:100px;border-radius:50%;
+             background:linear-gradient(135deg,#f43f5e,#a855f7);margin:0 auto 18px;
+             display:flex;align-items:center;justify-content:center;
+             font-size:2.6rem;font-weight:700;color:#fff;overflow:hidden;
+             box-shadow:0 0 0 8px rgba(168,85,247,.2),0 0 0 16px rgba(168,85,247,.1);">
+        </div>
+        <div id="activeCallName" style="color:#fff;font-size:1.35rem;font-weight:700;margin-bottom:8px;"></div>
+        <div id="activeCallStatus" style="color:#a78bfa;font-size:.95rem;margin-bottom:4px;">Calling…</div>
+        <div id="activeCallTimer" style="color:#6b7280;font-size:.9rem;font-variant-numeric:tabular-nums;">00:00</div>
+    </div>
+
+    {{-- Sound wave animation --}}
+    <div id="callWaveAnim" style="display:flex;align-items:center;gap:4px;margin:32px auto;height:40px;">
+        @for($i=0;$i<5;$i++)
+        <div style="width:5px;background:rgba(167,139,250,.6);border-radius:3px;
+                    animation:waveBar .8s ease-in-out {{ $i * 0.12 }}s infinite alternate;"
+             class="call-wave-bar"></div>
+        @endfor
+    </div>
+
+    {{-- Controls --}}
+    <div style="display:flex;gap:24px;justify-content:center;padding-bottom:60px;">
+        <button id="muteBtn" onclick="voiceCall.toggleMute()" title="Mute"
+                style="width:60px;height:60px;border-radius:50%;border:2px solid rgba(255,255,255,.2);
+                       background:rgba(255,255,255,.1);color:#fff;font-size:1.3rem;cursor:pointer;transition:.2s;">
+            <i class="bi bi-mic-fill"></i>
+        </button>
+        <button onclick="voiceCall.hangUp()"
+                style="width:72px;height:72px;border-radius:50%;border:none;
+                       background:#ef4444;color:#fff;font-size:1.6rem;cursor:pointer;
+                       box-shadow:0 6px 20px rgba(239,68,68,.5);transition:transform .15s;"
+                onmouseover="this.style.transform='scale(1.08)'" onmouseout="this.style.transform=''">
+            <i class="bi bi-telephone-x-fill"></i>
+        </button>
+        <button id="speakerBtn" onclick="voiceCall.toggleSpeaker()" title="Speaker"
+                style="width:60px;height:60px;border-radius:50%;border:2px solid rgba(255,255,255,.2);
+                       background:rgba(255,255,255,.1);color:#fff;font-size:1.3rem;cursor:pointer;transition:.2s;">
+            <i class="bi bi-volume-up-fill"></i>
+        </button>
+    </div>
+</div>
+
+<style>
+@keyframes waveBar {
+    from { height: 8px;  opacity: .4; }
+    to   { height: 36px; opacity: 1;  }
+}
+</style>
+
+@push('scripts')
+{{-- Agora RTC SDK (browser) --}}
+<script src="https://download.agora.io/sdk/release/AgoraRTC_N-4.21.0.js"></script>
+<script>
+const voiceCall = (() => {
+    // ── Config injected from Laravel ─────────────────────────────────────
+    const CONVERSATION_ID = {{ $conversation->id }};
+    const MY_USER_ID      = {{ auth()->id() }};
+    const OTHER_NAME      = @json($other->name);
+    const OTHER_AVATAR    = @json($other->primaryPhoto?->thumbnail_url ?? null);
+    const CSRF            = document.querySelector('meta[name="csrf-token"]').content;
+
+    const INITIATE_URL = '/calls/' + CONVERSATION_ID + '/initiate';
+
+    // ── State ──────────────────────────────────────────────────────────────
+    let callId        = null;
+    let agoraClient   = null;
+    let localTrack    = null;
+    let isMuted       = false;
+    let timerInterval = null;
+    let timerSeconds  = 0;
+    let pendingCall   = null; // for incoming call data
+
+    // ── DOM helpers ────────────────────────────────────────────────────────
+    const $incoming = document.getElementById('incomingCallOverlay');
+    const $active   = document.getElementById('activeCallOverlay');
+
+    function showIncoming(callerName, callerAvatar) {
+        setAvatar('incomingCallerAvatar', callerName, callerAvatar);
+        document.getElementById('incomingCallerName').textContent = callerName;
+        $incoming.style.display = 'flex';
+    }
+
+    function showActive(name, avatar) {
+        setAvatar('activeCallAvatar', name, avatar);
+        document.getElementById('activeCallName').textContent = name;
+        document.getElementById('activeCallStatus').textContent = 'Connecting…';
+        document.getElementById('activeCallTimer').textContent = '00:00';
+        $active.style.display = 'flex';
+    }
+
+    function hideAll() {
+        $incoming.style.display = 'none';
+        $active.style.display   = 'none';
+        stopTimer();
+    }
+
+    function setAvatar(elId, name, url) {
+        const el = document.getElementById(elId);
+        if (url) {
+            el.innerHTML = `<img src="${url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+        } else {
+            el.textContent = name.charAt(0).toUpperCase();
+        }
+    }
+
+    // ── Timer ──────────────────────────────────────────────────────────────
+    function startTimer() {
+        timerSeconds = 0;
+        timerInterval = setInterval(() => {
+            timerSeconds++;
+            const m = String(Math.floor(timerSeconds / 60)).padStart(2,'0');
+            const s = String(timerSeconds % 60).padStart(2,'0');
+            const el = document.getElementById('activeCallTimer');
+            if (el) el.textContent = m + ':' + s;
+        }, 1000);
+    }
+
+    function stopTimer() {
+        clearInterval(timerInterval);
+        timerInterval = null;
+    }
+
+    // ── POST helper ───────────────────────────────────────────────────────
+    async function post(url) {
+        const r = await fetch(url, {
+            method: 'POST',
+            headers: { 'X-CSRF-TOKEN': CSRF, 'Accept': 'application/json' }
+        });
+        if (!r.ok) throw new Error(await r.text());
+        return r.json();
+    }
+
+    // ── Agora join ────────────────────────────────────────────────────────
+    async function joinChannel(appId, channel, token, uid) {
+        agoraClient = AgoraRTC.createClient({ mode: 'rtc', codec: 'vp8' });
+
+        agoraClient.on('user-published', async (user, mediaType) => {
+            await agoraClient.subscribe(user, mediaType);
+            if (mediaType === 'audio') user.audioTrack.play();
+        });
+
+        agoraClient.on('user-left', () => {
+            hangUp(true); // other side left
+        });
+
+        await agoraClient.join(appId, channel, token, uid);
+        localTrack = await AgoraRTC.createMicrophoneAudioTrack();
+        await agoraClient.publish(localTrack);
+
+        document.getElementById('activeCallStatus').textContent = 'Connected';
+        startTimer();
+    }
+
+    // ── Leave channel ─────────────────────────────────────────────────────
+    async function leaveChannel() {
+        if (localTrack) { localTrack.stop(); localTrack.close(); localTrack = null; }
+        if (agoraClient) { await agoraClient.leave(); agoraClient = null; }
+    }
+
+    // ── Public API ────────────────────────────────────────────────────────
+
+    async function initiate() {
+        document.getElementById('callBtn').disabled = true;
+        showActive(OTHER_NAME, OTHER_AVATAR);
+        try {
+            const data = await post(INITIATE_URL);
+            callId = data.call_id;
+            await joinChannel(data.app_id, data.channel_name, data.token, data.uid);
+        } catch (e) {
+            console.error('Call initiate failed', e);
+            hideAll();
+            document.getElementById('callBtn').disabled = false;
+        }
+    }
+
+    async function answer() {
+        if (!pendingCall) return;
+        $incoming.style.display = 'none';
+        showActive(pendingCall.caller_name, pendingCall.caller_photo);
+        try {
+            const data = await post('/calls/' + pendingCall.call_id + '/answer');
+            callId = data.call_id;
+            await joinChannel(data.app_id, data.channel_name, data.token, data.uid);
+        } catch (e) {
+            console.error('Answer failed', e);
+            hideAll();
+        }
+    }
+
+    async function reject() {
+        if (!pendingCall) return;
+        await post('/calls/' + pendingCall.call_id + '/reject').catch(() => {});
+        pendingCall = null;
+        hideAll();
+    }
+
+    async function hangUp(remote = false) {
+        await leaveChannel();
+        if (callId && !remote) {
+            post('/calls/' + callId + '/end').catch(() => {});
+        }
+        callId  = null;
+        isMuted = false;
+        updateMuteBtn();
+        hideAll();
+        const btn = document.getElementById('callBtn');
+        if (btn) btn.disabled = false;
+    }
+
+    function toggleMute() {
+        if (!localTrack) return;
+        isMuted = !isMuted;
+        localTrack.setMuted(isMuted);
+        updateMuteBtn();
+    }
+
+    function updateMuteBtn() {
+        const btn = document.getElementById('muteBtn');
+        if (!btn) return;
+        btn.style.background = isMuted ? 'rgba(239,68,68,.7)' : 'rgba(255,255,255,.1)';
+        btn.innerHTML = isMuted
+            ? '<i class="bi bi-mic-mute-fill"></i>'
+            : '<i class="bi bi-mic-fill"></i>';
+    }
+
+    // Speaker toggle — on mobile this switches to speakerphone (best effort)
+    function toggleSpeaker() {
+        const btn = document.getElementById('speakerBtn');
+        btn.style.background = btn.style.background.includes('255,255,255')
+            ? 'rgba(16,185,129,.7)' : 'rgba(255,255,255,.1)';
+    }
+
+    // ── Listen for incoming calls via Reverb ──────────────────────────────
+    if (typeof window.Echo !== 'undefined') {
+        window.Echo.private('user.' + MY_USER_ID)
+            .listen('.incoming-call', (data) => {
+                pendingCall = data;
+                showIncoming(data.caller_name, data.caller_photo);
+            })
+            .listen('.call-status-changed', (data) => {
+                if (data.call_id !== callId) return;
+                if (data.status === 'rejected') {
+                    hangUp(true);
+                    // Could show a brief toast: "Call declined"
+                } else if (data.status === 'missed' || data.status === 'ended') {
+                    hangUp(true);
+                } else if (data.status === 'active') {
+                    document.getElementById('activeCallStatus').textContent = 'Connected';
+                    startTimer();
+                }
+            });
+    }
+
+    return { initiate, answer, reject, hangUp, toggleMute, toggleSpeaker };
+})();
+</script>
+@endpush
+
 @endsection
 
 @push('scripts')

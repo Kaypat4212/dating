@@ -83,7 +83,7 @@ unset($__defined_vars, $__key, $__value); ?>
     <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
 </span>
 
-<?php if (! $__env->hasRenderedOnce('60edb547-71c2-4ecb-a662-f272e9a4a2d0')): $__env->markAsRenderedOnce('60edb547-71c2-4ecb-a662-f272e9a4a2d0'); ?>
+<?php if (! $__env->hasRenderedOnce('79aaa053-fa4d-4c66-a77b-e4e990277afc')): $__env->markAsRenderedOnce('79aaa053-fa4d-4c66-a77b-e4e990277afc'); ?>
 <style>
 .site-logo-badge {
     display: inline-flex;
