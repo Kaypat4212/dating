@@ -14,7 +14,6 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 
 class VoiceCallSettings extends Page
 {
@@ -159,6 +158,13 @@ class VoiceCallSettings extends Page
                 ->color('primary')
                 ->action('save'),
         ];
+    }
+
+    /** Format seconds → "42s" or "1.5 min" — public so the blade can call it without a named function. */
+    public function formatSeconds(float $sec): string
+    {
+        if ($sec < 60) return number_format($sec, 0) . 's';
+        return number_format($sec / 60, 1) . ' min';
     }
 
     // ── Live stats (called from view via wire:click) ──────────────────────
