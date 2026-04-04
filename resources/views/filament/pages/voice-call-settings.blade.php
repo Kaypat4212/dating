@@ -49,41 +49,56 @@
     {{-- Active Now --}}
     <div class="vc-stat-card rounded-xl border border-gray-200 dark:border-gray-700
                 bg-white dark:bg-gray-900 p-4 border-l-4 border-l-green-500">
-        <div class="text-3xl font-black text-green-600 dark:text-green-400 leading-none">{{ $stats['active_now'] }}</div>
-        <div class="text-sm font-semibold text-gray-700 dark:text-gray-300 mt-2">Active Now</div>
-        <div class="text-xs text-gray-400 dark:text-gray-500 mt-0.5">live &amp; connected</div>
+        <div class="flex items-center gap-1.5 mb-3">
+            <x-heroicon-o-phone class="w-4 h-4 text-green-500 dark:text-green-400 shrink-0" />
+            <span class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Active Now</span>
+        </div>
+        <div class="text-2xl font-black text-green-600 dark:text-green-400 leading-none">{{ $stats['active_now'] }}</div>
+        <div class="text-xs text-gray-400 dark:text-gray-500 mt-1">live &amp; connected</div>
     </div>
 
     {{-- Ringing --}}
     <div class="vc-stat-card rounded-xl border border-gray-200 dark:border-gray-700
                 bg-white dark:bg-gray-900 p-4 border-l-4 border-l-amber-500">
-        <div class="text-3xl font-black text-amber-600 dark:text-amber-400 leading-none">{{ $stats['ringing_now'] }}</div>
-        <div class="text-sm font-semibold text-gray-700 dark:text-gray-300 mt-2">Ringing Now</div>
-        <div class="text-xs text-gray-400 dark:text-gray-500 mt-0.5">waiting for answer</div>
+        <div class="flex items-center gap-1.5 mb-3">
+            <x-heroicon-o-bell class="w-4 h-4 text-amber-500 dark:text-amber-400 shrink-0" />
+            <span class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Ringing Now</span>
+        </div>
+        <div class="text-2xl font-black text-amber-600 dark:text-amber-400 leading-none">{{ $stats['ringing_now'] }}</div>
+        <div class="text-xs text-gray-400 dark:text-gray-500 mt-1">waiting for answer</div>
     </div>
 
     {{-- Calls Today --}}
     <div class="vc-stat-card rounded-xl border border-gray-200 dark:border-gray-700
                 bg-white dark:bg-gray-900 p-4 border-l-4 border-l-blue-500">
-        <div class="text-3xl font-black text-blue-600 dark:text-blue-400 leading-none">{{ $stats['total_today'] }}</div>
-        <div class="text-sm font-semibold text-gray-700 dark:text-gray-300 mt-2">Calls Today</div>
-        <div class="text-xs text-gray-400 dark:text-gray-500 mt-0.5">initiated today</div>
+        <div class="flex items-center gap-1.5 mb-3">
+            <x-heroicon-o-chart-bar class="w-4 h-4 text-blue-500 dark:text-blue-400 shrink-0" />
+            <span class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Calls Today</span>
+        </div>
+        <div class="text-2xl font-black text-blue-600 dark:text-blue-400 leading-none">{{ $stats['total_today'] }}</div>
+        <div class="text-xs text-gray-400 dark:text-gray-500 mt-1">initiated today</div>
     </div>
 
     {{-- Missed Today --}}
     <div class="vc-stat-card rounded-xl border border-gray-200 dark:border-gray-700
                 bg-white dark:bg-gray-900 p-4 border-l-4 border-l-red-500">
-        <div class="text-3xl font-black text-red-600 dark:text-red-400 leading-none">{{ $stats['missed_today'] }}</div>
-        <div class="text-sm font-semibold text-gray-700 dark:text-gray-300 mt-2">Missed Today</div>
-        <div class="text-xs text-gray-400 dark:text-gray-500 mt-0.5">unanswered calls</div>
+        <div class="flex items-center gap-1.5 mb-3">
+            <x-heroicon-o-x-circle class="w-4 h-4 text-red-500 dark:text-red-400 shrink-0" />
+            <span class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Missed Today</span>
+        </div>
+        <div class="text-2xl font-black text-red-600 dark:text-red-400 leading-none">{{ $stats['missed_today'] }}</div>
+        <div class="text-xs text-gray-400 dark:text-gray-500 mt-1">unanswered calls</div>
     </div>
 
     {{-- Avg Duration --}}
     <div class="vc-stat-card rounded-xl border border-gray-200 dark:border-gray-700
                 bg-white dark:bg-gray-900 p-4 border-l-4 border-l-purple-500">
-        <div class="text-3xl font-black text-purple-600 dark:text-purple-400 leading-none">{{ $this->formatSeconds($stats['avg_duration_today']) }}</div>
-        <div class="text-sm font-semibold text-gray-700 dark:text-gray-300 mt-2">Avg Duration</div>
-        <div class="text-xs text-gray-400 dark:text-gray-500 mt-0.5">completed calls today</div>
+        <div class="flex items-center gap-1.5 mb-3">
+            <x-heroicon-o-clock class="w-4 h-4 text-purple-500 dark:text-purple-400 shrink-0" />
+            <span class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Avg Duration</span>
+        </div>
+        <div class="text-2xl font-black text-purple-600 dark:text-purple-400 leading-none">{{ $this->formatSeconds($stats['avg_duration_today']) }}</div>
+        <div class="text-xs text-gray-400 dark:text-gray-500 mt-1">completed calls today</div>
     </div>
 </div>
 
@@ -93,9 +108,7 @@
 <div class="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 overflow-hidden">
     <div class="flex items-center gap-2 px-5 py-3 border-b border-gray-100 dark:border-gray-800
                 bg-gray-50 dark:bg-gray-800/50 text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z"/>
-        </svg>
+        <x-heroicon-o-chart-bar class="w-4 h-4 shrink-0" />
         All-time Statistics
     </div>
     <div class="grid grid-cols-2 sm:grid-cols-4 divide-x divide-y divide-gray-100 dark:divide-gray-800">
@@ -124,10 +137,7 @@
 <div class="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 overflow-hidden">
     <div class="flex items-center gap-2 px-5 py-3 border-b border-gray-100 dark:border-gray-800
                 bg-gray-50 dark:bg-gray-800/50 text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 010 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 010-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28z"/>
-            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-        </svg>
+        <x-heroicon-o-cog-6-tooth class="w-4 h-4 shrink-0" />
         Call Configuration
     </div>
     <div class="p-5">
@@ -164,9 +174,7 @@
 <div class="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 overflow-hidden">
     <div class="flex items-center gap-2 px-5 py-3 border-b border-gray-100 dark:border-gray-800
                 bg-gray-50 dark:bg-gray-800/50 text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z"/>
-        </svg>
+        <x-heroicon-o-information-circle class="w-4 h-4 shrink-0" />
         Currently Active Settings <span class="ml-1 font-normal normal-case">(reflects last save)</span>
     </div>
     <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 divide-x divide-y divide-gray-100 dark:divide-gray-800">
@@ -209,9 +217,7 @@
 <div class="rounded-xl border-2 border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/30 overflow-hidden">
     <div class="flex items-center gap-2 px-5 py-3 border-b border-red-200 dark:border-red-800
                 text-xs font-bold uppercase tracking-wider text-red-600 dark:text-red-400">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/>
-        </svg>
+        <x-heroicon-o-exclamation-triangle class="w-4 h-4 shrink-0" />
         Danger Zone
     </div>
     <div class="p-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -220,7 +226,7 @@
         <div class="vc-danger-card rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-5 flex flex-col gap-3">
             <div>
                 <h4 class="text-sm font-bold text-gray-900 dark:text-gray-100 flex items-center gap-1.5">
-                    <span>⚡</span> End All Active Calls
+                    <x-heroicon-o-bolt class="w-4 h-4 text-red-500 shrink-0" /> End All Active Calls
                 </h4>
                 <p class="text-xs text-gray-500 dark:text-gray-400 mt-1.5 leading-relaxed">
                     Immediately force-terminates every call that is currently ringing or connected
@@ -254,7 +260,7 @@
         <div class="vc-danger-card rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-5 flex flex-col gap-3">
             <div>
                 <h4 class="text-sm font-bold text-gray-900 dark:text-gray-100 flex items-center gap-1.5">
-                    <span>🗑</span> Clear Call History
+                    <x-heroicon-o-trash class="w-4 h-4 text-gray-500 shrink-0" /> Clear Call History
                 </h4>
                 <p class="text-xs text-gray-500 dark:text-gray-400 mt-1.5 leading-relaxed">
                     Permanently deletes all

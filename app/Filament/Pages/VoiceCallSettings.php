@@ -70,7 +70,6 @@ class VoiceCallSettings extends Page
 
                 // ── Master switch ──────────────────────────────────────
                 Section::make('Master Switch')
-                    ->icon('heroicon-o-power')
                     ->description('Enable or disable the entire voice call feature across the platform. When disabled, the call button is hidden and all call endpoints return 503.')
                     ->schema([
                         Toggle::make('voice_calls_enabled')
@@ -80,7 +79,6 @@ class VoiceCallSettings extends Page
 
                 // ── Call behaviour ─────────────────────────────────────
                 Section::make('Call Behaviour')
-                    ->icon('heroicon-o-adjustments-horizontal')
                     ->schema([
                         TextInput::make('voice_call_timeout')
                             ->label('Ring timeout (seconds)')
@@ -114,7 +112,6 @@ class VoiceCallSettings extends Page
 
                 // ── Agora token ────────────────────────────────────────
                 Section::make('Agora Token Expiry')
-                    ->icon('heroicon-o-clock')
                     ->description('The Agora RTC token grants access to the call channel. Shorter tokens are more secure but require re-issue on reconnect.')
                     ->schema([
                         Select::make('voice_call_token_expire')
