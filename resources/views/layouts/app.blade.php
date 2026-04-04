@@ -244,6 +244,12 @@
                         <li><a class="dropdown-item" href="{{ route('icebreaker.index') }}"><i class="bi bi-snow2 me-2 text-info"></i>Icebreakers</a></li>
                         <li><a class="dropdown-item" href="{{ route('account.show') }}"><i class="bi bi-gear me-2 text-secondary"></i>Settings</a></li>
                         <li><a class="dropdown-item" href="{{ route('invite.index') }}"><i class="bi bi-gift me-2 text-danger"></i>Invite Friends</a></li>
+                        <li>
+                            <a class="dropdown-item d-flex align-items-center justify-content-between" href="{{ route('calls.history') }}" id="navCallHistoryLink">
+                                <span><i class="bi bi-telephone-fill me-2 text-success"></i>Call History</span>
+                                <span class="badge bg-danger rounded-pill d-none" id="missedCallBadgeNav" style="font-size:.65rem"></span>
+                            </a>
+                        </li>
                         {{-- Verification link --}}
                         @if(auth()->user()->is_verified)
                         <li><span class="dropdown-item-text small text-success"><i class="bi bi-patch-check-fill me-2"></i>Verified ✅</span></li>
@@ -438,7 +444,57 @@
                     }
                 }
             });
+
+        // Listen for missed calls via private channel (call-status-changed)
+        Echo.private('user.' + userId)
+            .listen('.call-status-changed', function (e) {
+                if (e.status === 'missed' || e.status === 'rejected') {
+                    updateMissedCallBadge();
+                    if (e.status === 'missed') {
+                        showCallToast('Missed call', '📵 You missed a call');
+                    }
+                }
+            });
     }
+
+    // ── Missed call badge ─────────────────────────────────────────────────────
+    function updateMissedCallBadge() {
+        fetch('/calls/missed-count', { headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(function (r) { return r.json(); })
+            .then(function (d) {
+                var badge = document.getElementById('missedCallBadgeNav');
+                if (!badge) return;
+                if (d.count > 0) {
+                    badge.textContent = d.count > 9 ? '9+' : d.count;
+                    badge.classList.remove('d-none');
+                } else {
+                    badge.classList.add('d-none');
+                }
+            })
+            .catch(function () {});
+    }
+
+    function showCallToast(title, body) {
+        var container = document.getElementById('toastContainer');
+        if (!container) return;
+        var el = document.createElement('div');
+        el.className = 'toast align-items-center border-0';
+        el.style.background = '#ef4444';
+        el.style.color = '#fff';
+        el.setAttribute('role', 'alert');
+        el.setAttribute('aria-live', 'assertive');
+        el.setAttribute('aria-atomic', 'true');
+        el.setAttribute('data-bs-autohide', 'true');
+        el.setAttribute('data-bs-delay', '7000');
+        el.innerHTML = '<div class="d-flex"><div class="toast-body fw-semibold">' + body.replace(/</g,'&lt;')
+            + ' — <a href="/calls" class="text-white fw-bold" style="text-decoration:underline">View history</a>'
+            + '</div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button></div>';
+        container.appendChild(el);
+        if (window.bootstrap && bootstrap.Toast) { new bootstrap.Toast(el).show(); }
+    }
+
+    // Poll once on page load
+    updateMissedCallBadge();
 })();
 </script>
 @endauth

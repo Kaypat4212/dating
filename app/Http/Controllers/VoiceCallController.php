@@ -9,6 +9,7 @@ use App\Models\VoiceCall;
 use App\Services\AgoraTokenService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\View\View;
 
 class VoiceCallController extends Controller
 {
@@ -148,5 +149,40 @@ class VoiceCallController extends Controller
         }
 
         return response()->json(['status' => $newStatus]);
+    }
+
+    /**
+     * Call history page — all calls the authenticated user participated in.
+     */
+    public function history(Request $request): View
+    {
+        $user = $request->user();
+
+        $calls = VoiceCall::where('caller_id', $user->id)
+            ->orWhere('callee_id', $user->id)
+            ->with(['caller.primaryPhoto', 'callee.primaryPhoto', 'conversation'])
+            ->orderByDesc('created_at')
+            ->paginate(30);
+
+        // Mark all missed calls as "seen" so the badge resets
+        VoiceCall::where('callee_id', $user->id)
+            ->where('status', 'missed')
+            ->whereNull('seen_at')
+            ->update(['seen_at' => now()]);
+
+        return view('calls.history', compact('calls'));
+    }
+
+    /**
+     * Return the count of unseen missed calls — used by the nav badge.
+     */
+    public function missedCount(Request $request): JsonResponse
+    {
+        $count = VoiceCall::where('callee_id', $request->user()->id)
+            ->where('status', 'missed')
+            ->whereNull('seen_at')
+            ->count();
+
+        return response()->json(['count' => $count]);
     }
 }

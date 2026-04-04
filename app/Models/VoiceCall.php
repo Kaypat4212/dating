@@ -15,6 +15,7 @@ class VoiceCall extends Model
         'status',
         'started_at',
         'ended_at',
+        'seen_at',
     ];
 
     protected function casts(): array
@@ -22,6 +23,7 @@ class VoiceCall extends Model
         return [
             'started_at' => 'datetime',
             'ended_at'   => 'datetime',
+            'seen_at'    => 'datetime',
         ];
     }
 

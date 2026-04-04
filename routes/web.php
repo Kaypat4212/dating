@@ -188,6 +188,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/calls/{call}/answer',           [VoiceCallController::class, 'answer'])->name('calls.answer');
         Route::post('/calls/{call}/reject',           [VoiceCallController::class, 'reject'])->name('calls.reject');
         Route::post('/calls/{call}/end',              [VoiceCallController::class, 'end'])->name('calls.end');
+        Route::get('/calls',                          [VoiceCallController::class, 'history'])->name('calls.history');
+        Route::get('/calls/missed-count',             [VoiceCallController::class, 'missedCount'])->name('calls.missed-count');
 
         // AI Assistant
         Route::post('/ai/suggest',              [AiController::class, 'suggest'])->name('ai.suggest');

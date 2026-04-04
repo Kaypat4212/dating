@@ -244,6 +244,49 @@ main { padding-bottom: 0 !important; }
     opacity: .9;
     line-height: 1.4;
 }
+
+/* ── Call event banners (inline in chat) ─────────────────── */
+.call-event-row {
+    display: flex;
+    justify-content: center;
+    margin: .5rem 0;
+}
+.call-event {
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+    font-size: .78rem;
+    font-weight: 500;
+    padding: .35rem .85rem;
+    border-radius: 20px;
+    max-width: 92%;
+}
+.call-event.missed {
+    background: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #fecaca;
+}
+.call-event.missed.outgoing {
+    background: #fef3c7;
+    color: #92400e;
+    border-color: #fde68a;
+}
+.call-event.rejected {
+    background: #fef3c7;
+    color: #92400e;
+    border: 1px solid #fde68a;
+}
+.call-event.ended {
+    background: #d1fae5;
+    color: #065f46;
+    border: 1px solid #a7f3d0;
+}
+[data-bs-theme="dark"] .call-event.missed    { background: #7f1d1d; color: #fca5a5; border-color: #991b1b; }
+[data-bs-theme="dark"] .call-event.missed.outgoing { background: #78350f; color: #fde68a; border-color: #92400e; }
+[data-bs-theme="dark"] .call-event.rejected  { background: #78350f; color: #fde68a; border-color: #92400e; }
+[data-bs-theme="dark"] .call-event.ended     { background: #064e3b; color: #6ee7b7; border-color: #065f46; }
+.call-event-time     { font-size: .7rem; opacity: .7; margin-left: .2rem; }
+.call-event-duration { font-weight: 700; margin-left: .1rem; }
 </style>
 @endpush
 
@@ -407,26 +450,89 @@ main { padding-bottom: 0 !important; }
     <div class="chat-body-scroll" id="chatBody">
         @php
             $prevDate = null;
-            $msgs     = $messages->values();
-            $total    = count($msgs);
+
+            // Build a merged timeline: messages + call events, sorted by time
+            $timeline = collect();
+            foreach ($messages->values() as $msg) {
+                $timeline->push((object)['type' => 'message', 'ts' => $msg->created_at, 'item' => $msg]);
+            }
+            foreach ($voiceCalls as $vc) {
+                // Only show ended/missed/rejected calls in the timeline
+                if (in_array($vc->status, ['ended', 'missed', 'rejected'])) {
+                    $timeline->push((object)['type' => 'call', 'ts' => $vc->created_at, 'item' => $vc]);
+                }
+            }
+            $timeline = $timeline->sortBy('ts')->values();
+            $msgs     = $timeline->filter(fn($t) => $t->type === 'message')->pluck('item')->values();
+            $total    = $msgs->count();
+            $msgIdx   = 0; // separate index for bubble grouping (only messages)
         @endphp
 
-        @foreach($msgs as $i => $msg)
-        @php
-            $isMe    = $msg->sender_id === $me->id;
-            $date    = $msg->created_at->toDateString();
-            $isFirst = ($i === 0 || $msgs[$i-1]->sender_id !== $msg->sender_id);
-            $isLast  = ($i === $total-1 || $msgs[$i+1]->sender_id !== $msg->sender_id);
-            $reactions = $msg->reactions ?? collect();
-        @endphp
+        @foreach($timeline as $entry)
+        @php $date = $entry->ts->toDateString(); @endphp
 
         {{-- Date separator --}}
         @if($date !== $prevDate)
             @php $prevDate = $date; @endphp
             <div class="date-sep">
-                {{ $msg->created_at->isToday() ? 'Today' : ($msg->created_at->isYesterday() ? 'Yesterday' : $msg->created_at->format('M j, Y')) }}
+                {{ $entry->ts->isToday() ? 'Today' : ($entry->ts->isYesterday() ? 'Yesterday' : $entry->ts->format('M j, Y')) }}
             </div>
         @endif
+
+        @if($entry->type === 'call')
+        {{-- ── Call event banner ─────────────────────────────────────────── --}}
+        @php
+            $vc       = $entry->item;
+            $isCaller = $vc->caller_id === $me->id;
+            $vcOther  = $isCaller ? $vc->callee : $vc->caller;
+            $dur      = $vc->durationSeconds();
+        @endphp
+        <div class="call-event-row">
+            @if($vc->status === 'missed')
+                @if($vc->callee_id === $me->id)
+                    {{-- I missed a call from them --}}
+                    <div class="call-event missed">
+                        <i class="bi bi-telephone-missed-fill"></i>
+                        <span>Missed call from <strong>{{ $vc->caller->name ?? 'them' }}</strong></span>
+                        <span class="call-event-time">{{ $vc->created_at->format('g:i A') }}</span>
+                    </div>
+                @else
+                    {{-- They didn't answer my call --}}
+                    <div class="call-event missed outgoing">
+                        <i class="bi bi-telephone-missed-fill"></i>
+                        <span>{{ $vc->callee->name ?? 'They' }} didn't answer</span>
+                        <span class="call-event-time">{{ $vc->created_at->format('g:i A') }}</span>
+                    </div>
+                @endif
+            @elseif($vc->status === 'rejected')
+                <div class="call-event rejected">
+                    <i class="bi bi-telephone-x-fill"></i>
+                    <span>{{ $isCaller ? ($vc->callee->name ?? 'They').' declined the call' : 'You declined the call' }}</span>
+                    <span class="call-event-time">{{ $vc->created_at->format('g:i A') }}</span>
+                </div>
+            @elseif($vc->status === 'ended')
+                <div class="call-event ended">
+                    <i class="bi bi-telephone-fill"></i>
+                    <span>Voice call</span>
+                    @if($dur)
+                        @php $m = floor($dur/60); $s = $dur % 60; @endphp
+                        <span class="call-event-duration">{{ $m > 0 ? $m.'m ' : '' }}{{ str_pad($s,2,'0',STR_PAD_LEFT) }}s</span>
+                    @endif
+                    <span class="call-event-time">{{ $vc->created_at->format('g:i A') }}</span>
+                </div>
+            @endif
+        </div>
+
+        @else
+        {{-- ── Regular message bubble ────────────────────────────────────── --}}
+        @php
+            $msg     = $entry->item;
+            $isMe    = $msg->sender_id === $me->id;
+            $isFirst = ($msgIdx === 0 || $msgs[$msgIdx-1]->sender_id !== $msg->sender_id);
+            $isLast  = ($msgIdx === $total-1 || $msgs[$msgIdx+1]->sender_id !== $msg->sender_id);
+            $reactions = $msg->reactions ?? collect();
+            $msgIdx++;
+        @endphp
 
         <div class="msg-row {{ $isMe ? 'me' : 'them' }} {{ $isFirst ? 'group-start' : '' }}">
 
@@ -502,6 +608,7 @@ main { padding-bottom: 0 !important; }
             @endif
 
         </div>
+        @endif {{-- end call/message branch --}}
         @endforeach
 
         {{-- Typing indicator --}}
@@ -808,6 +915,43 @@ const voiceCall = (() => {
     let timerInterval = null;
     let timerSeconds  = 0;
     let pendingCall   = null; // for incoming call data
+    let ringInterval  = null; // ring tone interval
+
+    // ── Ring tone (Web Audio API — no external file) ───────────────────
+    function playRing(loop = false) {
+        stopRing();
+        function _ring() {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain); gain.connect(ctx.destination);
+                osc.type = 'sine'; osc.frequency.setValueAtTime(440, ctx.currentTime);
+                gain.gain.setValueAtTime(0.18, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.8);
+                osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.8);
+            } catch (e) {}
+        }
+        _ring();
+        if (loop) ringInterval = setInterval(_ring, 1200);
+    }
+
+    function playSoundEnd() {
+        try {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain); gain.connect(ctx.destination);
+            osc.type = 'sine'; osc.frequency.setValueAtTime(330, ctx.currentTime);
+            gain.gain.setValueAtTime(0.15, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+            osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.5);
+        } catch (e) {}
+    }
+
+    function stopRing() {
+        if (ringInterval) { clearInterval(ringInterval); ringInterval = null; }
+    }
 
     // ── DOM helpers ────────────────────────────────────────────────────────
     const $incoming = document.getElementById('incomingCallOverlay');
@@ -817,6 +961,7 @@ const voiceCall = (() => {
         setAvatar('incomingCallerAvatar', callerName, callerAvatar);
         document.getElementById('incomingCallerName').textContent = callerName;
         $incoming.style.display = 'flex';
+        playRing(true); // play ringtone on loop for incoming
     }
 
     function showActive(name, avatar) {
@@ -831,6 +976,7 @@ const voiceCall = (() => {
         $incoming.style.display = 'none';
         $active.style.display   = 'none';
         stopTimer();
+        stopRing();
     }
 
     function setAvatar(elId, name, url) {
@@ -886,6 +1032,7 @@ const voiceCall = (() => {
         localTrack = await AgoraRTC.createMicrophoneAudioTrack();
         await agoraClient.publish(localTrack);
 
+        stopRing(); // stop outgoing/incoming ring once connected
         document.getElementById('activeCallStatus').textContent = 'Connected';
         startTimer();
     }
@@ -901,6 +1048,7 @@ const voiceCall = (() => {
     async function initiate() {
         document.getElementById('callBtn').disabled = true;
         showActive(OTHER_NAME, OTHER_AVATAR);
+        playRing(true); // outgoing ring while waiting for answer
         try {
             const data = await post(INITIATE_URL);
             callId = data.call_id;
@@ -917,6 +1065,7 @@ const voiceCall = (() => {
 
     async function answer() {
         if (!pendingCall) return;
+        stopRing();
         $incoming.style.display = 'none';
         showActive(pendingCall.caller_name, pendingCall.caller_photo);
         try {
@@ -937,6 +1086,8 @@ const voiceCall = (() => {
     }
 
     async function hangUp(remote = false) {
+        stopRing();
+        playSoundEnd();
         await leaveChannel();
         if (callId && !remote) {
             post('/calls/' + callId + '/end').catch(() => {});
@@ -982,11 +1133,13 @@ const voiceCall = (() => {
             .listen('.call-status-changed', (data) => {
                 if (data.call_id !== callId) return;
                 if (data.status === 'rejected') {
+                    playSoundEnd();
                     hangUp(true);
-                    // Could show a brief toast: "Call declined"
                 } else if (data.status === 'missed' || data.status === 'ended') {
+                    playSoundEnd();
                     hangUp(true);
                 } else if (data.status === 'active') {
+                    stopRing();
                     document.getElementById('activeCallStatus').textContent = 'Connected';
                     startTimer();
                 }

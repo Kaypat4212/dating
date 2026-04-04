@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Conversation;
 use App\Models\UserMatch;
+use App\Models\VoiceCall;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -52,10 +53,17 @@ class ConversationController extends Controller
             ->orderBy('created_at')
             ->get();
 
+        // Load voice calls for this conversation to show inline call events
+        $voiceCalls = VoiceCall::where('conversation_id', $conversation->id)
+            ->with(['caller', 'callee'])
+            ->orderBy('created_at')
+            ->get()
+            ->keyBy('id');
+
         $other = $match->getOtherUser($user->id);
 
         $giftPrices = \App\Models\SiteSetting::allAsArray();
 
-        return view('conversations.show', compact('conversation', 'messages', 'other', 'match', 'giftPrices'));
+        return view('conversations.show', compact('conversation', 'messages', 'other', 'match', 'giftPrices', 'voiceCalls'));
     }
 }
