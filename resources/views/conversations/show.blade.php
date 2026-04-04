@@ -342,7 +342,8 @@ main { padding-bottom: 0 !important; }
         </a>
 
         <div class="dropdown flex-shrink-0">
-            {{-- Voice call button --}}
+            {{-- Voice call button (hidden when feature is disabled by admin) --}}
+            @if(filter_var(\App\Models\SiteSetting::get('voice_calls_enabled', '1'), FILTER_VALIDATE_BOOLEAN))
             <button id="callBtn"
                     class="chat-footer-btn me-1"
                     style="display:flex;align-items:center;justify-content:center;background:none;border:none;color:#10b981;"
@@ -350,6 +351,7 @@ main { padding-bottom: 0 !important; }
                     onclick="voiceCall.initiate()">
                 <i class="bi bi-telephone-fill"></i>
             </button>
+            @endif
             <button class="chat-footer-btn"
                     style="display:flex;align-items:center;justify-content:center;background:none;border:none;"
                     data-bs-toggle="dropdown" aria-expanded="false" title="More options">

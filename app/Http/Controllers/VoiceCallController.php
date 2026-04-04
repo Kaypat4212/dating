@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Events\CallStatusChangedEvent;
 use App\Events\IncomingCallEvent;
 use App\Models\Conversation;
+use App\Models\SiteSetting;
 use App\Models\VoiceCall;
 use App\Services\AgoraTokenService;
 use Illuminate\Http\JsonResponse;
@@ -21,8 +22,26 @@ class VoiceCallController extends Controller
      */
     public function initiate(Request $request, Conversation $conversation): JsonResponse
     {
+        // ── Feature gate ──────────────────────────────────────────────────
+        if (! filter_var(SiteSetting::get('voice_calls_enabled', '1'), FILTER_VALIDATE_BOOLEAN)) {
+            return response()->json(['error' => 'Voice calls are currently disabled by the administrator.'], 503);
+        }
+
         try {
             $caller = $request->user();
+
+            // ── Daily call limit ──────────────────────────────────────────
+            $dailyLimit = (int) SiteSetting::get('voice_call_daily_limit', 0);
+            if ($dailyLimit > 0) {
+                $usedToday = VoiceCall::where('caller_id', $caller->id)
+                    ->whereDate('created_at', today())
+                    ->count();
+                if ($usedToday >= $dailyLimit) {
+                    return response()->json([
+                        'error' => "You've reached your daily call limit ({$dailyLimit} calls). Try again tomorrow.",
+                    ], 429);
+                }
+            }
             $match  = $conversation->match;
 
             // Authorise: caller must be in this conversation
@@ -48,8 +67,9 @@ class VoiceCallController extends Controller
                 'status'          => 'ringing',
             ]);
 
-            // Generate token for the caller
-            $callerToken = $this->agora->generateRtcToken($channelName, $caller->id);
+            // Generate token for the caller (respecting admin-configured expiry)
+            $tokenExpire = (int) SiteSetting::get('voice_call_token_expire', 3600);
+            $callerToken = $this->agora->generateRtcToken($channelName, $caller->id, $tokenExpire);
 
             // Notify the callee via Reverb (non-fatal — call works even if Reverb is down)
             try {
@@ -88,7 +108,8 @@ class VoiceCallController extends Controller
 
         $call->update(['status' => 'active', 'started_at' => now()]);
 
-        $token = $this->agora->generateRtcToken($call->channel_name, $user->id);
+        $tokenExpire = (int) SiteSetting::get('voice_call_token_expire', 3600);
+        $token = $this->agora->generateRtcToken($call->channel_name, $user->id, $tokenExpire);
 
         // Tell the caller their call was answered (non-fatal)
         try {
