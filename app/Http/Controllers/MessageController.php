@@ -119,6 +119,11 @@ class MessageController extends Controller
 
         $message->load('sender.primaryPhoto');
 
+        // Set disappearing timer if conversation has one
+        if ($expiresAt = $conversation->expiresAtForNewMessage()) {
+            $message->update(['expires_at' => $expiresAt]);
+        }
+
         // Notify partner about new message
         $partner = $match->getOtherUser($user->id);
         try { $partner->notify(new \App\Notifications\NewMessageNotification($message, $user)); } catch (\Throwable) {}
@@ -142,6 +147,7 @@ class MessageController extends Controller
                 'attachment_name'=> $message->attachment_name,
                 'sender_id'      => $message->sender_id,
                 'created_at'     => $message->created_at,
+                'expires_at'     => $message->expires_at?->toISOString(),
                 'is_me'          => true,
             ],
         ]);

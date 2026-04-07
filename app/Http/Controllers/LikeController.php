@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Models\UserMatch;
 use App\Notifications\FeatureUsageNotification;
 use App\Services\ActivityLogger;
+use App\Services\EloService;
 use App\Notifications\LikeResetNotification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -17,6 +18,8 @@ use Illuminate\Support\Facades\RateLimiter;
 
 class LikeController extends Controller
 {
+    public function __construct(private readonly EloService $elo) {}
+
     public function store(Request $request, User $user): JsonResponse|RedirectResponse
     {
         $sender     = $request->user();
@@ -86,6 +89,7 @@ class LikeController extends Controller
 
         // Pass action (swipe left) — acknowledge but do not record a Like
         if ($request->input('action') === 'pass') {
+            try { $this->elo->onPass($user); } catch (\Throwable) {}
             if ($request->expectsJson() || $request->ajax()) {
                 return response()->json(['passed' => true]);
             }
@@ -123,6 +127,9 @@ class LikeController extends Controller
 
         ActivityLogger::log($sender, 'like_sent', ['target_user_id' => $receiverId], $request);
 
+        // Elo boost: target gains rating when liked
+        try { $this->elo->onLike($sender, $user); } catch (\Throwable) {}
+
         // Notify receiver — swallow mail exceptions so a bad email never breaks the like
         try {
             $user->notify(new \App\Notifications\ProfileLikedNotification($sender));
@@ -159,6 +166,16 @@ class LikeController extends Controller
                 // Match created - notify both users
                 try { $user->notify(new \App\Notifications\NewMatchNotification($match, $sender)); } catch (\Throwable) {}
                 try { $sender->notify(new \App\Notifications\NewMatchNotification($match, $user)); } catch (\Throwable) {}
+
+                // Elo boost for mutual match
+                try { $this->elo->onMatch($sender, $user); } catch (\Throwable) {}
+
+                // Reveal any secret messages between these two users
+                try {
+                    SecretMessageController::revealBetween(
+                        $sender->id, $user->id, $match->conversation->id
+                    );
+                } catch (\Throwable) {}
 
                 if (SiteSetting::get('email_feature_usage_enabled', true)) {
                     try {

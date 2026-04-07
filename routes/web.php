@@ -37,6 +37,9 @@ use App\Http\Controllers\PremiumController;
 use App\Http\Controllers\ProfileSetupController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SwipeController;
+use App\Http\Controllers\AnnouncementController;
+use App\Http\Controllers\SpeedDatingController;
+use App\Http\Controllers\SecretMessageController;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Route;
 
@@ -366,6 +369,30 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::delete('/voice/{voicePrompt}',  [ProfileExtrasController::class, 'destroyVoice'])->name('voice.destroy');
             Route::get('/voice/{voicePrompt}/play',[ProfileExtrasController::class, 'playVoice'])->name('voice.play');
         });
+
+        // ── Coffee Break Speed Dating ─────────────────────────────────────────
+        Route::prefix('speed-dating')->name('speed-dating.')->group(function () {
+            Route::get('/',                            [SpeedDatingController::class, 'index'])->name('index');
+            Route::post('/join',                       [SpeedDatingController::class, 'join'])->name('join');
+            Route::post('/leave',                      [SpeedDatingController::class, 'leave'])->name('leave');
+            Route::get('/status',                      [SpeedDatingController::class, 'status'])->name('status');
+            Route::get('/{room}/messages',             [SpeedDatingController::class, 'messages'])->name('messages');
+            Route::post('/{room}/send',                [SpeedDatingController::class, 'sendMessage'])->name('send');
+            Route::post('/{room}/connect',             [SpeedDatingController::class, 'connect'])->name('connect');
+        });
+
+        // ── Secret Messages ───────────────────────────────────────────────────
+        Route::post('/secret-messages',                          [SecretMessageController::class, 'store'])->name('secret-messages.store');
+        Route::delete('/secret-messages/{secretMessage}',        [SecretMessageController::class, 'destroy'])->name('secret-messages.destroy');
+
+        // ── Disappearing message timer ────────────────────────────────────────
+        Route::patch('/messages/{conversation}/disappear', [ConversationController::class, 'setDisappearTimer'])->name('conversations.disappear');
+
+        // ── What's New Announcements ──────────────────────────────────────────
+        Route::get('/whats-new',                          [AnnouncementController::class, 'index'])->name('announcements.index');
+        Route::get('/whats-new/unread',                   [AnnouncementController::class, 'unread'])->name('announcements.unread');
+        Route::post('/whats-new/{announcement}/read',     [AnnouncementController::class, 'markRead'])->name('announcements.read');
+        Route::post('/whats-new/read-all',                [AnnouncementController::class, 'readAll'])->name('announcements.read-all');
     });
 });
 

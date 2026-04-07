@@ -214,7 +214,8 @@ class SwipeController extends Controller
             $query->select('users.*');
         }
 
-        $query->inRandomOrder();
+        // Blend elo_score into ordering so higher-rated profiles surface more
+        $query->orderByRaw('(RAND() * 0.4 + (users.elo_score / 2000.0) * 0.6) DESC');
         $profiles = $query->get();
 
         return [$this->attachScores($user, $profiles), false];
@@ -256,7 +257,9 @@ class SwipeController extends Controller
             }
             $pool = $candidates->merge($extra)->unique('id');
             $scored = $this->attachScores($user, $pool);
-            return $scored->sortByDesc('compat_score')->take(10)->values();
+            // Sort by blend of compatibility + elo so high-quality profiles surface first
+            return $scored->sortByDesc(fn ($p) => ($p->compat_score * 100 * 0.7) + (($p->elo_score ?? 1000) * 0.0003 * 0.3))
+                          ->take(10)->values();
         });
 
         return response()->json(['profiles' => $profiles]);

@@ -49,6 +49,7 @@ class ConversationController extends Controller
             ->update(['read_at' => now()]);
 
         $messages = $conversation->messages()
+            ->notExpired()
             ->with('sender.primaryPhoto', 'reactions')
             ->orderBy('created_at')
             ->get();
@@ -63,7 +64,26 @@ class ConversationController extends Controller
         $other = $match->getOtherUser($user->id);
 
         $giftPrices = \App\Models\SiteSetting::allAsArray();
+        $disappearAfter = $conversation->disappear_after ?? 'off';
 
-        return view('conversations.show', compact('conversation', 'messages', 'other', 'match', 'giftPrices', 'voiceCalls'));
+        return view('conversations.show', compact('conversation', 'messages', 'other', 'match', 'giftPrices', 'voiceCalls', 'disappearAfter'));
+    }
+
+    public function setDisappearTimer(Request $request, Conversation $conversation): \Illuminate\Http\JsonResponse
+    {
+        $user = $request->user();
+        $match = $conversation->match;
+
+        abort_unless(
+            $match && ($match->user1_id === $user->id || $match->user2_id === $user->id),
+            403
+        );
+
+        $mode = $request->input('mode', 'off');
+        abort_unless(in_array($mode, ['off', '1h', '24h', '7d']), 422);
+
+        $conversation->update(['disappear_after' => $mode]);
+
+        return response()->json(['disappear_after' => $mode]);
     }
 }

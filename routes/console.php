@@ -2,6 +2,8 @@
 
 use App\Jobs\ClearExpiredMoods;
 use App\Jobs\ExpirePremiumAccounts;
+use App\Jobs\PairSpeedDatingUsers;
+use App\Jobs\PurgeExpiredMessages;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
@@ -18,3 +20,9 @@ Schedule::command('emails:daily-summary')->dailyAt('08:00');
 
 // Hourly: clear mood statuses older than 24 hours
 Schedule::job(new ClearExpiredMoods)->hourly();
+
+// Every 2 minutes: pair users waiting in speed dating queue
+Schedule::job(new PairSpeedDatingUsers)->everyTwoMinutes();
+
+// Hourly: delete messages whose disappear timer has expired
+Schedule::job(new PurgeExpiredMessages)->hourly();

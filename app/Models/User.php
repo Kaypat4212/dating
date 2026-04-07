@@ -64,6 +64,7 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser, Has
         'location_filter_uses',
         'registration_ip', 'last_login_ip', 'last_login_at',
         'referral_code', 'referred_by',
+        'elo_score',
     ];
 
     protected $hidden = [

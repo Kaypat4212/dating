@@ -596,6 +596,7 @@ main { padding-bottom: 0 !important; }
                     @if($profile->is_verified)
                     <span class="verified-chip"><i class="bi bi-patch-check-fill" style="font-size:.72rem"></i>ID</span>
                     @endif
+                    <x-traveling-badge :user="$profile" />
                     @if(isset($profile->last_active_at) && \Carbon\Carbon::parse($profile->last_active_at)->diffInMinutes() < 15)
                     <span class="online-dot ms-1"></span>
                     @endif

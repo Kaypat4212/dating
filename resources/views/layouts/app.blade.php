@@ -112,11 +112,15 @@
 @php
     $unreadCount    = auth()->check() ? auth()->user()->unreadNotifications()->count() : 0;
     $unreadMsgCount = 0;
+    $wnUnreadCount  = 0;
     if (auth()->check()) {
         $uid = auth()->id();
         $unreadMsgCount = \App\Models\Message::whereHas('conversation.match', function ($q) use ($uid) {
             $q->where('user1_id', $uid)->orWhere('user2_id', $uid);
         })->where('sender_id', '!=', $uid)->whereNull('read_at')->count();
+        $wnUnreadCount = \App\Models\Announcement::published()->forUser($uid)
+            ->whereDoesntHave('reads', fn($q) => $q->where('user_id', $uid))
+            ->count();
     }
     $navPhoto = auth()->check() ? auth()->user()->primaryPhoto : null;
 @endphp
@@ -137,6 +141,13 @@
                     <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size:.6rem">{{ $unreadCount > 99 ? '99+' : $unreadCount }}</span>
                 @endif
             </a>
+            {{-- What's New (mobile) --}}
+            <button type="button" class="btn btn-sm btn-outline-secondary position-relative" data-bs-toggle="modal" data-bs-target="#whatsNewModal" title="What's New">
+                🎉
+                <span id="wnNavBadgeMobile" data-count="{{ $wnUnreadCount }}"
+                      class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-purple{{ $wnUnreadCount > 0 ? '' : ' d-none' }}"
+                      style="font-size:.6rem;background:#7c3aed">{{ $wnUnreadCount > 99 ? '99+' : $wnUnreadCount }}</span>
+            </button>
             <a href="{{ route('conversations.index') }}" class="btn btn-sm btn-outline-secondary position-relative" id="navChatMobile">
                 <i class="bi bi-chat-heart"></i>
                 <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger{{ $unreadMsgCount > 0 ? '' : ' d-none' }}" id="msgBadgeMobile" style="font-size:.6rem">{{ $unreadMsgCount > 99 ? '99+' : max($unreadMsgCount,1) }}</span>
@@ -198,12 +209,20 @@
                         <li><a class="dropdown-item" href="{{ route('forum.index') }}"><i class="bi bi-people-fill me-2 text-success"></i>Forum</a></li>
                         <li><a class="dropdown-item" href="{{ route('chat-rooms.index') }}"><i class="bi bi-chat-dots me-2 text-info"></i>Chat Rooms</a></li>
                         <li><a class="dropdown-item" href="{{ route('travel.index') }}"><i class="bi bi-airplane me-2 text-warning"></i>Travel Buddy</a></li>
+                        <li><a class="dropdown-item" href="{{ route('speed-dating.index') }}"><i class="bi bi-lightning-charge me-2 text-danger"></i>Coffee Break ☕</a></li>
                     </ul>
                 </li>
             </ul>
 
             {{-- Right-side actions --}}
             <div class="d-flex align-items-center gap-2 mt-2 mt-lg-0">
+                {{-- What's New (desktop) --}}
+                <button type="button" class="btn btn-sm btn-outline-secondary position-relative d-none d-lg-inline-flex" data-bs-toggle="modal" data-bs-target="#whatsNewModal" title="What's New">
+                    🎉
+                    <span id="wnNavBadge" data-count="{{ $wnUnreadCount }}"
+                          class="position-absolute top-0 start-100 translate-middle badge rounded-pill{{ $wnUnreadCount > 0 ? '' : ' d-none' }}"
+                          style="font-size:.6rem;background:#7c3aed">{{ $wnUnreadCount > 99 ? '99+' : $wnUnreadCount }}</span>
+                </button>
                 {{-- Notifications (desktop only — mobile already shown above) --}}
                 <a href="{{ route('notifications.index') }}" class="btn btn-sm btn-outline-secondary position-relative d-none d-lg-inline-flex" title="Notifications">
                     <i class="bi bi-bell"></i>
@@ -591,6 +610,9 @@
 <meta name="user-id" content="{{ auth()->id() }}">
 <script src="{{ asset('js/pwa-badge.js') }}"></script>
 @endauth
+
+{{-- ── What's New Modal ───────────────────────────────────────────────────── --}}
+<x-whats-new-modal />
 
 </body>
 </html>

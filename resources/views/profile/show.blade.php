@@ -99,6 +99,7 @@
                                 <span title="Verified profile" style="font-size:1.2rem;vertical-align:middle;color:#1d9bf0">&#9989;</span>
                                 @endif
                             </h2>
+                            <x-traveling-badge :user="$profileUser" />
                             @if($profile && $profile->city)
                             <p class="text-muted mb-1"><i class="bi bi-geo-alt me-1"></i>{{ $profile->city }}@if($profile->country), {{ $profile->country }}@endif</p>
                             @endif
@@ -117,6 +118,12 @@
                             @endif
                             {{-- Wave button --}}
                             <button class="btn btn-outline-warning wave-btn" data-user="{{ $profileUser->id }}" title="Send a wave">👋 Wave</button>
+                            @if(!$isMatched)
+                            {{-- Secret message button (only when not yet matched) --}}
+                            <button type="button" class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target="#secretMsgModal" title="Send a secret message revealed only if you both match">
+                                💌 Secret Message
+                            </button>
+                            @endif
                             {{-- Tip button (only show to other users) --}}
                             <button class="btn btn-outline-success tip-btn" data-user="{{ $profileUser->id }}" data-name="{{ $profileUser->name }}" title="Send a tip"><i class="bi bi-coin me-1"></i>Tip</button>
                             <button type="button" class="btn btn-outline-secondary report-btn"
@@ -338,6 +345,30 @@
 </div>
 
 @endsection
+
+{{-- ── Secret Message Modal ─────────────────────────────────────────────── --}}
+@if(auth()->id() !== $profileUser->id && !$isMatched)
+<div class="modal fade" id="secretMsgModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+      <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title">💌 Secret Message</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p class="text-muted small">Write a message that will only be revealed to <strong>{{ $profileUser->name }}</strong> if you both match.</p>
+        <textarea id="secretMsgBody" class="form-control" rows="4" maxlength="500"
+                  placeholder="Your secret message…"></textarea>
+        <div id="secretMsgFeedback" class="mt-2 small"></div>
+      </div>
+      <div class="modal-footer border-0 pt-0">
+        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary btn-sm" id="secretMsgSend">Send Secret</button>
+      </div>
+    </div>
+  </div>
+</div>
+@endif
 
 @push('scripts')
 <script>
@@ -596,5 +627,40 @@ document.querySelectorAll('.report-btn').forEach(btn => {
 });
 
 }); // end DOMContentLoaded
+</script>
+@endpush
+
+@push('scripts')
+<script>
+// ── Secret Message ─────────────────────────────────────────────────────────
+(function () {
+    const sendBtn = document.getElementById('secretMsgSend');
+    if (!sendBtn) return;
+    const csrf = document.querySelector('meta[name="csrf-token"]').content;
+    sendBtn.addEventListener('click', async () => {
+        const body = document.getElementById('secretMsgBody').value.trim();
+        const fb   = document.getElementById('secretMsgFeedback');
+        if (!body) { fb.innerHTML = '<span class="text-danger">Please write a message first.</span>'; return; }
+        sendBtn.disabled = true;
+        try {
+            const res = await fetch('{{ route("secret-messages.store") }}', {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': csrf, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ receiver_id: {{ $profileUser->id }}, body })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                fb.innerHTML = '<span class="text-success">💌 Sent! It will appear in the chat only if you match.</span>';
+                sendBtn.textContent = 'Sent!';
+            } else {
+                fb.innerHTML = `<span class="text-danger">${data.error ?? 'Failed to send.'}</span>`;
+                sendBtn.disabled = false;
+            }
+        } catch (e) {
+            fb.innerHTML = '<span class="text-danger">Network error.</span>';
+            sendBtn.disabled = false;
+        }
+    });
+})();
 </script>
 @endpush

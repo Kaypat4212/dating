@@ -591,6 +591,14 @@ main { padding-bottom: 0 !important; }
                     @endif
                 </div>
 
+                @if($msg->expires_at)
+                <div class="disappear-countdown text-muted d-flex align-items-center gap-1"
+                     style="font-size:.65rem;margin-top:2px;"
+                     data-expires="{{ $msg->expires_at->toISOString() }}">
+                    🔥 <span class="disappear-remaining"></span>
+                </div>
+                @endif
+
                 @if($reactions->isNotEmpty())
                 <div class="msg-reactions">
                     @foreach($reactions->groupBy('emoji') as $emoji => $group)
@@ -694,7 +702,29 @@ main { padding-bottom: 0 !important; }
             </div>
 
             {{-- Rephrase with AI --}}
-            <div class="ms-auto">
+            <div class="ms-auto d-flex align-items-center gap-1">
+
+                {{-- ⏱️ Disappearing timer toggle --}}
+                <div class="position-relative">
+                    <button type="button" class="chat-act-btn" id="disappearBtn"
+                            title="Disappearing messages ({{ $disappearAfter === 'off' ? 'Off' : $disappearAfter }})"
+                            style="{{ $disappearAfter !== 'off' ? 'color:#f97316' : '' }}">
+                        <i class="bi bi-hourglass-split"></i>
+                        @if($disappearAfter !== 'off')
+                            <span style="font-size:.55rem;font-weight:700;position:absolute;bottom:0;right:0;background:#f97316;color:#fff;border-radius:4px;padding:0 2px;line-height:1.4">{{ $disappearAfter }}</span>
+                        @endif
+                    </button>
+                    <div id="disappearPopover" class="chat-gift-popover d-none" style="width:150px;padding:8px;">
+                        <div class="gift-popover-title mb-2">Auto-delete after</div>
+                        @foreach(['off' => 'Off', '1h' => '1 Hour', '24h' => '24 Hours', '7d' => '7 Days'] as $val => $label)
+                        <button type="button" class="d-block w-100 text-start btn btn-sm mb-1 disappear-opt {{ $disappearAfter === $val ? 'btn-warning' : 'btn-outline-secondary' }}"
+                                data-mode="{{ $val }}">
+                            {{ $label }}
+                        </button>
+                        @endforeach
+                    </div>
+                </div>
+
                 <button id="aiRephraseBtn" class="chat-act-btn" type="button" title="Rewrite with AI">
                     <span class="d-none spinner-border spinner-border-sm text-danger" id="aiRephraseSpinner" style="width:.8rem;height:.8rem"></span>
                     <i class="bi bi-pencil-square"></i>
@@ -1228,6 +1258,75 @@ const voiceCall = (() => {
     const convId     = {{ $conversation->id }};
     const myId       = {{ auth()->id() }};
     const csrf       = document.querySelector('meta[name="csrf-token"]').content;
+    const base       = window.location.pathname.replace(/\/messages.*$/, '');
+    let   currentDisappearMode = '{{ $disappearAfter }}';
+
+    // ── Disappear timer UI ─────────────────────────────────────────────────
+    const disappearBtn     = document.getElementById('disappearBtn');
+    const disappearPopover = document.getElementById('disappearPopover');
+    if (disappearBtn && disappearPopover) {
+        disappearBtn.addEventListener('click', e => {
+            e.stopPropagation();
+            disappearPopover.classList.toggle('d-none');
+        });
+        document.addEventListener('click', () => disappearPopover.classList.add('d-none'));
+        disappearPopover.addEventListener('click', e => e.stopPropagation());
+        disappearPopover.querySelectorAll('.disappear-opt').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const mode = btn.dataset.mode;
+                disappearPopover.classList.add('d-none');
+                try {
+                    await fetch(`${base}/messages/${convId}/disappear`, {
+                        method: 'PATCH',
+                        headers: { 'X-CSRF-TOKEN': csrf, 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ mode })
+                    });
+                    currentDisappearMode = mode;
+                    // Update button appearance
+                    disappearPopover.querySelectorAll('.disappear-opt').forEach(b => {
+                        b.classList.toggle('btn-warning', b.dataset.mode === mode);
+                        b.classList.toggle('btn-outline-secondary', b.dataset.mode !== mode);
+                    });
+                    const badge = disappearBtn.querySelector('span');
+                    if (mode !== 'off') {
+                        disappearBtn.style.color = '#f97316';
+                        if (!badge) {
+                            const s = document.createElement('span');
+                            s.style.cssText = 'font-size:.55rem;font-weight:700;position:absolute;bottom:0;right:0;background:#f97316;color:#fff;border-radius:4px;padding:0 2px;line-height:1.4';
+                            s.textContent = mode;
+                            disappearBtn.appendChild(s);
+                        } else { badge.textContent = mode; }
+                    } else {
+                        disappearBtn.style.color = '';
+                        if (badge) badge.remove();
+                    }
+                } catch(e) { console.error(e); }
+            });
+        });
+    }
+
+    // ── Countdown ticks for existing disappearing messages ─────────────────
+    function formatRemaining(ms) {
+        if (ms <= 0) return 'Expired';
+        const s = Math.floor(ms / 1000);
+        if (s < 60) return s + 's';
+        const m = Math.floor(s / 60);
+        if (m < 60) return m + 'm ' + (s % 60) + 's';
+        const h = Math.floor(m / 60);
+        if (h < 24) return h + 'h ' + (m % 60) + 'm';
+        return Math.floor(h / 24) + 'd';
+    }
+    function tickCountdowns() {
+        document.querySelectorAll('.disappear-countdown').forEach(el => {
+            const exp = new Date(el.dataset.expires).getTime();
+            const rem = exp - Date.now();
+            const span = el.querySelector('.disappear-remaining');
+            if (span) span.textContent = formatRemaining(rem);
+            if (rem <= 0) el.closest('.msg-row')?.remove();
+        });
+    }
+    setInterval(tickCountdowns, 1000);
+    tickCountdowns();
     const chatBody   = document.getElementById('chatBody');
     const msgInput   = document.getElementById('msgInput');
     const btnSend    = document.getElementById('btnSend');
@@ -1239,8 +1338,6 @@ const voiceCall = (() => {
     const previewBar = document.getElementById('attachPreviewBar');
     const previewInner = document.getElementById('attachPreviewInner');
     const attachCancel = document.getElementById('attachCancel');
-
-    const base = window.location.pathname.replace(/\/messages.*$/, '');
 
     function scrollBottom(smooth) {
         chatBody.scrollTo({ top: chatBody.scrollHeight, behavior: smooth ? 'smooth' : 'instant' });
@@ -1434,14 +1531,18 @@ const voiceCall = (() => {
         if (!body) return;
         msgInput.value = '';
         msgInput.style.height = 'auto';
-        appendBubble(body, true, new Date().toISOString(), 'text');
         try {
-            await fetch(`${base}/messages/${convId}`, {
+            const res = await fetch(`${base}/messages/${convId}`, {
                 method: 'POST',
                 headers: { 'X-CSRF-TOKEN': csrf, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ body })
             });
-        } catch (err) { console.error(err); }
+            const data = res.ok ? await res.json() : null;
+            appendBubble(body, true, new Date().toISOString(), 'text', null, null, data?.message?.id, data?.message?.expires_at ?? null);
+        } catch (err) {
+            appendBubble(body, true, new Date().toISOString(), 'text');
+            console.error(err);
+        }
     }
 
     btnSend.addEventListener('click', send);
@@ -1450,7 +1551,7 @@ const voiceCall = (() => {
     });
 
     // -- Build bubble HTML ---------------------------------------------------
-    function appendBubble(body, isMe, createdAt, type = 'text', attachUrl = null, attachName = null, id = null) {
+    function appendBubble(body, isMe, createdAt, type = 'text', attachUrl = null, attachName = null, id = null, expiresAt = null) {
         typingRow.classList.add('d-none');
         const t   = new Date(createdAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
         const chk = isMe ? '<i class="bi bi-check2 text-muted"></i>' : '';
@@ -1484,6 +1585,9 @@ const voiceCall = (() => {
 
         bubble.innerHTML = content
             + `<div class="message-meta d-flex align-items-center gap-1">${t} ${chk}</div>`
+            + (expiresAt
+                ? `<div class="disappear-countdown text-muted d-flex align-items-center gap-1" style="font-size:.65rem;margin-top:2px;" data-expires="${expiresAt}">\uD83D\uDD25 <span class="disappear-remaining"></span></div>`
+                : '')
             + (type === 'text'
                 ? `<div class="reaction-picker-trigger" title="React">+</div><div class="reaction-picker d-none">${REACTIONS.map(e=>`<span class="reaction-choice" data-emoji="${e}">${e}</span>`).join('')}</div>`
                 : '');

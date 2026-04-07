@@ -9,12 +9,13 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 /**
  * @property int $id
  * @property int $match_id
+ * @property string $disappear_after  off|1h|24h|7d
  * @property \Illuminate\Support\Carbon $created_at
  * @property \Illuminate\Support\Carbon $updated_at
  */
 class Conversation extends Model
 {
-    protected $fillable = ['match_id'];
+    protected $fillable = ['match_id', 'disappear_after'];
 
     public function match(): BelongsTo
     {
@@ -37,5 +38,16 @@ class Conversation extends Model
             ->where('sender_id', '!=', $userId)
             ->whereNull('read_at')
             ->count();
+    }
+
+    /** Compute the expires_at timestamp for a new message based on the room setting. */
+    public function expiresAtForNewMessage(): ?\Illuminate\Support\Carbon
+    {
+        return match ($this->disappear_after ?? 'off') {
+            '1h'  => now()->addHour(),
+            '24h' => now()->addDay(),
+            '7d'  => now()->addWeek(),
+            default => null,
+        };
     }
 }
