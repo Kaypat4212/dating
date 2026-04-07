@@ -1,7 +1,7 @@
 <x-filament-panels::page>
 @php
-    $stats = $this->stats;
-    $users = $this->incompleteUsers;
+    $stats = $this->getStats();
+    $users = $this->getIncompleteUsers();
     $filterOptions = [
         'all'         => 'All Incomplete',
         'eligible'    => 'Eligible for Reminder',
@@ -340,9 +340,11 @@
                                     $maxCount  = (int) \App\Models\SiteSetting::get('onboarding_reminder_max_count', 3);
                                     $minH      = (int) \App\Models\SiteSetting::get('onboarding_reminder_min_hours', 24);
                                     $intH      = (int) \App\Models\SiteSetting::get('onboarding_reminder_interval_hours', 48);
+                                    $reminderCount = (int) ($user->reminder_count ?? 0);
+                                    $lastReminder  = $user->last_reminder_at ?? null;
                                     $tooNew    = $user->created_at->gt(now()->subHours($minH));
-                                    $tooSoon   = $user->last_reminder_at && $user->last_reminder_at->gt(now()->subHours($intH));
-                                    $maxed     = $user->reminder_count >= $maxCount;
+                                    $tooSoon   = $lastReminder && $lastReminder->gt(now()->subHours($intH));
+                                    $maxed     = $reminderCount >= $maxCount;
                                     $eligible  = !$tooNew && !$tooSoon && !$maxed;
                                 @endphp
                                 <tr>
@@ -421,13 +423,13 @@
                                         <div style="display:flex; flex-direction:column; gap:3px;">
                                             <div class="or-remind-dots">
                                                 @for($i = 0; $i < $maxCount; $i++)
-                                                    <div class="or-remind-dot {{ $i < $user->reminder_count ? 'sent' : '' }}"></div>
+                                                    <div class="or-remind-dot {{ $i < $reminderCount ? 'sent' : '' }}"></div>
                                                 @endfor
                                             </div>
                                             <div style="font-size:.7rem; color:var(--txt3)">
-                                                {{ $user->reminder_count }}/{{ $maxCount }} sent
-                                                @if($user->last_reminder_at)
-                                                    · {{ $user->last_reminder_at->diffForHumans() }}
+                                                {{ $reminderCount }}/{{ $maxCount }} sent
+                                                @if($lastReminder)
+                                                    · {{ $lastReminder->diffForHumans() }}
                                                 @endif
                                             </div>
                                             @if($tooNew)
@@ -435,7 +437,7 @@
                                             @elseif($maxed)
                                                 <span class="or-badge red">Limit reached</span>
                                             @elseif($tooSoon)
-                                                <span class="or-badge amber">Wait: {{ $user->last_reminder_at->addHours($intH)->diffForHumans() }}</span>
+                                                <span class="or-badge amber">Wait: {{ $lastReminder->addHours($intH)->diffForHumans() }}</span>
                                             @endif
                                         </div>
                                     </td>

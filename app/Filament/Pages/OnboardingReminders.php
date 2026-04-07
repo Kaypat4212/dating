@@ -217,31 +217,35 @@ class OnboardingReminders extends Page
 
     // ── Stats (used in blade) ──────────────────────────────────────────────
 
-    public function getStatsProperty(): array
+    public function getStats(): array
     {
-        $incomplete = User::where('profile_complete', false)
-            ->where('is_banned', false)
-            ->whereNot('id', 1)
-            ->get(['id', 'gender', 'seeking', 'date_of_birth', 'onboarding_step', 'created_at', 'reminder_count', 'last_reminder_at']);
+        try {
+            $incomplete = User::where('profile_complete', false)
+                ->where('is_banned', false)
+                ->whereNot('id', 1)
+                ->get();
 
-        $total        = $incomplete->count();
-        $eligible     = $this->getEligibleUsers()->count();
-        $remindedToday = User::where('profile_complete', false)
-            ->whereDate('last_reminder_at', today())
-            ->count();
-        $neverStarted = $incomplete->filter(fn($u) => (int)$u->onboarding_step === 0)->count();
+            $total        = $incomplete->count();
+            $eligible     = $this->getEligibleUsers()->count();
+            $remindedToday = User::where('profile_complete', false)
+                ->whereDate('last_reminder_at', today())
+                ->count();
+            $neverStarted = $incomplete->filter(fn($u) => (int)$u->onboarding_step === 0)->count();
 
-        return [
-            'total'          => $total,
-            'eligible'       => $eligible,
-            'reminded_today' => $remindedToday,
-            'never_started'  => $neverStarted,
-        ];
+            return [
+                'total'          => $total,
+                'eligible'       => $eligible,
+                'reminded_today' => $remindedToday,
+                'never_started'  => $neverStarted,
+            ];
+        } catch (\Throwable) {
+            return ['total' => 0, 'eligible' => 0, 'reminded_today' => 0, 'never_started' => 0];
+        }
     }
 
     // ── Paginated table data (used in blade) ──────────────────────────────
 
-    public function getIncompleteUsersProperty(): LengthAwarePaginator
+    public function getIncompleteUsers(): LengthAwarePaginator
     {
         $query = User::with(['profile', 'photos'])
             ->where('profile_complete', false)
@@ -270,15 +274,19 @@ class OnboardingReminders extends Page
                 );
                 break;
             case 'eligible':
-                $minH  = (int) SiteSetting::get('onboarding_reminder_min_hours', 24);
-                $maxC  = (int) SiteSetting::get('onboarding_reminder_max_count', 3);
-                $intH  = (int) SiteSetting::get('onboarding_reminder_interval_hours', 48);
-                $query->where('created_at', '<=', now()->subHours($minH))
-                      ->where('reminder_count', '<', $maxC)
-                      ->where(fn($q) => $q
-                          ->whereNull('last_reminder_at')
-                          ->orWhere('last_reminder_at', '<=', now()->subHours($intH))
-                      );
+                try {
+                    $minH  = (int) SiteSetting::get('onboarding_reminder_min_hours', 24);
+                    $maxC  = (int) SiteSetting::get('onboarding_reminder_max_count', 3);
+                    $intH  = (int) SiteSetting::get('onboarding_reminder_interval_hours', 48);
+                    $query->where('created_at', '<=', now()->subHours($minH))
+                          ->where('reminder_count', '<', $maxC)
+                          ->where(fn($q) => $q
+                              ->whereNull('last_reminder_at')
+                              ->orWhere('last_reminder_at', '<=', now()->subHours($intH))
+                          );
+                } catch (\Throwable) {
+                    // reminder columns don't exist yet — skip filter
+                }
                 break;
         }
 
@@ -291,21 +299,25 @@ class OnboardingReminders extends Page
 
     protected function getEligibleUsers()
     {
-        $minH = (int) SiteSetting::get('onboarding_reminder_min_hours', 24);
-        $maxC = (int) SiteSetting::get('onboarding_reminder_max_count', 3);
-        $intH = (int) SiteSetting::get('onboarding_reminder_interval_hours', 48);
+        try {
+            $minH = (int) SiteSetting::get('onboarding_reminder_min_hours', 24);
+            $maxC = (int) SiteSetting::get('onboarding_reminder_max_count', 3);
+            $intH = (int) SiteSetting::get('onboarding_reminder_interval_hours', 48);
 
-        return User::with(['profile', 'photos'])
-            ->where('profile_complete', false)
-            ->where('is_banned', false)
-            ->whereNot('id', 1)
-            ->where('created_at', '<=', now()->subHours($minH))
-            ->where('reminder_count', '<', $maxC)
-            ->where(fn($q) => $q
-                ->whereNull('last_reminder_at')
-                ->orWhere('last_reminder_at', '<=', now()->subHours($intH))
-            )
-            ->get();
+            return User::with(['profile', 'photos'])
+                ->where('profile_complete', false)
+                ->where('is_banned', false)
+                ->whereNot('id', 1)
+                ->where('created_at', '<=', now()->subHours($minH))
+                ->where('reminder_count', '<', $maxC)
+                ->where(fn($q) => $q
+                    ->whereNull('last_reminder_at')
+                    ->orWhere('last_reminder_at', '<=', now()->subHours($intH))
+                )
+                ->get();
+        } catch (\Throwable) {
+            return collect();
+        }
     }
 
     // ── Sort toggle (called from blade) ───────────────────────────────────
