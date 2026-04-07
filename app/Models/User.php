@@ -35,6 +35,8 @@ use Spatie\Permission\Traits\HasRoles;
  * @property \Illuminate\Support\Carbon|null $last_active_at
  * @property bool $profile_complete
  * @property int $onboarding_step
+ * @property int $reminder_count
+ * @property \Illuminate\Support\Carbon|null $last_reminder_at
  * @property int $credit_balance
  * @property \Illuminate\Support\Carbon $created_at
  * @property \Illuminate\Support\Carbon $updated_at
@@ -54,6 +56,7 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser, Has
         'is_verified',
         'hide_last_seen',
         'last_active_at', 'profile_complete', 'onboarding_step',
+        'reminder_count', 'last_reminder_at',
         'secret_word',
         'totp_secret', 'totp_recovery_codes',
         'credit_balance',
@@ -114,6 +117,8 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser, Has
             'last_active_at'        => 'datetime',
             'email_otp_expires_at'  => 'datetime',
             'profile_complete'      => 'boolean',
+            'reminder_count'        => 'integer',
+            'last_reminder_at'      => 'datetime',
             'passport_mode'         => 'boolean',
             'totp_recovery_codes'   => 'array',
             'location_filter_uses'  => 'integer',
