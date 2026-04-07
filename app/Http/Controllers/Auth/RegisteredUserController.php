@@ -77,6 +77,9 @@ class RegisteredUserController extends Controller
         // Send a welcome email — swallow failures so registration always succeeds.
         try { $user->notify(new WelcomeNotification()); } catch (\Throwable) {}
 
+        // Notify admin via Telegram about the new registration.
+        try { app(\App\Services\TelegramNotificationService::class)->notifyNewRegistration($user->id); } catch (\Throwable) {}
+
         return redirect(route('setup.step', ['step' => 1]))->with('just_registered', true);
     }
 }
