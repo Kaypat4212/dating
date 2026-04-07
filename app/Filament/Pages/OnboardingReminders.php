@@ -290,9 +290,15 @@ class OnboardingReminders extends Page
                 break;
         }
 
-        $query->orderBy($this->sortField, $this->sortDir);
+        $allowed = ['name', 'email', 'created_at', 'last_active_at', 'onboarding_step'];
+        $sortField = in_array($this->sortField, $allowed) ? $this->sortField : 'created_at';
+        $query->orderBy($sortField, $this->sortDir);
 
-        return $query->paginate($this->perPage);
+        try {
+            return $query->paginate($this->perPage);
+        } catch (\Throwable) {
+            return new \Illuminate\Pagination\LengthAwarePaginator([], 0, $this->perPage);
+        }
     }
 
     // ── Eligible users query (for bulk send) ──────────────────────────────
@@ -362,8 +368,12 @@ class OnboardingReminders extends Page
         }
 
         // Step 5: Interests
-        if (!$profile || $profile->interests()->doesntExist()) {
-            $missing[] = 'Interests';
+        try {
+            if (!$profile || $profile->interests()->doesntExist()) {
+                $missing[] = 'Interests';
+            }
+        } catch (\Throwable) {
+            // pivot table may not exist yet
         }
 
         return $missing;
