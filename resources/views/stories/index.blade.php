@@ -41,14 +41,25 @@
                 <div style="font-size:.72rem;max-width:70px" class="text-truncate">{{ $storyUser->name }}</div>
             </div>
 
+            {{-- Own story view count badge --}}
+            @if($storyUser->id === auth()->id())
+            <div class="text-center mt-1" style="font-size:.68rem;color:#888">
+                <span class="story-vc-{{ $userId }}">👁 {{ $userStories->sum('views_count') }}</span>
+            </div>
+            @endif
+
             {{-- Story Modal --}}
-            <div class="modal fade" id="storyModal{{ $userId }}" tabindex="-1">
+            <div class="modal fade" id="storyModal{{ $userId }}" tabindex="-1"
+                 data-owner-id="{{ $userId }}" data-current-user="{{ auth()->id() }}">
                 <div class="modal-dialog modal-dialog-centered" style="max-width:400px">
                     <div class="modal-content border-0 bg-black">
                         <div class="modal-body p-0 position-relative" style="height:600px">
                             @foreach($userStories as $i => $story)
                             <div class="story-slide {{ $i === 0 ? 'd-flex' : 'd-none' }} align-items-center justify-content-center h-100 flex-column"
-                                 data-index="{{ $i }}" data-total="{{ $userStories->count() }}">
+                                 data-index="{{ $i }}" data-total="{{ $userStories->count() }}"
+                                 data-story-id="{{ $story->id }}"
+                                 data-is-mine="{{ $story->user_id === auth()->id() ? '1' : '0' }}"
+                                 data-view-count="{{ $story->views_count }}">
                                 @if($story->media_type === 'image')
                                 <img src="{{ asset('storage/'.$story->media_path) }}" class="mw-100 mh-100 object-fit-contain">
                                 @else
@@ -64,7 +75,11 @@
                                     <span class="text-white fw-semibold small">{{ $storyUser->name }}</span>
                                     <span class="text-white-50" style="font-size:.7rem">{{ $story->created_at->diffForHumans() }}</span>
                                     @if($story->user_id === auth()->id())
-                                    <form method="POST" action="{{ route('stories.destroy', $story->id) }}" class="ms-auto" onsubmit="return confirm('Delete this story?')">@csrf @method('DELETE')
+                                    <button class="btn btn-sm btn-outline-light py-0 ms-1"
+                                            onclick="showViewers({{ $story->id }}, event)" title="Who viewed?">
+                                        <i class="bi bi-eye"></i> <span id="vc-{{ $story->id }}">{{ $story->views_count }}</span>
+                                    </button>
+                                    <form method="POST" action="{{ route('stories.destroy', $story->id) }}" class="ms-1" onsubmit="return confirm('Delete this story?');">@csrf @method('DELETE')
                                         <button class="btn btn-sm btn-outline-light py-0"><i class="bi bi-trash"></i></button>
                                     </form>
                                     @endif
@@ -124,15 +139,77 @@
 
 @push('scripts')
 <script>
+/* ── Story view tracking ── */
+const _viewedStories = new Set();
+
+function trackView(storyId) {
+    if (!storyId || _viewedStories.has(storyId)) return;
+    _viewedStories.add(storyId);
+    fetch(`/stories/${storyId}/view`, {
+        method: 'POST',
+        headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content },
+    });
+}
+
 function advanceStory(modal) {
     const slides = modal.querySelectorAll('.story-slide');
     let current  = [...slides].findIndex(s => s.classList.contains('d-flex'));
     if (current < slides.length - 1) {
-        slides[current].classList.replace('d-flex','d-none');
-        slides[current + 1].classList.replace('d-none','d-flex');
+        slides[current].classList.replace('d-flex', 'd-none');
+        const next = slides[current + 1];
+        next.classList.replace('d-none', 'd-flex');
+        trackView(next.dataset.storyId);
     } else {
         bootstrap.Modal.getInstance(modal).hide();
     }
 }
+
+/* Auto-track first slide when a story modal opens */
+document.addEventListener('show.bs.modal', function(e) {
+    const modal = e.target;
+    if (!modal.id.startsWith('storyModal')) return;
+    const firstSlide = modal.querySelector('.story-slide[data-index="0"]');
+    if (firstSlide) trackView(firstSlide.dataset.storyId);
+});
+
+/* ── Who viewed? ── */
+function showViewers(storyId, evt) {
+    if (evt) evt.stopPropagation();
+    const panel = document.getElementById('viewersPanel');
+    const body  = document.getElementById('viewersList');
+    body.innerHTML = '<div class="text-center py-3"><div class="spinner-border spinner-border-sm"></div></div>';
+    panel.classList.add('show');
+    fetch(`/stories/${storyId}/viewers`)
+        .then(r => r.json())
+        .then(data => {
+            if (!data.viewers.length) {
+                body.innerHTML = '<p class="text-muted text-center py-3">No views yet</p>';
+                return;
+            }
+            body.innerHTML = data.viewers.map(v => `
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <img src="${v.photo || '/img/default-avatar.png'}" width="40" height="40"
+                         class="rounded-circle object-fit-cover" alt="${v.name}">
+                    <div class="flex-grow-1">
+                        <div class="fw-semibold small">${v.name}</div>
+                        <div class="text-muted" style="font-size:.7rem">${v.viewed_at}</div>
+                    </div>
+                </div>`).join('');
+        })
+        .catch(() => { body.innerHTML = '<p class="text-danger text-center py-3">Failed to load</p>'; });
+}
 </script>
+
+{{-- Viewers slide-up side panel --}}
+<div id="viewersPanel" style="position:fixed;bottom:0;right:0;width:300px;max-height:60vh;
+     background:var(--bs-body-bg);border-radius:12px 0 0 0;box-shadow:-4px -4px 20px rgba(0,0,0,.15);
+     transform:translateX(100%);transition:transform .3s ease;z-index:2000;display:flex;flex-direction:column"
+     class="">
+    <div class="d-flex align-items-center justify-content-between p-3 border-bottom">
+        <strong>👁 Who Viewed</strong>
+        <button class="btn-close" onclick="document.getElementById('viewersPanel').classList.remove('show')"></button>
+    </div>
+    <div id="viewersList" class="p-3 overflow-auto flex-grow-1"></div>
+</div>
+<style>#viewersPanel.show{transform:translateX(0)}</style>
 @endpush

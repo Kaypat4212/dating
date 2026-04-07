@@ -451,6 +451,108 @@
         </div>
 
     </form>
+
+    {{-- ── Saved Filter Packs (edit mode + premium) ─── --}}
+    @if(isset($is_edit))
+    <div class="mt-4 rounded-4 p-4" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1)">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+            <div>
+                <h6 class="mb-0 fw-bold" style="color:#e2e8f0">
+                    <i class="bi bi-bookmark-star me-2" style="color:#f9a8d4"></i>Saved Filter Packs
+                </h6>
+                <p class="mb-0 small mt-1" style="color:rgba(255,255,255,.45)">Save your current filters as a named pack and apply them in one click.</p>
+            </div>
+            @if($is_premium)
+                <button type="button" class="btn btn-sm fw-semibold"
+                        style="background:linear-gradient(135deg,#f43f5e,#a855f7);color:#fff;border:none;border-radius:.75rem;white-space:nowrap"
+                        data-bs-toggle="modal" data-bs-target="#saveFilterModal">
+                    <i class="bi bi-plus-lg me-1"></i>Save Current
+                </button>
+            @else
+                <span class="badge rounded-pill px-3 py-2" style="background:rgba(249,168,212,.15);color:#f9a8d4;font-size:.78rem">
+                    <i class="bi bi-lock-fill me-1"></i>Premium
+                </span>
+            @endif
+        </div>
+
+        {{-- Existing packs list --}}
+        <div id="filterPacksList">
+            @forelse(auth()->user()->savedFilters()->orderBy('is_default','desc')->orderBy('created_at')->get() as $pack)
+            <div class="d-flex align-items-center justify-content-between mb-2 rounded-3 px-3 py-2"
+                 style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08)"
+                 id="fp-row-{{ $pack->id }}">
+                <div class="d-flex align-items-center gap-2">
+                    @if($pack->is_default)
+                        <i class="bi bi-star-fill" style="color:#fbbf24;font-size:.85rem" title="Default pack"></i>
+                    @else
+                        <i class="bi bi-star" style="color:rgba(255,255,255,.3);font-size:.85rem"></i>
+                    @endif
+                    <span class="fw-semibold" style="color:#e2e8f0;font-size:.9rem">{{ $pack->name }}</span>
+                    <span class="small" style="color:rgba(255,255,255,.3)">{{ count($pack->criteria) }} filter(s)</span>
+                </div>
+                <div class="d-flex gap-2">
+                    @unless($pack->is_default)
+                    <button type="button" class="btn btn-sm" title="Set as default"
+                            style="background:rgba(251,191,36,.15);border:1px solid rgba(251,191,36,.3);color:#fbbf24;border-radius:.5rem;font-size:.78rem"
+                            onclick="fpSetDefault({{ $pack->id }})">
+                        <i class="bi bi-star"></i>
+                    </button>
+                    @endunless
+                    <button type="button" class="btn btn-sm" title="Delete pack"
+                            style="background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.3);color:#f87171;border-radius:.5rem;font-size:.78rem"
+                            onclick="fpDelete({{ $pack->id }})">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+            </div>
+            @empty
+            <p id="fpEmpty" class="mb-0 small text-center py-3" style="color:rgba(255,255,255,.3)">No saved packs yet.</p>
+            @endforelse
+        </div>
+
+        @unless($is_premium)
+        <div class="mt-2 rounded-3 p-3 text-center" style="background:rgba(249,168,212,.06);border:1px dashed rgba(249,168,212,.25)">
+            <p class="mb-1 small fw-semibold" style="color:#f9a8d4"><i class="bi bi-stars me-1"></i>Premium Feature</p>
+            <p class="mb-2 small" style="color:rgba(255,255,255,.45)">Upgrade to save up to 10 filter presets and switch between them instantly.</p>
+            <a href="{{ route('premium.index') }}" class="btn btn-sm fw-semibold"
+               style="background:linear-gradient(135deg,#f43f5e,#a855f7);color:#fff;border:none;border-radius:.65rem">
+                Upgrade to Premium
+            </a>
+        </div>
+        @endunless
+    </div>
+
+    {{-- Save Filter Modal --}}
+    @if($is_premium)
+    <div class="modal fade" id="saveFilterModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content" style="background:#1e1e2e;border:1px solid rgba(255,255,255,.15);border-radius:1.2rem">
+                <div class="modal-header border-0 pb-0">
+                    <h6 class="modal-title fw-bold" style="color:#e2e8f0"><i class="bi bi-bookmark-plus me-2" style="color:#f9a8d4"></i>Save Filter Pack</h6>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <label for="fpName" class="form-label small fw-semibold" style="color:rgba(255,255,255,.6)">Pack Name</label>
+                    <input type="text" id="fpName" class="form-control" maxlength="80"
+                           style="background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.15);color:#fff;border-radius:.75rem"
+                           placeholder="e.g. Casual Weekend, Serious Match…">
+                    <div id="fpError" class="mt-2 small" style="color:#f87171;display:none"></div>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-sm" data-bs-dismiss="modal"
+                            style="background:rgba(255,255,255,.08);color:#fff;border:none;border-radius:.65rem">Cancel</button>
+                    <button type="button" id="fpSaveBtn" class="btn btn-sm fw-semibold"
+                            style="background:linear-gradient(135deg,#f43f5e,#a855f7);color:#fff;border:none;border-radius:.65rem"
+                            onclick="fpSave()">
+                        <i class="bi bi-bookmark-check me-1"></i>Save Pack
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
+    @endif
+
 </div>
 @endsection
 
@@ -704,3 +806,94 @@
 </script>
 @endpush
 
+@if(isset($is_edit) && $is_premium)
+@push('scripts')
+<script>
+// ── Filter Packs JS ───────────────────────────────────────────────────────────
+const FP_CSRF = document.querySelector('meta[name="csrf-token"]')?.content ?? '';
+
+function fpCurrentCriteria() {
+    const form = document.querySelector('form[action="{{ route('preferences.update') }}"]');
+    if (!form) return {};
+    const data = new FormData(form);
+    const out  = {};
+    for (const [k, v] of data.entries()) {
+        if (['_token', '_method'].includes(k)) continue;
+        if (k.endsWith('[]')) {
+            const key = k.slice(0, -2);
+            out[key]  = out[key] ? [...out[key], v] : [v];
+        } else {
+            out[k] = v;
+        }
+    }
+    return out;
+}
+
+async function fpSave() {
+    const name = document.getElementById('fpName').value.trim();
+    const errEl = document.getElementById('fpError');
+    errEl.style.display = 'none';
+    if (!name) { errEl.textContent = 'Please enter a name.'; errEl.style.display = 'block'; return; }
+
+    const btn = document.getElementById('fpSaveBtn');
+    btn.disabled = true;
+    try {
+        const res = await fetch('{{ route('filter-packs.store') }}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': FP_CSRF, 'Accept': 'application/json' },
+            body: JSON.stringify({ name, criteria: fpCurrentCriteria(), is_default: false }),
+        });
+        const json = await res.json();
+        if (!res.ok) { errEl.textContent = json.error ?? 'Error saving pack.'; errEl.style.display = 'block'; return; }
+        bootstrap.Modal.getInstance(document.getElementById('saveFilterModal'))?.hide();
+        document.getElementById('fpName').value = '';
+        fpAddRow(json);
+        document.getElementById('fpEmpty')?.remove();
+    } catch (e) {
+        errEl.textContent = 'Network error. Try again.'; errEl.style.display = 'block';
+    } finally {
+        btn.disabled = false;
+    }
+}
+
+function fpAddRow(pack) {
+    const list = document.getElementById('filterPacksList');
+    const row  = document.createElement('div');
+    row.id = 'fp-row-' + pack.id;
+    row.className = 'd-flex align-items-center justify-content-between mb-2 rounded-3 px-3 py-2';
+    row.style.cssText = 'background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08)';
+    row.innerHTML = `
+        <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-star" style="color:rgba(255,255,255,.3);font-size:.85rem"></i>
+            <span class="fw-semibold" style="color:#e2e8f0;font-size:.9rem">${pack.name}</span>
+        </div>
+        <div class="d-flex gap-2">
+            <button type="button" class="btn btn-sm" title="Set as default"
+                    style="background:rgba(251,191,36,.15);border:1px solid rgba(251,191,36,.3);color:#fbbf24;border-radius:.5rem;font-size:.78rem"
+                    onclick="fpSetDefault(${pack.id})"><i class="bi bi-star"></i></button>
+            <button type="button" class="btn btn-sm" title="Delete pack"
+                    style="background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.3);color:#f87171;border-radius:.5rem;font-size:.78rem"
+                    onclick="fpDelete(${pack.id})"><i class="bi bi-trash"></i></button>
+        </div>`;
+    list.appendChild(row);
+}
+
+async function fpDelete(id) {
+    if (!confirm('Delete this filter pack?')) return;
+    const res = await fetch(`/filter-packs/${id}`, {
+        method: 'DELETE',
+        headers: { 'X-CSRF-TOKEN': FP_CSRF, 'Accept': 'application/json' },
+    });
+    if (res.ok) document.getElementById('fp-row-' + id)?.remove();
+}
+
+async function fpSetDefault(id) {
+    const res = await fetch(`/filter-packs/${id}/default`, {
+        method: 'POST',
+        headers: { 'X-CSRF-TOKEN': FP_CSRF, 'Accept': 'application/json' },
+    });
+    if (res.ok) location.reload();
+}
+</script>
+@endpush
+@endif

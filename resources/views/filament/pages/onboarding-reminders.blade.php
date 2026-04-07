@@ -256,6 +256,108 @@
         </div>
     </div>
 
+    {{-- ── Reminder Email Template ─────────────────────────────────────── --}}
+    @php
+        $tplVars = [
+            '{user_name}'     => "Recipient's display name",
+            '{app_name}'      => 'Your site name (from config)',
+            '{app_url}'       => 'Site base URL',
+            '{setup_url}'     => 'Direct link to the next onboarding step',
+            '{missing_list}'  => 'HTML <li> list of missing items',
+            '{admin_message}' => 'Custom message from Reminder Settings',
+        ];
+    @endphp
+    <div class="or-card">
+        <div class="or-card-header">
+            <div class="or-card-title">
+                <x-heroicon-o-envelope-open class="w-5 h-5" style="color:var(--green)" />
+                Reminder Email Template
+                <span class="or-badge gray" style="font-weight:500;font-size:.7rem">key: profile_reminder</span>
+            </div>
+            <button wire:click="saveEmailTemplate" wire:loading.attr="disabled" class="or-btn or-btn-primary" style="padding:.45rem 1.1rem;font-size:.8rem">
+                <span wire:loading.remove wire:target="saveEmailTemplate" style="display:inline-flex;align-items:center;gap:.35rem">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="or-btn-sm"><path d="M10.75 2.75a.75.75 0 0 0-1.5 0v8.614L6.295 8.235a.75.75 0 1 0-1.09 1.03l4.25 4.5a.75.75 0 0 0 1.09 0l4.25-4.5a.75.75 0 0 0-1.09-1.03l-2.955 3.129V2.75Z"/></svg>
+                    Save Template
+                </span>
+                <span wire:loading wire:target="saveEmailTemplate" style="display:inline-flex;align-items:center;gap:.35rem">
+                    <svg style="animation:akt-spin .7s linear infinite;width:13px;height:13px" fill="none" viewBox="0 0 24 24"><circle style="opacity:.3" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path style="opacity:.75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>
+                    Saving…
+                </span>
+            </button>
+        </div>
+        <div class="or-card-body" style="display:flex;flex-direction:column;gap:1.25rem">
+
+            {{-- Variables cheat-sheet --}}
+            <div style="background:var(--bg1);border:1px solid var(--border);border-radius:10px;padding:1rem 1.25rem">
+                <p style="font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--txt3);margin:0 0 .6rem">Available placeholders</p>
+                <div style="display:flex;flex-wrap:wrap;gap:.4rem .6rem">
+                    @foreach($tplVars as $token => $desc)
+                        <span
+                            title="{{ $desc }}"
+                            style="font-family:ui-monospace,monospace;font-size:.75rem;background:var(--bg2);border:1px solid var(--border2);color:var(--txt2);padding:2px 9px;border-radius:5px;cursor:default"
+                        >{{ $token }}</span>
+                    @endforeach
+                </div>
+                <p style="font-size:.72rem;color:var(--txt3);margin:.6rem 0 0">Hover a token for its description. <strong>{missing_list}</strong> renders as HTML <code style="font-size:.7rem">&lt;li&gt;</code> items — wrap with <code style="font-size:.7rem">&lt;ul&gt;…&lt;/ul&gt;</code> in your body.</p>
+            </div>
+
+            {{-- Subject --}}
+            <div style="display:flex;flex-direction:column;gap:.4rem">
+                <label style="font-size:.82rem;font-weight:600;color:var(--txt2)">
+                    Email Subject <span style="color:var(--red)">*</span>
+                </label>
+                <input
+                    type="text"
+                    wire:model.blur="tplSubject"
+                    placeholder="e.g. Complete your profile 💕"
+                    style="width:100%;padding:.6rem .9rem;background:var(--bg1);border:1.5px solid var(--border2);border-radius:8px;font-size:.875rem;color:var(--txt);outline:none"
+                    onfocus="this.style.borderColor='var(--blue)'"
+                    onblur="this.style.borderColor='var(--border2)'"
+                />
+                @error('tplSubject') <p style="font-size:.75rem;color:var(--red);margin:0">{{ $message }}</p> @enderror
+            </div>
+
+            {{-- Body --}}
+            <div style="display:flex;flex-direction:column;gap:.4rem">
+                <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem">
+                    <label style="font-size:.82rem;font-weight:600;color:var(--txt2)">
+                        Email Body (HTML) <span style="color:var(--red)">*</span>
+                    </label>
+                    <div style="display:flex;gap:.5rem;align-items:center">
+                        <span style="font-size:.72rem;color:var(--txt3)">Preview:</span>
+                        <button
+                            type="button"
+                            onclick="document.getElementById('or-preview-frame').srcdoc = document.getElementById('or-tpl-body-input').value; document.getElementById('or-preview-panel').style.display = document.getElementById('or-preview-panel').style.display === 'none' ? 'block' : 'none'"
+                            class="or-btn or-btn-ghost"
+                            style="padding:3px 10px;font-size:.72rem"
+                        >Toggle Preview</button>
+                    </div>
+                </div>
+                <textarea
+                    id="or-tpl-body-input"
+                    wire:model.blur="tplBody"
+                    rows="18"
+                    placeholder="Write HTML here… use {placeholder} tokens."
+                    style="width:100%;padding:.75rem .9rem;background:var(--bg1);border:1.5px solid var(--border2);border-radius:8px;font-size:.8rem;font-family:ui-monospace,monospace;color:var(--txt);outline:none;resize:vertical;line-height:1.6"
+                    onfocus="this.style.borderColor='var(--blue)'"
+                    onblur="this.style.borderColor='var(--border2)'"
+                >{{ $this->tplBody }}</textarea>
+                @error('tplBody') <p style="font-size:.75rem;color:var(--red);margin:0">{{ $message }}</p> @enderror
+            </div>
+
+            {{-- Live preview pane --}}
+            <div id="or-preview-panel" style="display:none">
+                <p style="font-size:.78rem;font-weight:600;color:var(--txt2);margin:0 0 .5rem">HTML Preview (click "Toggle Preview" to refresh)</p>
+                <iframe
+                    id="or-preview-frame"
+                    style="width:100%;height:500px;border:1.5px solid var(--border2);border-radius:10px;background:#fff"
+                    sandbox="allow-same-origin"
+                ></iframe>
+            </div>
+
+        </div>
+    </div>
+
     {{-- ── Incomplete Users Table ───────────────────────────────────────── --}}
     <div class="or-card">
         <div class="or-card-header">

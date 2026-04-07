@@ -3,77 +3,87 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Services\CompatibilityService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 class DailyMatchController extends Controller
 {
+    public function __construct(private readonly CompatibilityService $compat) {}
+
     /**
-     * Return today's curated daily match for the authenticated user.
-     * Uses a seeded random based on user-id + today's date for consistency.
-     * Prioritises same country + state, then falls back to same country only.
+     * Return today's curated daily spark for the authenticated user.
+     * Picks the highest-compatibility unseen candidate for today; uses a 24-h
+     * cache so the result is stable across page reloads.
      */
     public function show(Request $request)
     {
-        $user    = $request->user();
+        $user    = $request->user()->load(['profile.interests', 'preferences']);
         $profile = $user->profile;
 
-        $userCountry = $profile->country ?? null;
-        $userState   = $profile->state   ?? null;
+        $cacheKey = "daily_spark_{$user->id}_" . now()->toDateString();
 
-        // Seed random with user id + date so it stays stable for 24h
-        $seed = (int) ($user->id . now()->format('Ymd'));
-        mt_srand($seed % PHP_INT_MAX);
+        $matchData = Cache::remember($cacheKey, now()->endOfDay(), function () use ($user, $profile) {
+            $userCountry = $profile?->country ?? null;
+            $userState   = $profile?->state   ?? null;
 
-        $baseQuery = fn () => User::where('users.id', '!=', $user->id)
-            ->where('is_banned', false)
-            ->where('profile_complete', true)
-            ->whereNotNull('email_verified_at')
-            ->whereNotNull('username')
-            ->when($user->seeking !== 'everyone', function ($q) use ($user) {
-                $q->where('gender', $user->seeking);
-            })
-            ->join('profiles', 'profiles.user_id', '=', 'users.id')
-            ->with('profile', 'primaryPhoto')
-            ->select('users.*');
+            $seed = (int) ($user->id . now()->format('Ymd'));
 
-        $match = null;
+            $baseQuery = fn () => User::where('users.id', '!=', $user->id)
+                ->where('is_banned', false)
+                ->where('profile_complete', true)
+                ->whereNotNull('email_verified_at')
+                ->whereNotNull('username')
+                ->when($user->seeking && $user->seeking !== 'everyone', fn ($q) => $q->where('gender', $user->seeking))
+                ->join('profiles', 'profiles.user_id', '=', 'users.id')
+                ->where('profiles.is_paused', false)
+                ->with(['profile.interests', 'primaryPhoto'])
+                ->select('users.*');
 
-        // 1️⃣ Try: same country + same state (most local)
-        if ($userCountry && $userState) {
-            $match = $baseQuery()
-                ->where('profiles.country', $userCountry)
-                ->where('profiles.state',   $userState)
-                ->orderByRaw('RAND(' . $seed . ')')
-                ->first();
-        }
+            // Candidate pool: prefer same country+state, fall back to country, then global
+            $candidates = null;
+            if ($userCountry && $userState) {
+                $candidates = $baseQuery()->where('profiles.country', $userCountry)->where('profiles.state', $userState)->inRandomOrder()->limit(30)->get();
+            }
+            if ((!$candidates || $candidates->isEmpty()) && $userCountry) {
+                $candidates = $baseQuery()->where('profiles.country', $userCountry)->inRandomOrder()->limit(30)->get();
+            }
+            if (!$candidates || $candidates->isEmpty()) {
+                $candidates = $baseQuery()->orderByRaw('RAND(' . $seed . ')')->limit(30)->get();
+            }
 
-        // 2️⃣ Fallback: same country only
-        if (! $match && $userCountry) {
-            $match = $baseQuery()
-                ->where('profiles.country', $userCountry)
-                ->orderByRaw('RAND(' . $seed . ')')
-                ->first();
-        }
+            if ($candidates->isEmpty()) {
+                return null;
+            }
 
-        // 3️⃣ Last resort: any user (original behaviour, no location filter)
-        if (! $match) {
-            $match = $baseQuery()
-                ->orderByRaw('RAND(' . $seed . ')')
-                ->first();
-        }
+            // Pick the highest-compatibility candidate
+            $best      = null;
+            $bestScore = -1;
+            foreach ($candidates as $candidate) {
+                $score = $this->compat->score($user, $candidate);
+                if ($score > $bestScore) {
+                    $bestScore = $score;
+                    $best      = $candidate;
+                }
+            }
 
-        return response()->json([
-            'match' => $match ? [
-                'id'       => $match->id,
-                'name'     => $match->name,
-                'age'      => $match->age,
-                'city'     => optional($match->profile)->city,
-                'country'  => optional($match->profile)->country,
-                'state'    => optional($match->profile)->state,
-                'headline' => optional($match->profile)->headline,
-                'photo'    => optional($match->primaryPhoto)->thumbnail_url,
-                'username' => $match->username,
-            ] : null,
-        ]);
+            if (!$best) return null;
+
+            return [
+                'id'            => $best->id,
+                'name'          => $best->name,
+                'age'           => $best->age,
+                'city'          => optional($best->profile)->city,
+                'country'       => optional($best->profile)->country,
+                'state'         => optional($best->profile)->state,
+                'headline'      => optional($best->profile)->headline,
+                'photo'         => optional($best->primaryPhoto)->thumbnail_url,
+                'username'      => $best->username,
+                'compat_score'  => $bestScore,
+                'is_verified'   => (bool) $best->is_verified,
+            ];
+        });
+
+        return response()->json(['match' => $matchData]);
     }
 }

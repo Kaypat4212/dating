@@ -424,6 +424,29 @@ main { padding-bottom: 0 !important; }
   border-color: rgba(251,191,36,.5) !important;
   color: #fde68a !important;
 }
+
+/* ── Deck / Top Picks tabs ─────────────────────────── */
+.deck-tab-btn {
+  flex: 1; border: none; border-radius: 12px; padding: .5rem 0;
+  font-weight: 600; font-size: .85rem; cursor: pointer;
+  background: rgba(255,255,255,.06); color: rgba(255,255,255,.55);
+  transition: background .2s, color .2s;
+}
+.deck-tab-btn.active {
+  background: linear-gradient(135deg, var(--hc-purple), var(--hc-pink));
+  color: #fff;
+}
+/* Top Picks list */
+#topPicksPanel { display: none }
+.tp-card {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 12px; border-radius: 14px; cursor: pointer;
+  background: rgba(255,255,255,.05); margin-bottom: 8px;
+  border: 1px solid rgba(255,255,255,.08); text-decoration: none;
+}
+.tp-card:hover { background: rgba(255,255,255,.1) }
+.tp-card img { width:54px; height:54px; border-radius: 50%; object-fit: cover; }
+.tp-compat { font-size:.75rem; font-weight:700; color:#f59e0b }
 </style>
 @endpush
 
@@ -460,6 +483,19 @@ main { padding-bottom: 0 !important; }
             </a>
         </div>
     </div>
+
+    {{-- Deck / Top Picks tab switcher --}}
+    <div class="d-flex gap-2 mb-3">
+        <button id="tabDeck" class="deck-tab-btn active" onclick="switchDeckTab('deck')">
+            <i class="bi bi-shuffle me-1"></i>Discover
+        </button>
+        <button id="tabTopPicks" class="deck-tab-btn" onclick="switchDeckTab('toppicks')">
+            <i class="bi bi-stars me-1"></i>Top Picks
+        </button>
+    </div>
+
+    {{-- Top Picks panel (hidden by default) --}}
+    <div id="topPicksPanel"></div>
 
     @if($profiles->isEmpty())
     <div class="empty-state">
@@ -1344,5 +1380,58 @@ document.addEventListener('visibilitychange', () => {
         startSwipeCountdown(knownDate);
     }
 });
+
+/* ── Top Picks tab ─────────────────────────────────────── */
+let _topPicksLoaded = false;
+
+function switchDeckTab(tab) {
+    const deckWrap     = document.getElementById('swipe-stack') ?? document.querySelector('.empty-state');
+    const topPanel     = document.getElementById('topPicksPanel');
+    const btnDeck      = document.getElementById('tabDeck');
+    const btnTopPicks  = document.getElementById('tabTopPicks');
+
+    if (tab === 'toppicks') {
+        if (deckWrap) deckWrap.style.display = 'none';
+        topPanel.style.display = 'block';
+        btnDeck.classList.remove('active');
+        btnTopPicks.classList.add('active');
+        if (!_topPicksLoaded) loadTopPicks();
+    } else {
+        if (deckWrap) deckWrap.style.display = '';
+        topPanel.style.display = 'none';
+        btnDeck.classList.add('active');
+        btnTopPicks.classList.remove('active');
+    }
+}
+
+function loadTopPicks() {
+    _topPicksLoaded = true;
+    const panel = document.getElementById('topPicksPanel');
+    panel.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-light"></div><p class="text-white-50 mt-2">Calculating best matches…</p></div>';
+    fetch('{{ route("swipe.top-picks") }}')
+        .then(r => r.json())
+        .then(data => {
+            if (!data.profiles || !data.profiles.length) {
+                panel.innerHTML = '<p class="text-white-50 text-center py-4">No top picks available yet. Keep swiping!</p>';
+                return;
+            }
+            panel.innerHTML = '<h6 class="text-white fw-bold mb-3"><i class="bi bi-stars text-warning me-1"></i>Your Top Picks today</h6>'
+                + data.profiles.map((p, i) => `
+                    <a href="/profile/${p.username ?? p.id}" class="tp-card">
+                        <div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#ff3e6c);
+                                    display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:.75rem;flex-shrink:0">
+                            ${i + 1}
+                        </div>
+                        <img src="${p.primary_photo?.thumbnail_url ?? p.primaryPhoto?.thumbnail_url ?? '/img/default-avatar.png'}"
+                             alt="${p.name}" onerror="this.src='/img/default-avatar.png'">
+                        <div class="flex-grow-1">
+                            <div class="text-white fw-semibold small">${p.name}</div>
+                            <div class="text-white-50" style="font-size:.72rem">${p.profile?.city ?? ''}</div>
+                        </div>
+                        <div class="tp-compat">${Math.round(p.compat_score ?? 0)}% match</div>
+                    </a>`).join('');
+        })
+        .catch(() => { panel.innerHTML = '<p class="text-danger text-center py-4">Failed to load top picks.</p>'; });
+}
 </script>
 @endsection

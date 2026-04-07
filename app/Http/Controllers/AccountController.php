@@ -196,4 +196,82 @@ class AccountController extends Controller
 
         return back()->with('success', 'Notification preferences saved.');
     }
+
+    // ─────────────────────────────────────────────────────────
+    // 2FA / TOTP
+    // ─────────────────────────────────────────────────────────
+
+    /**
+     * Return a JSON object with the TOTP setup data (QR svg + secret).
+     * Called via fetch() before the user has confirmed the code.
+     */
+    public function totpSetup(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $user   = $request->user();
+        $g2fa   = new \PragmaRX\Google2FA\Google2FA();
+        $secret = $user->totp_secret ?? $g2fa->generateSecretKey();
+
+        // Temporarily stash the generated secret in the session (not saved until confirmed)
+        session(['totp_pending_secret' => $secret]);
+
+        $qrUrl = $g2fa->getQRCodeUrl(
+            config('app.name'),
+            $user->email,
+            $secret
+        );
+
+        // Use a simple backend QR renderer via Google2FAQRCode
+        $renderer = new \PragmaRX\Google2FAQRCode\Google2FA();
+        $qrSvg    = $renderer->getQRCodeInline(
+            config('app.name'),
+            $user->email,
+            $secret,
+            200
+        );
+
+        return response()->json([
+            'secret' => $secret,
+            'qr'     => $qrSvg,
+        ]);
+    }
+
+    /**
+     * Confirm and enable TOTP 2FA after the user has scanned the QR code
+     * and entered a valid one-time code.
+     */
+    public function totpEnable(Request $request): RedirectResponse
+    {
+        $request->validate(['totp_code' => ['required', 'digits:6']]);
+
+        $secret = session('totp_pending_secret');
+        if (! $secret) {
+            return back()->withErrors(['totp_code' => 'Session expired. Please start the 2FA setup again.']);
+        }
+
+        $g2fa = new \PragmaRX\Google2FA\Google2FA();
+        if (! $g2fa->verifyKey($secret, $request->totp_code)) {
+            return back()->withErrors(['totp_code' => 'Invalid code. Please try again.']);
+        }
+
+        $request->user()->forceFill(['totp_secret' => $secret])->save();
+        session()->forget('totp_pending_secret');
+
+        return back()->with('success', '2FA enabled! Your account is now protected by an authenticator app.');
+    }
+
+    /**
+     * Disable TOTP 2FA after the user confirms with their current password.
+     */
+    public function totpDisable(Request $request): RedirectResponse
+    {
+        $request->validate(['password' => ['required', 'current_password']]);
+
+        $request->user()->forceFill([
+            'totp_secret'         => null,
+            'totp_recovery_codes' => null,
+        ])->save();
+
+        return back()->with('success', '2FA has been disabled.');
+    }
 }
+

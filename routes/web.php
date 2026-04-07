@@ -86,6 +86,10 @@ Route::get('/ref/{code}', [InviteController::class, 'track'])
     ->name('invite.track')
     ->where('code', '[A-Za-z0-9]{4,12}');
 
+// ─── Google OAuth ─────────────────────────────────────────────────────────────
+Route::get('/auth/google',          [\App\Http\Controllers\Auth\GoogleController::class, 'redirect'])->name('auth.google');
+Route::get('/auth/google/callback', [\App\Http\Controllers\Auth\GoogleController::class, 'callback'])->name('auth.google.callback');
+
 // Signed one-click admin funding actions (approve/reject from email/Telegram)
 Route::get('/admin/funding-actions/{payment}/{action}/{admin}', [FundingActionController::class, 'handle'])
     ->whereIn('action', ['approve', 'reject'])
@@ -148,12 +152,21 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/preferences',              [ProfileSetupController::class, 'editPreferences'])->name('preferences.edit');
         Route::post('/preferences',             [ProfileSetupController::class, 'updatePreferences'])->name('preferences.update');
 
+        // Saved filter packs (Premium)
+        Route::prefix('filter-packs')->name('filter-packs.')->group(function () {
+            Route::get('/',             [\App\Http\Controllers\FilterPackController::class, 'index'])->name('index');
+            Route::post('/',            [\App\Http\Controllers\FilterPackController::class, 'store'])->name('store');
+            Route::post('/{pack}/default', [\App\Http\Controllers\FilterPackController::class, 'setDefault'])->name('default');
+            Route::delete('/{pack}',    [\App\Http\Controllers\FilterPackController::class, 'destroy'])->name('destroy');
+        });
+
         // Discover / Browse grid
         Route::get('/discover',                 [DiscoverController::class, 'index'])->name('discover.index');
 
         // Swipe deck
         Route::get('/swipe',                    [SwipeController::class, 'deck'])->name('swipe.deck');
         Route::get('/swipe/deck',               [SwipeController::class, 'fetchDeck'])->name('swipe.fetch');
+        Route::get('/swipe/top-picks',          [SwipeController::class, 'topPicks'])->name('swipe.top-picks');
 
         // Profile viewing / editing
         Route::get('/profile/me/edit',          [DatingProfileController::class, 'editDating'])->name('profile.edit');
@@ -237,6 +250,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/account/blocked',          [AccountController::class, 'blockedUsers'])->name('account.blocked');
         Route::post('/account/secret-word',     [AccountController::class, 'saveSecretWord'])->name('account.secret-word');
         Route::post('/account/notification-preferences', [AccountController::class, 'updateNotificationPreferences'])->name('account.notification-prefs');
+        Route::get('/account/2fa/setup',              [AccountController::class, 'totpSetup'])->name('account.2fa.setup');
+        Route::post('/account/2fa/enable',            [AccountController::class, 'totpEnable'])->name('account.2fa.enable');
+        Route::post('/account/2fa/disable',           [AccountController::class, 'totpDisable'])->name('account.2fa.disable');
 
         // ── Waves / Wink ──────────────────────────────────────────────────────
         Route::post('/wave/{user}',             [WaveController::class, 'store'])->name('wave.store');
@@ -244,9 +260,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/waves/seen',              [WaveController::class, 'markSeen'])->name('wave.seen');
 
         // ── Stories ───────────────────────────────────────────────────────────
-        Route::get('/stories',                  [StoryController::class, 'index'])->name('stories.index');
-        Route::post('/stories',                 [StoryController::class, 'store'])->name('stories.store');
-        Route::delete('/stories/{story}',       [StoryController::class, 'destroy'])->name('stories.destroy');
+        Route::get('/stories',                          [StoryController::class, 'index'])->name('stories.index');
+        Route::post('/stories',                         [StoryController::class, 'store'])->name('stories.store');
+        Route::post('/stories/{story}/view',            [StoryController::class, 'markViewed'])->name('stories.view');
+        Route::get('/stories/{story}/viewers',          [StoryController::class, 'viewers'])->name('stories.viewers');
+        Route::delete('/stories/{story}',               [StoryController::class, 'destroy'])->name('stories.destroy');
 
         // ── Boost ─────────────────────────────────────────────────────────────
         Route::post('/boost',                   [BoostController::class, 'store'])->name('boost.store');

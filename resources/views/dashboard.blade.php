@@ -132,6 +132,34 @@
             </div>
         </div>
 
+        {{-- Birthday Spotlight --}}
+        @if($birthdayUsers->isNotEmpty())
+        <div class="col-12">
+            <h5 class="fw-bold mb-3">🎂 Birthday Spotlight</h5>
+            <div class="d-flex flex-wrap gap-3">
+                @foreach($birthdayUsers as $bUser)
+                <a href="{{ route('profile.view', $bUser->username ?? $bUser->id) }}" class="text-decoration-none">
+                    <div class="d-flex align-items-center gap-2 px-3 py-2 rounded-3 shadow-sm"
+                         style="background:linear-gradient(135deg,rgba(244,143,177,.18),rgba(206,147,216,.18));border:1px solid rgba(244,143,177,.35)">
+                        @if($bUser->primaryPhoto)
+                        <img src="{{ $bUser->primaryPhoto->thumbnail_url }}" width="40" height="40"
+                             class="rounded-circle object-fit-cover" alt="{{ $bUser->name }}">
+                        @else
+                        <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center" style="width:40px;height:40px">
+                            <i class="bi bi-person-fill text-white"></i>
+                        </div>
+                        @endif
+                        <div>
+                            <div class="fw-semibold small" style="color:var(--bs-body-color)">{{ $bUser->name }}</div>
+                            <div style="font-size:.7rem;color:#f48fb1">🎉 Today is their birthday!</div>
+                        </div>
+                    </div>
+                </a>
+                @endforeach
+            </div>
+        </div>
+        @endif
+
         {{-- Recent Matches --}}
         @if($recentMatches->isNotEmpty())
         <div class="col-12">
@@ -150,7 +178,10 @@
                         </div>
                         <div class="card-body p-2 text-center">
                             <div class="fw-semibold small">{{ $other->name }}</div>
-                            <div class="text-muted" style="font-size:.7rem">{{ $other->age }} yrs</div>
+                            <div class="text-muted d-flex align-items-center gap-1" style="font-size:.7rem">
+                                {{ $other->age }} yrs
+                                <x-online-status-dot :user="$other" :size="7" />
+                            </div>
                         </div>
                         <a href="{{ $match->conversation ? route('conversations.show', $match->conversation->id) : '#' }}" class="stretched-link"></a>
                     </div>

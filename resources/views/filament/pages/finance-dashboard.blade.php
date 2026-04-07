@@ -55,7 +55,7 @@
             <p class="mb-0" style="color:#64748b;font-size:.82rem;">All wallet activity at a glance</p>
         </div>
         <div class="ms-auto d-flex gap-2">
-            <a href="{{ \Filament\Facades\Filament::getPanel()->route('resources.wallet-funding-requests.index') ?? url('/admin/wallet-funding-requests') }}" class="btn-action btn-approve">
+            <a href="{{ url('/admin/wallet-funding-requests') }}" class="btn-action btn-approve">
                 <i class="bi bi-arrow-down-circle"></i> Deposits
                 @if($pendingDeposits > 0)
                     <span class="badge-pending">{{ $pendingDeposits }}</span>

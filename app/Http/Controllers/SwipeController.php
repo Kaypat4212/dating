@@ -230,4 +230,36 @@ class SwipeController extends Controller
 
         return $profiles->each(fn ($p) => $p->compat_score = $this->compat->score($authUser, $p));
     }
+
+    /**
+     * Top Picks — the 10 highest-compatibility profiles from a 50-candidate pool.
+     * Cached per user per day so repeated calls are cheap.
+     */
+    public function topPicks(Request $request): JsonResponse
+    {
+        if ($request->user()->swipes_restricted) {
+            return response()->json(['profiles' => [], 'restricted' => true]);
+        }
+
+        $user = $request->user();
+        $cacheKey = "top_picks_{$user->id}_" . now()->toDateString();
+
+        $profiles = \Illuminate\Support\Facades\Cache::remember($cacheKey, now()->endOfDay(), function () use ($request, $user) {
+            [$candidates] = $this->getProfiles($request);
+            // getProfiles returns DECK_SIZE (10). Fetch a bigger pool by calling the
+            // raw query logic inline with a higher limit, then score and sort.
+            // Simplest approach: fetch 50 extras via a separate random pull, merge, dedupe, score, sort.
+            $extra = [];
+            for ($i = 0; $i < 4; $i++) {
+                [$chunk] = $this->getProfiles($request);
+                $extra = array_merge($extra, $chunk->all());
+            }
+            $pool = $candidates->merge($extra)->unique('id');
+            $scored = $this->attachScores($user, $pool);
+            return $scored->sortByDesc('compat_score')->take(10)->values();
+        });
+
+        return response()->json(['profiles' => $profiles]);
+    }
 }
+

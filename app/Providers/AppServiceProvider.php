@@ -3,12 +3,15 @@
 namespace App\Providers;
 
 use App\Models\Message;
+use App\Models\Referral;
 use App\Models\WalletFundingRequest;
 use App\Models\WalletWithdrawalRequest;
 use App\Observers\MessageObserver;
 use App\Observers\WalletFundingRequestObserver;
 use App\Observers\WalletWithdrawalRequestObserver;
 use App\Services\MailSettingsService;
+use Illuminate\Auth\Events\Verified;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Livewire\Livewire;
@@ -41,6 +44,46 @@ class AppServiceProvider extends ServiceProvider
         Message::observe(MessageObserver::class);
         WalletFundingRequest::observe(WalletFundingRequestObserver::class);
         WalletWithdrawalRequest::observe(WalletWithdrawalRequestObserver::class);
+
+        // ── Referral → Free Premium reward ───────────────────────────────────
+        // When a referred user verifies their email, award 7 days of premium
+        // to the referrer AND the referred user, and mark the referral rewarded.
+        Event::listen(Verified::class, function (Verified $event) {
+            $user = $event->user;
+            if (!($user instanceof \App\Models\User)) return;
+
+            $referral = Referral::where('referred_id', $user->id)->where('rewarded', false)->first();
+            if (!$referral) return;
+
+            $rewardDays = 7;
+
+            // Helper to extend premium
+            $grantPremium = function (\App\Models\User $u) use ($rewardDays) {
+                $base = ($u->premium_expires_at && $u->premium_expires_at->isFuture())
+                    ? $u->premium_expires_at
+                    : now();
+                $u->forceFill([
+                    'is_premium'          => true,
+                    'premium_plan'        => $u->premium_plan ?? 'referral',
+                    'premium_expires_at'  => $base->addDays($rewardDays),
+                ])->save();
+            };
+
+            // Award the new member (referred user)
+            $grantPremium($user);
+
+            // Award the referrer
+            $referrer = $referral->referrer;
+            if ($referrer) {
+                $grantPremium($referrer);
+                try {
+                    $referrer->notify(new \App\Notifications\ReferralRewardNotification($user->name, $rewardDays));
+                } catch (\Throwable) {}
+            }
+
+            // Mark referral as rewarded
+            $referral->update(['rewarded' => true, 'rewarded_at' => now()]);
+        });
 
         // Apply admin-configured mail settings from the database (cache-backed).
         try {

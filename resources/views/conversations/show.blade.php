@@ -845,7 +845,20 @@ main { padding-bottom: 0 !important; }
 <div id="activeCallOverlay" style="display:none;position:fixed;inset:0;z-index:1000;
      background:linear-gradient(160deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%);
      align-items:center;justify-content:center;flex-direction:column;gap:0;">
-    <div style="text-align:center;padding:40px 24px 0;">
+
+    {{-- Remote video (fills top half when on, hidden otherwise) --}}
+    <div id="remoteVideoWrapper" style="display:none;position:absolute;inset:0;bottom:180px;">
+        <div id="remoteVideoEl" style="width:100%;height:100%;object-fit:cover;background:#000;"></div>
+    </div>
+
+    {{-- Local video PiP (bottom-right corner when camera is on) --}}
+    <div id="localVideoWrapper" style="display:none;position:absolute;bottom:190px;right:16px;
+         width:90px;height:130px;border-radius:12px;overflow:hidden;border:2px solid rgba(255,255,255,.3);
+         z-index:10;background:#000;">
+        <div id="localVideoEl" style="width:100%;height:100%;"></div>
+    </div>
+
+    <div style="text-align:center;padding:40px 24px 0;position:relative;z-index:2;">
         <div id="activeCallAvatar" style="width:100px;height:100px;border-radius:50%;
              background:linear-gradient(135deg,#f43f5e,#a855f7);margin:0 auto 18px;
              display:flex;align-items:center;justify-content:center;
@@ -858,7 +871,7 @@ main { padding-bottom: 0 !important; }
     </div>
 
     {{-- Sound wave animation --}}
-    <div id="callWaveAnim" style="display:flex;align-items:center;gap:4px;margin:32px auto;height:40px;">
+    <div id="callWaveAnim" style="display:flex;align-items:center;gap:4px;margin:32px auto;height:40px;position:relative;z-index:2;">
         @for($i=0;$i<5;$i++)
         <div style="width:5px;background:rgba(167,139,250,.6);border-radius:3px;
                     animation:waveBar .8s ease-in-out {{ $i * 0.12 }}s infinite alternate;"
@@ -867,11 +880,16 @@ main { padding-bottom: 0 !important; }
     </div>
 
     {{-- Controls --}}
-    <div style="display:flex;gap:24px;justify-content:center;padding-bottom:60px;">
+    <div style="display:flex;gap:24px;justify-content:center;padding-bottom:60px;position:relative;z-index:2;">
         <button id="muteBtn" onclick="voiceCall.toggleMute()" title="Mute"
                 style="width:60px;height:60px;border-radius:50%;border:2px solid rgba(255,255,255,.2);
                        background:rgba(255,255,255,.1);color:#fff;font-size:1.3rem;cursor:pointer;transition:.2s;">
             <i class="bi bi-mic-fill"></i>
+        </button>
+        <button id="videoBtn" onclick="voiceCall.toggleVideo()" title="Camera"
+                style="width:60px;height:60px;border-radius:50%;border:2px solid rgba(255,255,255,.2);
+                       background:rgba(255,255,255,.1);color:#fff;font-size:1.3rem;cursor:pointer;transition:.2s;">
+            <i class="bi bi-camera-video-off-fill"></i>
         </button>
         <button onclick="voiceCall.hangUp()"
                 style="width:72px;height:72px;border-radius:50%;border:none;
@@ -911,8 +929,10 @@ const voiceCall = (() => {
 
     // ── State ──────────────────────────────────────────────────────────────
     let callId        = null;
-    let agoraClient   = null;
-    let localTrack    = null;
+    let agoraClient      = null;
+    let localTrack       = null;   // audio track
+    let localVideoTrack  = null;   // camera track (optional)
+    let isVideoOn        = false;
     let isMuted       = false;
     let timerInterval = null;
     let timerSeconds  = 0;
@@ -1024,6 +1044,18 @@ const voiceCall = (() => {
         agoraClient.on('user-published', async (user, mediaType) => {
             await agoraClient.subscribe(user, mediaType);
             if (mediaType === 'audio') user.audioTrack.play();
+            if (mediaType === 'video') {
+                document.getElementById('remoteVideoWrapper').style.display = 'block';
+                document.getElementById('activeCallAvatar').style.opacity   = '0';
+                user.videoTrack.play('remoteVideoEl');
+            }
+        });
+
+        agoraClient.on('user-unpublished', (user, mediaType) => {
+            if (mediaType === 'video') {
+                document.getElementById('remoteVideoWrapper').style.display = 'none';
+                document.getElementById('activeCallAvatar').style.opacity   = '1';
+            }
         });
 
         agoraClient.on('user-left', () => {
@@ -1041,8 +1073,16 @@ const voiceCall = (() => {
 
     // ── Leave channel ─────────────────────────────────────────────────────
     async function leaveChannel() {
-        if (localTrack) { localTrack.stop(); localTrack.close(); localTrack = null; }
-        if (agoraClient) { await agoraClient.leave(); agoraClient = null; }
+        if (localVideoTrack) { localVideoTrack.stop(); localVideoTrack.close(); localVideoTrack = null; }
+        if (localTrack)      { localTrack.stop(); localTrack.close(); localTrack = null; }
+        if (agoraClient)     { await agoraClient.leave(); agoraClient = null; }
+        // Reset video UI
+        document.getElementById('remoteVideoWrapper').style.display = 'none';
+        document.getElementById('localVideoWrapper').style.display  = 'none';
+        document.getElementById('activeCallAvatar').style.opacity   = '1';
+        isVideoOn = false;
+        const vBtn = document.getElementById('videoBtn');
+        if (vBtn) { vBtn.style.background = 'rgba(255,255,255,.1)'; vBtn.innerHTML = '<i class="bi bi-camera-video-off-fill"></i>'; }
     }
 
     // ── Public API ────────────────────────────────────────────────────────
@@ -1125,6 +1165,33 @@ const voiceCall = (() => {
             ? 'rgba(16,185,129,.7)' : 'rgba(255,255,255,.1)';
     }
 
+    // Camera toggle — starts/stops local video track
+    async function toggleVideo() {
+        const btn = document.getElementById('videoBtn');
+        if (!agoraClient) return;
+        if (!isVideoOn) {
+            try {
+                localVideoTrack = await AgoraRTC.createCameraVideoTrack();
+                await agoraClient.publish(localVideoTrack);
+                localVideoTrack.play('localVideoEl');
+                document.getElementById('localVideoWrapper').style.display = 'block';
+                isVideoOn = true;
+                btn.style.background = 'rgba(16,185,129,.7)';
+                btn.innerHTML = '<i class="bi bi-camera-video-fill"></i>';
+            } catch (e) {
+                console.warn('Camera unavailable:', e);
+                btn.title = 'Camera unavailable';
+            }
+        } else {
+            await agoraClient.unpublish(localVideoTrack);
+            localVideoTrack.stop(); localVideoTrack.close(); localVideoTrack = null;
+            document.getElementById('localVideoWrapper').style.display = 'none';
+            isVideoOn = false;
+            btn.style.background = 'rgba(255,255,255,.1)';
+            btn.innerHTML = '<i class="bi bi-camera-video-off-fill"></i>';
+        }
+    }
+
     // ── Listen for incoming calls via Reverb ──────────────────────────────
     if (typeof window.Echo !== 'undefined') {
         window.Echo.private('user.' + MY_USER_ID)
@@ -1148,7 +1215,7 @@ const voiceCall = (() => {
             });
     }
 
-    return { initiate, answer, reject, hangUp, toggleMute, toggleSpeaker };
+    return { initiate, answer, reject, hangUp, toggleMute, toggleSpeaker, toggleVideo };
 })();
 </script>
 @endpush

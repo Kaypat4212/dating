@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Story;
+use App\Models\StoryView;
 use App\Models\UserMatch;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -14,13 +15,12 @@ class StoryController extends Controller
     {
         $user = $request->user();
 
-        // Get matched user IDs
         $matchedIds = UserMatch::where('user1_id', $user->id)->pluck('user2_id')
             ->merge(UserMatch::where('user2_id', $user->id)->pluck('user1_id'))
             ->push($user->id)
             ->unique();
 
-        $stories = Story::with('user.primaryPhoto')
+        $stories = Story::with(['user.primaryPhoto', 'views.viewer.primaryPhoto'])
             ->whereIn('user_id', $matchedIds)
             ->active()
             ->orderBy('user_id')
@@ -28,10 +28,55 @@ class StoryController extends Controller
             ->get()
             ->groupBy('user_id');
 
-        return view('stories.index', compact('stories'));
+        return view('stories.index', compact('stories', 'user'));
     }
 
-    /** Upload a new story (image only for now). */
+    /** Record a view and return viewer list for a story (owner only). */
+    public function viewers(Request $request, Story $story)
+    {
+        abort_unless($story->user_id === $request->user()->id, 403);
+
+        $viewers = StoryView::with('viewer.primaryPhoto')
+            ->where('story_id', $story->id)
+            ->latest('viewed_at')
+            ->get();
+
+        return response()->json([
+            'count'   => $viewers->count(),
+            'viewers' => $viewers->map(fn ($v) => [
+                'id'         => $v->viewer->id,
+                'name'       => $v->viewer->name,
+                'username'   => $v->viewer->username,
+                'photo'      => optional($v->viewer->primaryPhoto)->thumbnail_url,
+                'viewed_at'  => $v->viewed_at->diffForHumans(),
+            ]),
+        ]);
+    }
+
+    /** Mark a story as viewed by the current user. */
+    public function markViewed(Request $request, Story $story)
+    {
+        $user = $request->user();
+
+        if ($story->user_id !== $user->id && $story->isExpired() === false) {
+            $alreadyViewed = StoryView::where('story_id', $story->id)
+                ->where('user_id', $user->id)
+                ->exists();
+
+            if (!$alreadyViewed) {
+                StoryView::create([
+                    'story_id'  => $story->id,
+                    'user_id'   => $user->id,
+                    'viewed_at' => now(),
+                ]);
+                $story->increment('views_count');
+            }
+        }
+
+        return response()->json(['ok' => true]);
+    }
+
+    /** Upload a new story (image or video). */
     public function store(Request $request)
     {
         $request->validate([

@@ -59,6 +59,7 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser, Has
         'reminder_count', 'last_reminder_at',
         'secret_word',
         'totp_secret', 'totp_recovery_codes',
+        'google_id',
         'credit_balance',
         'location_filter_uses',
         'registration_ip', 'last_login_ip', 'last_login_at',
@@ -197,6 +198,11 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser, Has
     public function preferences(): HasOne
     {
         return $this->hasOne(UserPreference::class);
+    }
+
+    public function savedFilters(): HasMany
+    {
+        return $this->hasMany(SavedFilter::class);
     }
 
     public function premiumPayments(): HasMany
@@ -349,5 +355,53 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser, Has
             $q->where('user1_id', $userId)->where('user2_id', $this->id);
         })->where('is_active', true)->exists();
     }
+
+    /**
+     * Granular online status based on last_active_at.
+     *
+     * Returns one of: 'online' | 'recent' | 'today' | 'away'
+     *   online  — active within the last 10 minutes
+     *   recent  — active between 10 min and 1 hour ago
+     *   today   — active today (but more than 1 hour ago)
+     *   away    — last active more than 24 hours ago (or never)
+     */
+    public function onlineStatus(): string
+    {
+        if (! $this->last_active_at) return 'away';
+
+        $minutes = $this->last_active_at->diffInMinutes(now());
+
+        if ($minutes < 10)                             return 'online';
+        if ($minutes < 60)                             return 'recent';
+        if ($this->last_active_at->isToday())          return 'today';
+        return 'away';
+    }
+
+    /**
+     * Human-readable online status label.
+     */
+    public function onlineStatusLabel(): string
+    {
+        return match ($this->onlineStatus()) {
+            'online' => 'Online now',
+            'recent' => 'Active ' . $this->last_active_at->diffForHumans(),
+            'today'  => 'Active today',
+            default  => $this->last_active_at ? 'Active ' . $this->last_active_at->diffForHumans() : 'Offline',
+        };
+    }
+
+    /**
+     * Tailwind/Bootstrap colour for the online status dot.
+     */
+    public function onlineStatusColor(): string
+    {
+        return match ($this->onlineStatus()) {
+            'online' => '#22c55e', // green
+            'recent' => '#eab308', // yellow
+            'today'  => '#f97316', // orange
+            default  => '#9ca3af', // gray
+        };
+    }
 }
+
 

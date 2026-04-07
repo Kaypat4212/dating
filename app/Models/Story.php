@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * @property int $id
@@ -23,7 +24,10 @@ class Story extends Model
 
     public function user() { return $this->belongsTo(User::class); }
 
+    public function views(): HasMany { return $this->hasMany(StoryView::class); }
+
     public function isExpired(): bool { return $this->expires_at && $this->expires_at->isPast(); }
 
     public function scopeActive($query) { return $query->where('expires_at', '>', now()); }
 }
+

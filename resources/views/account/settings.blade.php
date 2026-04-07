@@ -148,6 +148,66 @@
 
             {{-- Secret Word for Password Recovery --}}
             <div class="card border-0 shadow-sm mb-4">
+
+            {{-- Two-Factor Authentication --}}
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-transparent fw-semibold">
+                    <i class="bi bi-shield-lock me-2 text-primary"></i>Two-Factor Authentication (2FA)
+                    @if($user->totp_secret)
+                    <span class="badge bg-success ms-2 small"><i class="bi bi-check-circle me-1"></i>Enabled</span>
+                    @else
+                    <span class="badge bg-secondary ms-2 small">Disabled</span>
+                    @endif
+                </div>
+                <div class="card-body">
+                    @if($user->totp_secret)
+                    {{-- Disable form --}}
+                    <p class="text-muted small mb-3">2FA is active. Each sign-in requires a code from your authenticator app.</p>
+                    <form method="POST" action="{{ route('account.2fa.disable') }}" id="twoFaDisableForm">
+                        @csrf
+                        <div class="input-group" style="max-width:380px">
+                            <input type="password" name="password" class="form-control @error('password','disable2fa') is-invalid @enderror"
+                                   placeholder="Confirm current password" required>
+                            <button type="submit" class="btn btn-danger" onclick="return confirm('Disable 2FA?')">
+                                <i class="bi bi-shield-x me-1"></i>Disable 2FA
+                            </button>
+                        </div>
+                        @error('password','disable2fa')<div class="text-danger small mt-1">{{ $message }}</div>@enderror
+                    </form>
+                    @else
+                    {{-- Enable section --}}
+                    <p class="text-muted small mb-3">
+                        Protect your account by requiring a time-based one-time code from an app like
+                        <strong>Google Authenticator</strong> or <strong>Authy</strong> at each sign-in.
+                    </p>
+                    <div id="twoFaSetupSection" style="display:none">
+                        <div class="mb-3 d-flex flex-wrap align-items-start gap-4">
+                            <div id="twoFaQr" class="border rounded p-2 bg-white"></div>
+                            <div>
+                                <div class="fw-semibold small mb-1">Or enter the key manually:</div>
+                                <code id="twoFaSecret" class="user-select-all" style="font-size:.85rem;word-break:break-all"></code>
+                            </div>
+                        </div>
+                        <form method="POST" action="{{ route('account.2fa.enable') }}">
+                            @csrf
+                            <div class="input-group" style="max-width:340px">
+                                <input type="text" name="totp_code" id="totpCodeInput"
+                                       class="form-control @error('totp_code') is-invalid @enderror"
+                                       inputmode="numeric" pattern="[0-9]{6}" maxlength="6"
+                                       placeholder="6-digit code from app" autocomplete="one-time-code" required>
+                                <button type="submit" class="btn btn-success">
+                                    <i class="bi bi-check-circle me-1"></i>Verify & Enable
+                                </button>
+                            </div>
+                            @error('totp_code')<div class="text-danger small mt-1">{{ $message }}</div>@enderror
+                        </form>
+                    </div>
+                    <button id="twoFaStartBtn" class="btn btn-primary btn-sm" onclick="initTwoFa(this)">
+                        <i class="bi bi-qr-code me-1"></i>Set Up 2FA
+                    </button>
+                    @endif
+                </div>
+            </div>
                 <div class="card-header bg-transparent fw-semibold"><i class="bi bi-key-fill text-warning me-2"></i>Password Recovery Secret Word</div>
                 <div class="card-body">
                     <p class="text-muted small mb-3">
@@ -251,6 +311,22 @@
 </div>
 @push('scripts')
 <script>
+function initTwoFa(btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Loading…';
+    fetch('{{ route("account.2fa.setup") }}')
+        .then(r => r.json())
+        .then(data => {
+            document.getElementById('twoFaQr').innerHTML     = data.qr;
+            document.getElementById('twoFaSecret').textContent = data.secret;
+            document.getElementById('twoFaSetupSection').style.display = '';
+            btn.style.display = 'none';
+        })
+        .catch(() => {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-qr-code me-1"></i>Set Up 2FA';
+        });
+}
 document.getElementById('toggleSecretWordBtn')?.addEventListener('click', function () {
     var inp  = document.getElementById('secretWordInput');
     var icon = document.getElementById('toggleSecretWordIcon');

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\View\View;
+use App\Models\User;
 use App\Models\UserMatch;
 use App\Models\Like;
 use App\Models\ProfileView;
@@ -53,6 +54,18 @@ class DashboardController extends Controller
           ->with(['user1.primaryPhoto', 'user2.primaryPhoto', 'conversation'])
           ->get();
 
-        return view('dashboard', compact('stats', 'recentMatches'));
+        // Birthday Spotlight — matches whose birthday is today
+        $matchedIds = UserMatch::where('user1_id', $user->id)->pluck('user2_id')
+            ->merge(UserMatch::where('user2_id', $user->id)->pluck('user1_id'))
+            ->unique();
+
+        $birthdayUsers = User::whereIn('id', $matchedIds)
+            ->whereNotNull('date_of_birth')
+            ->whereRaw('MONTH(date_of_birth) = ? AND DAY(date_of_birth) = ?', [now()->month, now()->day])
+            ->with('primaryPhoto')
+            ->limit(10)
+            ->get();
+
+        return view('dashboard', compact('stats', 'recentMatches', 'birthdayUsers'));
     }
 }

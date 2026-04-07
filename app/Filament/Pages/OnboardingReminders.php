@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages;
 
+use App\Models\EmailTemplate;
 use App\Models\SiteSetting;
 use App\Models\User;
 use App\Notifications\ProfileReminderNotification;
@@ -37,6 +38,11 @@ class OnboardingReminders extends Page
 
     public array $data = [];
 
+    // ── Email template state ───────────────────────────────────────────────
+
+    public string $tplSubject = '';
+    public string $tplBody    = '';
+
     // ── Table state ────────────────────────────────────────────────────────
 
     public string  $search    = '';
@@ -56,6 +62,16 @@ class OnboardingReminders extends Page
             'onboarding_reminder_max_count'      => (int) SiteSetting::get('onboarding_reminder_max_count',  3),
             'onboarding_reminder_message'        => SiteSetting::get('onboarding_reminder_message', ''),
         ]);
+
+        $tpl = EmailTemplate::findByKey('profile_reminder');
+        if ($tpl) {
+            $this->tplSubject = $tpl->subject;
+            $this->tplBody    = $tpl->body;
+        } else {
+            $appName = config('app.name', 'HeartsConnect');
+            $this->tplSubject = "Complete your {$appName} profile 💕";
+            $this->tplBody    = $this->defaultReminderBody();
+        }
     }
 
     // ── Filament form schema ───────────────────────────────────────────────
@@ -336,6 +352,79 @@ class OnboardingReminders extends Page
             $this->sortField = $field;
             $this->sortDir   = 'desc';
         }
+    }
+
+    // ── Email template save ───────────────────────────────────────────────
+
+    public function saveEmailTemplate(): void
+    {
+        $this->validate([
+            'tplSubject' => ['required', 'string', 'max:255'],
+            'tplBody'    => ['required', 'string'],
+        ]);
+
+        EmailTemplate::updateOrCreate(
+            ['key' => 'profile_reminder'],
+            [
+                'name'      => 'Profile Reminder',
+                'subject'   => $this->tplSubject,
+                'body'      => $this->tplBody,
+                'variables' => [
+                    '{user_name}', '{app_name}', '{app_url}',
+                    '{setup_url}', '{missing_list}', '{admin_message}',
+                ],
+            ]
+        );
+
+        Notification::make()
+            ->title('Email template saved')
+            ->success()
+            ->send();
+    }
+
+    // ── Default reminder HTML template ────────────────────────────────────
+
+    private function defaultReminderBody(): string
+    {
+        return <<<'HTML'
+<!DOCTYPE html>
+<html>
+<body style="margin:0;padding:0;background:#f8fafc;font-family:sans-serif">
+<div style="max-width:560px;margin:32px auto;background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.08)">
+  <div style="background:linear-gradient(135deg,#ec4899,#8b5cf6);padding:32px 32px 24px;text-align:center">
+    <p style="color:rgba(255,255,255,.85);font-size:.9rem;margin:0">Complete your profile</p>
+  </div>
+  <div style="padding:32px">
+    <p style="color:#0f172a;font-size:1rem;margin-top:0">Hey <strong>{user_name}</strong>,</p>
+    <p style="color:#475569;line-height:1.6">
+      You're so close to connecting with great people on <strong>{app_name}</strong>!
+      Your profile is still missing a few things:
+    </p>
+    <ul style="color:#475569;line-height:2;padding-left:1.25rem">
+      {missing_list}
+    </ul>
+    <div style="text-align:center;margin:28px 0">
+      <a href="{setup_url}"
+         style="background:linear-gradient(135deg,#ec4899,#8b5cf6);color:#fff;padding:14px 32px;
+                border-radius:10px;text-decoration:none;font-weight:700;font-size:.95rem;
+                display:inline-block">
+        Complete My Profile →
+      </a>
+    </div>
+    {admin_message}
+    <p style="color:#94a3b8;font-size:.82rem;margin-bottom:0">
+      With ❤️, The {app_name} Team
+    </p>
+  </div>
+  <div style="background:#f1f5f9;padding:16px 32px;text-align:center">
+    <p style="color:#94a3b8;font-size:.75rem;margin:0">
+      <a href="{app_url}" style="color:#94a3b8">{app_url}</a>
+    </p>
+  </div>
+</div>
+</body>
+</html>
+HTML;
     }
 
     // ── Profile completeness helper ───────────────────────────────────────
