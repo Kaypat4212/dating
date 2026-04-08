@@ -12,6 +12,8 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Group;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Filament\Actions\BulkAction;
+use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Notifications\Notification;
 
@@ -235,8 +237,8 @@ class AnnouncementResource extends Resource
                     ->trueLabel('Published')
                     ->falseLabel('Draft'),
             ])
-            ->actions([
-                Tables\Actions\Action::make('publish')
+            ->recordActions([
+                Actions\Action::make('publish')
                     ->label('Publish')
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
@@ -246,7 +248,7 @@ class AnnouncementResource extends Resource
                         Notification::make()->title('Announcement published!')->success()->send();
                     }),
 
-                Tables\Actions\Action::make('unpublish')
+                Actions\Action::make('unpublish')
                     ->label('Unpublish')
                     ->icon('heroicon-o-x-circle')
                     ->color('warning')
@@ -256,20 +258,22 @@ class AnnouncementResource extends Resource
                         Notification::make()->title('Announcement unpublished.')->warning()->send();
                     }),
 
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                Actions\EditAction::make(),
+                Actions\DeleteAction::make(),
             ])
             ->bulkActions([
-                Tables\Actions\BulkAction::make('publishSelected')
-                    ->label('Publish selected')
-                    ->icon('heroicon-o-check-circle')
-                    ->color('success')
-                    ->action(fn ($records) => $records->each(fn ($r) => $r->update([
-                        'is_published' => true,
-                        'published_at' => $r->published_at ?? now(),
-                    ])))
-                    ->deselectRecordsAfterCompletion(),
-                DeleteBulkAction::make(),
+                BulkActionGroup::make([
+                    BulkAction::make('publishSelected')
+                        ->label('Publish selected')
+                        ->icon('heroicon-o-check-circle')
+                        ->color('success')
+                        ->action(fn ($records) => $records->each(fn ($r) => $r->update([
+                            'is_published' => true,
+                            'published_at' => $r->published_at ?? now(),
+                        ])))
+                        ->deselectRecordsAfterCompletion(),
+                    DeleteBulkAction::make(),
+                ]),
             ]);
     }
 
