@@ -167,6 +167,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // Discover / Browse grid
         Route::get('/discover',                 [DiscoverController::class, 'index'])->name('discover.index');
 
+        // ── User Search (find people by name / username / email) ────────────
+        Route::get('/find-people',              [\App\Http\Controllers\UserSearchController::class, 'index'])->name('users.search');
+        Route::get('/find-people/search',       [\App\Http\Controllers\UserSearchController::class, 'search'])->name('users.search.results');
+
         // Swipe deck
         Route::get('/swipe',                    [SwipeController::class, 'deck'])->name('swipe.deck');
         Route::get('/swipe/deck',               [SwipeController::class, 'fetchDeck'])->name('swipe.fetch');

@@ -31,11 +31,12 @@ class IncomingCallEvent implements ShouldBroadcastNow
     {
         $caller = $this->call->caller;
         return [
-            'call_id'      => $this->call->id,
-            'channel_name' => $this->call->channel_name,
-            'caller_id'    => $caller->id,
-            'caller_name'  => $caller->name,
-            'caller_photo' => $caller->primaryPhoto?->thumbnail_url,
+            'call_id'        => $this->call->id,
+            'room_url'       => $this->call->room_url ?? ('https://meet.jit.si/' . $this->call->channel_name),
+            'call_type'      => $this->call->call_type ?? 'voice',
+            'caller_id'      => $caller->id,
+            'caller_name'    => $caller->name,
+            'caller_photo'   => $caller->primaryPhoto?->thumbnail_url,
             'conversation_id' => $this->call->conversation_id,
         ];
     }

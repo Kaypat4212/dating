@@ -2,7 +2,7 @@
 
 @php
 $services = [
-    ['id'=>'agora',      'label'=>'Agora',       'subtitle'=>'Video & Voice Calls',  'icon'=>'heroicon-o-video-camera',      'method'=>'testAgora',     'env_keys'=>['AGORA_APP_ID','AGORA_APP_CERTIFICATE']],
+    ['id'=>'dailyco',    'label'=>'Daily.co',     'subtitle'=>'Voice & Video Calls',  'icon'=>'heroicon-o-video-camera',      'method'=>'testDailyCo',   'env_keys'=>['DAILY_CO_API_KEY','DAILY_CO_DOMAIN']],
     ['id'=>'groq',       'label'=>'Groq AI',     'subtitle'=>'AI Smart Match',       'icon'=>'heroicon-o-cpu-chip',          'method'=>'testGroq',      'env_keys'=>['GROQ_API_KEY']],
     ['id'=>'iphub',      'label'=>'IPHub',        'subtitle'=>'VPN Detection',        'icon'=>'heroicon-o-shield-check',      'method'=>'testIpHub',     'env_keys'=>['IPHUB_API_KEY']],
     ['id'=>'proxycheck', 'label'=>'ProxyCheck',   'subtitle'=>'VPN Detection',        'icon'=>'heroicon-o-shield-exclamation','method'=>'testProxyCheck','env_keys'=>['PROXYCHECK_API_KEY']],

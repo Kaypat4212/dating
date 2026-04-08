@@ -7,7 +7,7 @@ use App\Events\IncomingCallEvent;
 use App\Models\Conversation;
 use App\Models\SiteSetting;
 use App\Models\VoiceCall;
-use App\Services\AgoraTokenService;
+use App\Services\DailyCoService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
@@ -15,7 +15,7 @@ use Illuminate\View\View;
 
 class VoiceCallController extends Controller
 {
-    public function __construct(private readonly AgoraTokenService $agora) {}
+    public function __construct(private readonly DailyCoService $daily) {}
 
     /**
      * Initiate a call from the current user to the other participant in a conversation.
@@ -50,26 +50,33 @@ class VoiceCallController extends Controller
                 403
             );
 
-            $callee = $match->getOtherUser($caller->id);
+            $callee   = $match->getOtherUser($caller->id);
+            $callType = in_array($request->input('call_type'), ['voice', 'video']) ? $request->input('call_type') : 'voice';
 
             // Cancel any pre-existing ringing call for this conversation
             VoiceCall::where('conversation_id', $conversation->id)
                 ->where('status', 'ringing')
                 ->update(['status' => 'missed', 'ended_at' => now()]);
 
-            $channelName = 'call-' . $conversation->id . '-' . time();
+            $roomName    = 'hc-' . $conversation->id . '-' . time();
+            $tokenExpire = (int) SiteSetting::get('voice_call_token_expire', 3600);
 
-            $call = VoiceCall::create([
+            // Create Daily.co room (falls back to Jitsi Meet if no API key)
+            $room        = $this->daily->createRoom($roomName, $tokenExpire);
+            $callerToken = $this->daily->createToken($roomName, $caller->id, true, $tokenExpire);
+
+            $callData = [
                 'conversation_id' => $conversation->id,
                 'caller_id'       => $caller->id,
                 'callee_id'       => $callee->id,
-                'channel_name'    => $channelName,
+                'channel_name'    => $roomName,
                 'status'          => 'ringing',
-            ]);
-
-            // Generate token for the caller (respecting admin-configured expiry)
-            $tokenExpire = (int) SiteSetting::get('voice_call_token_expire', 3600);
-            $callerToken = $this->agora->generateRtcToken($channelName, $caller->id, $tokenExpire);
+                'call_type'       => $callType,
+            ];
+            if (\Illuminate\Support\Facades\Schema::hasColumn('voice_calls', 'room_url')) {
+                $callData['room_url'] = $room['url'];
+            }
+            $call = VoiceCall::create($callData);
 
             // Notify the callee via Reverb (non-fatal — call works even if Reverb is down)
             try {
@@ -79,11 +86,10 @@ class VoiceCallController extends Controller
             }
 
             return response()->json([
-                'call_id'      => $call->id,
-                'channel_name' => $channelName,
-                'token'        => $callerToken,
-                'app_id'       => config('services.agora.app_id'),
-                'uid'          => $caller->id,
+                'call_id'   => $call->id,
+                'room_url'  => $room['url'],
+                'token'     => $callerToken,
+                'call_type' => $callType,
             ]);
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::error('VoiceCall initiate failed', [
@@ -97,7 +103,7 @@ class VoiceCallController extends Controller
     }
 
     /**
-     * Callee answers the call — returns their Agora token.
+     * Callee answers the call — returns their Daily.co room URL + token.
      */
     public function answer(Request $request, VoiceCall $call): JsonResponse
     {
@@ -109,7 +115,10 @@ class VoiceCallController extends Controller
         $call->update(['status' => 'active', 'started_at' => now()]);
 
         $tokenExpire = (int) SiteSetting::get('voice_call_token_expire', 3600);
-        $token = $this->agora->generateRtcToken($call->channel_name, $user->id, $tokenExpire);
+        $token       = $this->daily->createToken($call->channel_name, $user->id, false, $tokenExpire);
+        $roomUrl     = \Illuminate\Support\Facades\Schema::hasColumn('voice_calls', 'room_url')
+            ? ($call->room_url ?? 'https://meet.jit.si/' . $call->channel_name)
+            : 'https://meet.jit.si/' . $call->channel_name;
 
         // Tell the caller their call was answered (non-fatal)
         try {
@@ -119,11 +128,10 @@ class VoiceCallController extends Controller
         }
 
         return response()->json([
-            'call_id'      => $call->id,
-            'channel_name' => $call->channel_name,
-            'token'        => $token,
-            'app_id'       => config('services.agora.app_id'),
-            'uid'          => $user->id,
+            'call_id'   => $call->id,
+            'room_url'  => $roomUrl,
+            'token'     => $token,
+            'call_type' => $call->call_type ?? 'voice',
         ]);
     }
 
@@ -161,6 +169,9 @@ class VoiceCallController extends Controller
 
         $newStatus = $call->status === 'ringing' ? 'missed' : 'ended';
         $call->update(['status' => $newStatus, 'ended_at' => now()]);
+
+        // Clean up Daily.co room asynchronously (non-fatal)
+        try { $this->daily->deleteRoom($call->channel_name); } catch (\Throwable) {}
 
         // Notify the other participant (non-fatal)
         $otherUserId = $call->caller_id === $user->id ? $call->callee_id : $call->caller_id;

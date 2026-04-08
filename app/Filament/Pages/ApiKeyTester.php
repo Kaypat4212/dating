@@ -2,7 +2,7 @@
 
 namespace App\Filament\Pages;
 
-use App\Services\AgoraTokenService;
+use App\Services\DailyCoService;
 use Filament\Pages\Page;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\Facades\Auth;
@@ -44,7 +44,7 @@ class ApiKeyTester extends Page
         $this->isRunning = true;
         $this->results   = [];
 
-        $this->runAgora();
+        $this->runDailyCo();
         $this->runGroq();
         $this->runIpHub();
         $this->runProxyCheck();
@@ -60,7 +60,7 @@ class ApiKeyTester extends Page
     // Individual tests — each one can also be called in isolation from the UI
     // ─────────────────────────────────────────────────────────────────────
 
-    public function testAgora(): void    { $this->runAgora(); }
+    public function testDailyCo(): void  { $this->runDailyCo(); }
     public function testGroq(): void     { $this->runGroq(); }
     public function testIpHub(): void    { $this->runIpHub(); }
     public function testProxyCheck(): void { $this->runProxyCheck(); }
@@ -112,64 +112,44 @@ class ApiKeyTester extends Page
         return [$result, $ms];
     }
 
-    // ── Agora ─────────────────────────────────────────────────────────────
+    // ── Daily.co ──────────────────────────────────────────────────────────
 
-    private function runAgora(): void
+    private function runDailyCo(): void
     {
-        $appId   = config('services.agora.app_id', '');
-        $appCert = config('services.agora.app_certificate', '');
+        $apiKey = config('services.dailyco.api_key', '');
+        $domain = config('services.dailyco.domain', '');
 
-        if (empty($appId) || empty($appCert)) {
-            $this->fail('agora', 'Not configured', 'AGORA_APP_ID or AGORA_APP_CERTIFICATE is empty in .env');
+        if (empty($apiKey)) {
+            $this->warn(
+                'dailyco',
+                'Not configured — using Jitsi fallback',
+                'DAILY_CO_API_KEY is empty. Voice/video calls fall back to free Jitsi Meet (meet.jit.si). Add DAILY_CO_API_KEY to .env to use Daily.co.'
+            );
             return;
         }
 
-        // Step 1: generate a token (local operation, proves keys are non-empty and algorithm works)
-        try {
-            $svc = app(AgoraTokenService::class);
-            [$token, $ms] = $this->timed(fn() => $svc->generateRtcToken('test-channel', 0, 60));
-            $tokenOk = !empty($token) && str_starts_with($token, '007');
-        } catch (\Throwable $e) {
-            $this->fail('agora', 'Token generation failed', $e->getMessage());
-            return;
-        }
-
-        if (!$tokenOk) {
-            $this->fail('agora', 'Token has unexpected format', "Got: " . substr($token, 0, 20) . '…');
-            return;
-        }
-
-        // Step 2: make a real API call to Agora to verify the App ID is live
-        // Agora's acquire API returns 401 on bad appId, 200 on good appId
-        [$response, $httpMs] = $this->timed(function () use ($appId) {
-            return Http::timeout(6)->withHeaders([
-                'Content-Type' => 'application/json',
-            ])->post("https://api.agora.io/v1/apps/{$appId}/cloud_recording/acquire", [
-                'cname'         => 'test',
-                'uid'           => '0',
-                'clientRequest' => [],
-            ]);
-        });
-
-        // 401 = app ID valid but no cloud recording enabled (expected), 400/200 = valid app ID
-        // 404 = app ID not found → bad key
-        if ($response->status() === 404) {
-            $this->fail('agora', 'App ID not found on Agora servers', "HTTP 404 — check your AGORA_APP_ID in .env", $httpMs + $ms);
-            return;
-        }
-
-        if ($response->status() >= 500) {
-            $this->warn('agora', 'Agora API unreachable (server error)', "HTTP {$response->status()}", $httpMs + $ms);
-            return;
-        }
-
-        // Any 4xx except 404 means the key IS valid (auth/permission error, not "not found")
-        $this->pass(
-            'agora',
-            'App ID verified & token generation OK',
-            "App ID: " . substr($appId, 0, 8) . "…  |  Token prefix: " . substr($token, 0, 12) . "…  |  HTTP {$response->status()}",
-            $ms + $httpMs
+        // Test the API key by listing rooms (GET /v1/rooms)
+        [$response, $ms] = $this->timed(fn() =>
+            Http::timeout(8)
+                ->withToken($apiKey)
+                ->get('https://api.daily.co/v1/rooms', ['limit' => 1])
         );
+
+        if ($response->successful()) {
+            $roomCount = data_get($response->json(), 'total_count', '?');
+            $detail    = "API key valid | Domain: " . ($domain ?: '(not set)') . " | Rooms: {$roomCount}";
+            if (empty($domain)) {
+                $this->warn('dailyco', 'API key valid but DAILY_CO_DOMAIN not set', $detail . ' | Set DAILY_CO_DOMAIN in .env for custom subdomain calls', $ms);
+            } else {
+                $this->pass('dailyco', 'Daily.co API key valid & reachable', $detail, $ms);
+            }
+        } elseif ($response->status() === 401) {
+            $this->fail('dailyco', 'Invalid API key (401 Unauthorized)', 'Check DAILY_CO_API_KEY in .env — get your key at daily.co/dashboard', $ms);
+        } elseif ($response->status() === 429) {
+            $this->warn('dailyco', 'Key valid but rate-limited (429)', 'Too many requests to Daily.co API', $ms);
+        } else {
+            $this->fail('dailyco', "Unexpected HTTP {$response->status()}", substr($response->body(), 0, 200), $ms);
+        }
     }
 
     // ── Groq (AI) ─────────────────────────────────────────────────────────

@@ -184,6 +184,11 @@
                     </a>
                 </li>
                 <li class="nav-item">
+                    <a class="nav-link {{ request()->routeIs('users.search*') ? 'active fw-semibold' : '' }}" href="{{ route('users.search') }}">
+                        <i class="bi bi-person-search me-1"></i>Find People
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link {{ request()->routeIs('matches.*') ? 'active fw-semibold' : '' }}" href="{{ route('matches.index') }}">
                         <i class="bi bi-hearts me-1"></i>Matches
                     </a>
@@ -384,6 +389,9 @@
     </a>
     <a href="{{ route('discover.index') }}" class="{{ request()->routeIs('discover.*') ? 'active' : '' }}">
         <i class="bi bi-search-heart"></i><span>Browse</span>
+    </a>
+    <a href="{{ route('users.search') }}" class="{{ request()->routeIs('users.search*') ? 'active' : '' }}">
+        <i class="bi bi-person-search"></i><span>Find</span>
     </a>
     <a href="{{ route('matches.index') }}" class="{{ request()->routeIs('matches.*') ? 'active' : '' }}">
         <i class="bi bi-hearts"></i><span>Matches</span>

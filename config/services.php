@@ -40,6 +40,14 @@ return [
         'app_certificate' => env('AGORA_APP_CERTIFICATE', ''),
     ],
 
+    // Daily.co — free 10K participant-mins/month
+    // Sign up: https://dashboard.daily.co → grab your API key + domain
+    // Falls back to Jitsi Meet (100% free, no account) if not configured.
+    'dailyco' => [
+        'api_key' => env('DAILY_CO_API_KEY', ''),
+        'domain'  => env('DAILY_CO_DOMAIN', ''), // e.g. 'heartsconnect'
+    ],
+
     'iphub' => [
         'api_key' => env('IPHUB_API_KEY'),
         'enabled' => env('VPN_ENABLE_IPHUB', true),

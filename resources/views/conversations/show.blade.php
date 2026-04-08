@@ -342,7 +342,7 @@ main { padding-bottom: 0 !important; }
         </a>
 
         <div class="dropdown flex-shrink-0">
-            {{-- Voice call button (hidden when feature is disabled by admin) --}}
+            {{-- Voice call button --}}
             @if(filter_var(\App\Models\SiteSetting::get('voice_calls_enabled', '1'), FILTER_VALIDATE_BOOLEAN))
             <button id="callBtn"
                     class="chat-footer-btn me-1"
@@ -350,6 +350,13 @@ main { padding-bottom: 0 !important; }
                     title="Voice call"
                     onclick="voiceCall.initiate()">
                 <i class="bi bi-telephone-fill"></i>
+            </button>
+            <button id="videoCallBtn"
+                    class="chat-footer-btn me-1"
+                    style="display:flex;align-items:center;justify-content:center;background:none;border:none;color:#7c3aed;"
+                    title="Video call"
+                    onclick="voiceCall.initiateVideo()">
+                <i class="bi bi-camera-video-fill"></i>
             </button>
             @endif
             <button class="chat-footer-btn"
@@ -578,6 +585,13 @@ main { padding-bottom: 0 !important; }
                 @else
                     {{-- Text --}}
                     {{ $msg->body }}
+                    @if(!$isMe && $msg->body)
+                    <button type="button" class="tts-btn" title="Read aloud"
+                            onclick="readAloud(this)" data-text="{{ e($msg->body) }}"
+                            style="background:none;border:none;font-size:.68rem;color:rgba(255,255,255,.2);cursor:pointer;vertical-align:middle;margin-left:3px;padding:0;line-height:1;">
+                        <i class="bi bi-volume-up-fill"></i>
+                    </button>
+                    @endif
                 @endif
 
                 <div class="message-meta d-flex align-items-center gap-1">
@@ -746,6 +760,13 @@ main { padding-bottom: 0 !important; }
                       rows="2"
                       autocomplete="off"
                       style="resize:none;"></textarea>
+            {{-- Speech-to-Text microphone button --}}
+            <button id="sttBtn" type="button"
+                    title="Speak to type"
+                    onclick="sttToggle()"
+                    style="flex-shrink:0;border:none;background:none;color:rgba(255,255,255,0.35);font-size:1.1rem;padding:0 6px;cursor:pointer;line-height:1;align-self:flex-end;margin-bottom:6px;">
+                <i class="bi bi-mic" id="sttIcon"></i>
+            </button>
             <button id="btnSend" class="btn btn-primary chat-send-btn" title="Send (Enter)">
                 <i class="bi bi-send-fill"></i>
             </button>
@@ -857,7 +878,7 @@ main { padding-bottom: 0 !important; }
              font-size:2.2rem;font-weight:700;color:#fff;overflow:hidden;">
         </div>
         <div id="incomingCallerName" style="color:#fff;font-size:1.25rem;font-weight:700;margin-bottom:6px;"></div>
-        <div style="color:#9ca3af;font-size:.9rem;margin-bottom:32px;">Incoming voice call…</div>
+        <div id="incomingCallTypeText" style="color:#9ca3af;font-size:.9rem;margin-bottom:32px;">Incoming voice call…</div>
         <div style="display:flex;gap:20px;justify-content:center;">
             <button onclick="voiceCall.reject()" style="width:64px;height:64px;border-radius:50%;
                     border:none;background:#ef4444;color:#fff;font-size:1.5rem;cursor:pointer;
@@ -884,14 +905,16 @@ main { padding-bottom: 0 !important; }
 
     {{-- Remote video (fills top half when on, hidden otherwise) --}}
     <div id="remoteVideoWrapper" style="display:none;position:absolute;inset:0;bottom:180px;">
-        <div id="remoteVideoEl" style="width:100%;height:100%;object-fit:cover;background:#000;"></div>
+        <video id="remoteVideoEl" autoplay playsinline
+               style="width:100%;height:100%;object-fit:cover;background:#000;"></video>
     </div>
 
     {{-- Local video PiP (bottom-right corner when camera is on) --}}
     <div id="localVideoWrapper" style="display:none;position:absolute;bottom:190px;right:16px;
          width:90px;height:130px;border-radius:12px;overflow:hidden;border:2px solid rgba(255,255,255,.3);
          z-index:10;background:#000;">
-        <div id="localVideoEl" style="width:100%;height:100%;"></div>
+        <video id="localVideoEl" autoplay playsinline muted
+               style="width:100%;height:100%;object-fit:cover;"></video>
     </div>
 
     <div style="text-align:center;padding:40px 24px 0;position:relative;z-index:2;">
@@ -950,8 +973,8 @@ main { padding-bottom: 0 !important; }
 </style>
 
 @push('scripts')
-{{-- Agora RTC SDK (browser) --}}
-<script src="https://download.agora.io/sdk/release/AgoraRTC_N-4.21.0.js"></script>
+{{-- Daily.co WebRTC SDK --}}
+<script src="https://unpkg.com/@daily-co/daily-js"></script>
 <script>
 const voiceCall = (() => {
     // ── Config injected from Laravel ─────────────────────────────────────
@@ -964,16 +987,14 @@ const voiceCall = (() => {
     const INITIATE_URL = '/calls/' + CONVERSATION_ID + '/initiate';
 
     // ── State ──────────────────────────────────────────────────────────────
-    let callId        = null;
-    let agoraClient      = null;
-    let localTrack       = null;   // audio track
-    let localVideoTrack  = null;   // camera track (optional)
+    let callId           = null;
+    let dailyCallObject  = null;   // Daily.co call object (replaces Agora client)
     let isVideoOn        = false;
-    let isMuted       = false;
-    let timerInterval = null;
-    let timerSeconds  = 0;
-    let pendingCall   = null; // for incoming call data
-    let ringInterval  = null; // ring tone interval
+    let isMuted          = false;
+    let timerInterval    = null;
+    let timerSeconds     = 0;
+    let pendingCall      = null;   // for incoming call data
+    let ringInterval     = null;   // ring tone interval
 
     // ── Ring tone (Web Audio API — no external file) ───────────────────
     function playRing(loop = false) {
@@ -1073,64 +1094,122 @@ const voiceCall = (() => {
         return r.json();
     }
 
-    // ── Agora join ────────────────────────────────────────────────────────
-    async function joinChannel(appId, channel, token, uid) {
-        agoraClient = AgoraRTC.createClient({ mode: 'rtc', codec: 'vp8' });
+    // ── Daily.co join room ────────────────────────────────────────────────
+    async function joinRoom(roomUrl, token, callType) {
+        if (!window.Daily) { console.error('Daily.co SDK not loaded'); return; }
+        dailyCallObject = window.Daily.createCallObject();
 
-        agoraClient.on('user-published', async (user, mediaType) => {
-            await agoraClient.subscribe(user, mediaType);
-            if (mediaType === 'audio') user.audioTrack.play();
-            if (mediaType === 'video') {
-                document.getElementById('remoteVideoWrapper').style.display = 'block';
-                document.getElementById('activeCallAvatar').style.opacity   = '0';
-                user.videoTrack.play('remoteVideoEl');
+        dailyCallObject.on('participant-joined', (evt) => {
+            if (evt.participant.local) return;
+            _updateRemoteVideo(evt.participant);
+        });
+
+        dailyCallObject.on('participant-updated', (evt) => {
+            if (evt.participant.local) {
+                // update local video when our own track changes
+                if (isVideoOn) _updateLocalVideo();
+                return;
+            }
+            _updateRemoteVideo(evt.participant);
+        });
+
+        dailyCallObject.on('participant-left', () => {
+            hangUp(true);
+        });
+
+        dailyCallObject.on('joined-meeting', () => {
+            stopRing();
+            document.getElementById('activeCallStatus').textContent = 'Connected';
+            startTimer();
+            if (callType === 'video') {
+                isVideoOn = true;
+                dailyCallObject.setLocalVideo(true);
+                setTimeout(_updateLocalVideo, 600);
             }
         });
 
-        agoraClient.on('user-unpublished', (user, mediaType) => {
-            if (mediaType === 'video') {
-                document.getElementById('remoteVideoWrapper').style.display = 'none';
-                document.getElementById('activeCallAvatar').style.opacity   = '1';
-            }
+        dailyCallObject.on('error', (e) => {
+            console.error('Daily.co error', e);
         });
 
-        agoraClient.on('user-left', () => {
-            hangUp(true); // other side left
+        await dailyCallObject.join({
+            url:            roomUrl,
+            token:          token || undefined,
+            startVideoOff:  callType !== 'video',
+            startAudioOff:  false,
         });
-
-        await agoraClient.join(appId, channel, token, uid);
-        localTrack = await AgoraRTC.createMicrophoneAudioTrack();
-        await agoraClient.publish(localTrack);
-
-        stopRing(); // stop outgoing/incoming ring once connected
-        document.getElementById('activeCallStatus').textContent = 'Connected';
-        startTimer();
     }
 
-    // ── Leave channel ─────────────────────────────────────────────────────
+    function _updateRemoteVideo(participant) {
+        const wrapper = document.getElementById('remoteVideoWrapper');
+        const avatar  = document.getElementById('activeCallAvatar');
+        if (participant.video && participant.tracks && participant.tracks.video
+                && participant.tracks.video.persistentTrack) {
+            const track = participant.tracks.video.persistentTrack;
+            const el    = document.getElementById('remoteVideoEl');
+            if (el.srcObject !== track) {
+                const stream = new MediaStream([track]);
+                el.srcObject = stream;
+            }
+            wrapper.style.display = 'block';
+            avatar.style.opacity  = '0';
+        } else {
+            wrapper.style.display = 'none';
+            avatar.style.opacity  = '1';
+        }
+    }
+
+    function _updateLocalVideo() {
+        if (!dailyCallObject) return;
+        const participants = dailyCallObject.participants();
+        const local = participants && participants.local;
+        if (local && local.video && local.tracks && local.tracks.video
+                && local.tracks.video.persistentTrack) {
+            const track = local.tracks.video.persistentTrack;
+            const el    = document.getElementById('localVideoEl');
+            if (el.srcObject !== track) {
+                el.srcObject = new MediaStream([track]);
+            }
+            document.getElementById('localVideoWrapper').style.display = 'block';
+        }
+    }
+
+    // ── Leave / destroy Daily.co call ─────────────────────────────────────
     async function leaveChannel() {
-        if (localVideoTrack) { localVideoTrack.stop(); localVideoTrack.close(); localVideoTrack = null; }
-        if (localTrack)      { localTrack.stop(); localTrack.close(); localTrack = null; }
-        if (agoraClient)     { await agoraClient.leave(); agoraClient = null; }
-        // Reset video UI
+        if (dailyCallObject) {
+            try { await dailyCallObject.leave(); }   catch (e) {}
+            try { await dailyCallObject.destroy(); } catch (e) {}
+            dailyCallObject = null;
+        }
+        // Clear video elements
+        const remEl = document.getElementById('remoteVideoEl');
+        const locEl = document.getElementById('localVideoEl');
+        if (remEl) remEl.srcObject = null;
+        if (locEl) locEl.srcObject = null;
         document.getElementById('remoteVideoWrapper').style.display = 'none';
         document.getElementById('localVideoWrapper').style.display  = 'none';
         document.getElementById('activeCallAvatar').style.opacity   = '1';
         isVideoOn = false;
         const vBtn = document.getElementById('videoBtn');
-        if (vBtn) { vBtn.style.background = 'rgba(255,255,255,.1)'; vBtn.innerHTML = '<i class="bi bi-camera-video-off-fill"></i>'; }
+        if (vBtn) {
+            vBtn.style.background = 'rgba(255,255,255,.1)';
+            vBtn.innerHTML = '<i class="bi bi-camera-video-off-fill"></i>';
+        }
     }
 
     // ── Public API ────────────────────────────────────────────────────────
 
-    async function initiate() {
+    async function initiate(callType = 'voice') {
         document.getElementById('callBtn').disabled = true;
         showActive(OTHER_NAME, OTHER_AVATAR);
         playRing(true); // outgoing ring while waiting for answer
+        // Update incoming call overlay text in case it's already visible
+        const typeEl = document.getElementById('incomingCallTypeText');
+        if (typeEl) typeEl.textContent = callType === 'video' ? 'Incoming video call…' : 'Incoming voice call…';
         try {
-            const data = await post(INITIATE_URL);
+            const data = await post(INITIATE_URL + '?call_type=' + callType);
             callId = data.call_id;
-            await joinChannel(data.app_id, data.channel_name, data.token, data.uid);
+            await joinRoom(data.room_url, data.token, data.call_type || callType);
         } catch (e) {
             let msg = 'Call failed';
             try { msg = JSON.parse(e.message).error ?? msg; } catch (_) {}
@@ -1141,6 +1220,8 @@ const voiceCall = (() => {
         }
     }
 
+    function initiateVideo() { return initiate('video'); }
+
     async function answer() {
         if (!pendingCall) return;
         stopRing();
@@ -1149,7 +1230,7 @@ const voiceCall = (() => {
         try {
             const data = await post('/calls/' + pendingCall.call_id + '/answer');
             callId = data.call_id;
-            await joinChannel(data.app_id, data.channel_name, data.token, data.uid);
+            await joinRoom(data.room_url, data.token, data.call_type || 'voice');
         } catch (e) {
             console.error('Answer failed', e);
             hideAll();
@@ -1179,9 +1260,9 @@ const voiceCall = (() => {
     }
 
     function toggleMute() {
-        if (!localTrack) return;
+        if (!dailyCallObject) return;
         isMuted = !isMuted;
-        localTrack.setMuted(isMuted);
+        dailyCallObject.setLocalAudio(!isMuted);
         updateMuteBtn();
     }
 
@@ -1201,30 +1282,26 @@ const voiceCall = (() => {
             ? 'rgba(16,185,129,.7)' : 'rgba(255,255,255,.1)';
     }
 
-    // Camera toggle — starts/stops local video track
+    // Camera toggle — starts/stops local video via Daily.co
     async function toggleVideo() {
+        if (!dailyCallObject) return;
         const btn = document.getElementById('videoBtn');
-        if (!agoraClient) return;
-        if (!isVideoOn) {
-            try {
-                localVideoTrack = await AgoraRTC.createCameraVideoTrack();
-                await agoraClient.publish(localVideoTrack);
-                localVideoTrack.play('localVideoEl');
-                document.getElementById('localVideoWrapper').style.display = 'block';
-                isVideoOn = true;
+        isVideoOn = !isVideoOn;
+        dailyCallObject.setLocalVideo(isVideoOn);
+        if (isVideoOn) {
+            setTimeout(_updateLocalVideo, 600);
+            if (btn) {
                 btn.style.background = 'rgba(16,185,129,.7)';
                 btn.innerHTML = '<i class="bi bi-camera-video-fill"></i>';
-            } catch (e) {
-                console.warn('Camera unavailable:', e);
-                btn.title = 'Camera unavailable';
             }
         } else {
-            await agoraClient.unpublish(localVideoTrack);
-            localVideoTrack.stop(); localVideoTrack.close(); localVideoTrack = null;
+            const locEl = document.getElementById('localVideoEl');
+            if (locEl) locEl.srcObject = null;
             document.getElementById('localVideoWrapper').style.display = 'none';
-            isVideoOn = false;
-            btn.style.background = 'rgba(255,255,255,.1)';
-            btn.innerHTML = '<i class="bi bi-camera-video-off-fill"></i>';
+            if (btn) {
+                btn.style.background = 'rgba(255,255,255,.1)';
+                btn.innerHTML = '<i class="bi bi-camera-video-off-fill"></i>';
+            }
         }
     }
 
@@ -1232,7 +1309,9 @@ const voiceCall = (() => {
     if (typeof window.Echo !== 'undefined') {
         window.Echo.private('user.' + MY_USER_ID)
             .listen('.incoming-call', (data) => {
-                pendingCall = data;
+                pendingCall = data; // has room_url, call_type, caller_name, caller_photo
+                const typeEl = document.getElementById('incomingCallTypeText');
+                if (typeEl) typeEl.textContent = data.call_type === 'video' ? 'Incoming video call…' : 'Incoming voice call…';
                 showIncoming(data.caller_name, data.caller_photo);
             })
             .listen('.call-status-changed', (data) => {
@@ -1251,8 +1330,59 @@ const voiceCall = (() => {
             });
     }
 
-    return { initiate, answer, reject, hangUp, toggleMute, toggleSpeaker, toggleVideo };
+    return { initiate, initiateVideo, answer, reject, hangUp, toggleMute, toggleSpeaker, toggleVideo };
 })();
+
+// ── Speech-to-Text (microphone → textarea) ────────────────────────────────
+function sttToggle() {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) { alert('Speech recognition is not supported in this browser. Try Chrome or Edge.'); return; }
+    const icon = document.getElementById('sttIcon');
+    const btn  = document.getElementById('sttBtn');
+    if (window._sttRecognition) {
+        window._sttRecognition.stop();
+        window._sttRecognition = null;
+        if (icon) icon.className = 'bi bi-mic';
+        if (btn)  btn.style.color = 'rgba(255,255,255,0.35)';
+        return;
+    }
+    const recognition = new SR();
+    recognition.lang = 'en-US';
+    recognition.interimResults = true;
+    recognition.continuous     = false;
+    window._sttRecognition = recognition;
+    if (icon) icon.className = 'bi bi-mic-fill';
+    if (btn)  btn.style.color = '#ef4444';  // red while listening
+    recognition.onresult = (e) => {
+        const transcript = Array.from(e.results).map(r => r[0].transcript).join('');
+        const input = document.getElementById('msgInput');
+        if (input) {
+            input.value = transcript;
+            input.dispatchEvent(new Event('input'));
+        }
+    };
+    recognition.onend = recognition.onerror = () => {
+        window._sttRecognition = null;
+        if (icon) icon.className = 'bi bi-mic';
+        if (btn)  btn.style.color = 'rgba(255,255,255,0.35)';
+    };
+    recognition.start();
+}
+
+// ── Text-to-Speech (read aloud incoming message) ──────────────────────────
+function readAloud(btn) {
+    window.speechSynthesis.cancel();
+    const text = btn ? (btn.dataset.text || '') : '';
+    if (!text) return;
+    const utt  = new SpeechSynthesisUtterance(text);
+    utt.lang   = 'en-US';
+    utt.rate   = 0.95;
+    if (btn) btn.style.color = '#10b981';   // green while speaking
+    utt.onend = utt.onerror = () => {
+        if (btn) btn.style.color = 'rgba(255,255,255,.2)';
+    };
+    window.speechSynthesis.speak(utt);
+}
 </script>
 @endpush
 

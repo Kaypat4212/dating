@@ -29,7 +29,7 @@ return new class extends Migration
         // Answers from matched users
         Schema::create('match_question_answers', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('match_id')->constrained('user_matches')->cascadeOnDelete();
+            $table->foreignId('match_id')->constrained('matches')->cascadeOnDelete();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->foreignId('question_id')->constrained('match_questions')->cascadeOnDelete();
             $table->string('answer', 500);
