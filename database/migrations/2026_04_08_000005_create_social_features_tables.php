@@ -9,52 +9,61 @@ return new class extends Migration
     public function up(): void
     {
         // Passes (left-swipes) — so we can resurface them after 30 days
-        Schema::create('profile_passes', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('passer_id')->constrained('users')->cascadeOnDelete();
-            $table->foreignId('passed_id')->constrained('users')->cascadeOnDelete();
-            $table->timestamp('passed_at')->useCurrent();
-            $table->boolean('resurfaced')->default(false); // has it appeared in second-chance queue?
-            $table->unique(['passer_id', 'passed_id']);
-        });
+        if (! Schema::hasTable('profile_passes')) {
+            Schema::create('profile_passes', function (Blueprint $table) {
+                $table->id();
+                $table->foreignId('passer_id')->constrained('users')->cascadeOnDelete();
+                $table->foreignId('passed_id')->constrained('users')->cascadeOnDelete();
+                $table->timestamp('passed_at')->useCurrent();
+                $table->boolean('resurfaced')->default(false); // has it appeared in second-chance queue?
+                $table->unique(['passer_id', 'passed_id']);
+            });
+        }
 
         // Daily match question (one active per day)
-        Schema::create('match_questions', function (Blueprint $table) {
-            $table->id();
-            $table->string('question', 250);
-            $table->boolean('is_active')->default(true);
-            $table->timestamps();
-        });
+        if (! Schema::hasTable('match_questions')) {
+            Schema::create('match_questions', function (Blueprint $table) {
+                $table->id();
+                $table->string('question', 250);
+                $table->boolean('is_active')->default(true);
+                $table->timestamps();
+            });
+        }
 
         // Answers from matched users
-        Schema::create('match_question_answers', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('match_id')->constrained('matches')->cascadeOnDelete();
-            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('question_id')->constrained('match_questions')->cascadeOnDelete();
-            $table->string('answer', 500);
-            $table->date('answered_date');
-            $table->timestamps();
-            $table->unique(['match_id', 'user_id', 'question_id']);
-        });
+        if (! Schema::hasTable('match_question_answers')) {
+            Schema::create('match_question_answers', function (Blueprint $table) {
+                $table->id();
+                $table->foreignId('match_id')->constrained('matches')->cascadeOnDelete();
+                $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+                $table->foreignId('question_id')->constrained('match_questions')->cascadeOnDelete();
+                $table->string('answer', 500);
+                $table->date('answered_date');
+                $table->timestamps();
+                $table->unique(['match_id', 'user_id', 'question_id']);
+            });
+        }
 
         // Safe Date Check-In
-        Schema::create('safe_date_checkins', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-            $table->string('date_location', 200)->nullable();
-            $table->string('emergency_contact_name', 80)->nullable();
-            $table->string('emergency_contact_phone', 30)->nullable();
-            $table->string('emergency_contact_email', 100)->nullable();
-            $table->timestamp('date_at');            // when date starts
-            $table->unsignedSmallInteger('checkin_minutes')->default(120); // alert after X minutes
-            $table->timestamp('checked_in_at')->nullable();  // user confirmed safe
-            $table->timestamp('alert_sent_at')->nullable();  // emergency alert fired
-            $table->enum('status', ['active', 'safe', 'alerted'])->default('active');
-            $table->timestamps();
-        });
+        if (! Schema::hasTable('safe_date_checkins')) {
+            Schema::create('safe_date_checkins', function (Blueprint $table) {
+                $table->id();
+                $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+                $table->string('date_location', 200)->nullable();
+                $table->string('emergency_contact_name', 80)->nullable();
+                $table->string('emergency_contact_phone', 30)->nullable();
+                $table->string('emergency_contact_email', 100)->nullable();
+                $table->timestamp('date_at');            // when date starts
+                $table->unsignedSmallInteger('checkin_minutes')->default(120); // alert after X minutes
+                $table->timestamp('checked_in_at')->nullable();  // user confirmed safe
+                $table->timestamp('alert_sent_at')->nullable();  // emergency alert fired
+                $table->enum('status', ['active', 'safe', 'alerted'])->default('active');
+                $table->timestamps();
+            });
+        }
 
-        // Seed a few match questions
+        // Seed a few match questions (only if table was just created / is empty)
+        if (\Illuminate\Support\Facades\DB::table('match_questions')->count() === 0) {
         \Illuminate\Support\Facades\DB::table('match_questions')->insert([
             ['question' => 'If you could teleport anywhere right now, where would you go?', 'created_at' => now(), 'updated_at' => now()],
             ['question' => 'What\'s your idea of a perfect first date?',                    'created_at' => now(), 'updated_at' => now()],
@@ -71,6 +80,7 @@ return new class extends Migration
             ['question' => 'Beach 🏖️, mountains 🏔️, or city 🌆?',                       'created_at' => now(), 'updated_at' => now()],
             ['question' => 'What\'s on your bucket list for this year?',                  'created_at' => now(), 'updated_at' => now()],
         ]);
+        } // end if match_questions empty
     }
 
     public function down(): void

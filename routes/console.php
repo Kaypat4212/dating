@@ -29,3 +29,6 @@ Schedule::job(new PurgeExpiredMessages)->hourly();
 
 // Every 5 minutes: check for overdue safe date check-ins and send alerts
 Schedule::command('safe-date:alert')->everyFiveMinutes();
+
+// Weekly Monday 08:00: send weekly digest emails (likes, matches, views)
+Schedule::command('emails:weekly-digest')->weeklyOn(1, '08:00');

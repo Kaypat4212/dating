@@ -287,12 +287,58 @@ main { padding-bottom: 0 !important; }
 [data-bs-theme="dark"] .call-event.ended     { background: #064e3b; color: #6ee7b7; border-color: #065f46; }
 .call-event-time     { font-size: .7rem; opacity: .7; margin-left: .2rem; }
 .call-event-duration { font-weight: 700; margin-left: .1rem; }
+/* ── Date spot suggestions popover ──────────────────────── */
+.date-spot-btn { color: #10b981 !important; }
+.date-spot-btn:hover { background: rgba(16,185,129,.1) !important; color: #059669 !important; }
+.date-spot-popover {
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 0;
+    background: var(--bs-body-bg);
+    border: 1.5px solid var(--bs-border-color);
+    border-radius: 16px;
+    padding: 14px;
+    width: 260px;
+    box-shadow: 0 8px 32px rgba(0,0,0,.18);
+    z-index: 300;
+}
+.date-spot-title { font-size: .78rem; font-weight: 700; color: var(--bs-body-color); margin-bottom: 10px; display:flex; align-items:center; gap:6px; }
+.date-spot-location { font-size: .71rem; color: var(--bs-secondary-color); margin-bottom: 10px; background: var(--bs-secondary-bg); border-radius: 8px; padding: 6px 10px; }
+.date-spot-link {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 10px; border-radius: 10px; text-decoration: none;
+    font-size: .82rem; font-weight: 600; color: var(--bs-body-color);
+    border: 1px solid var(--bs-border-color); margin-bottom: 6px; transition: background .15s;
+}
+.date-spot-link:hover { background: var(--bs-secondary-bg); text-decoration: none; color: var(--bs-body-color); }
+.date-spot-link .dsl-ico { width: 30px; height: 30px; border-radius: 8px; display:flex; align-items:center; justify-content:center; font-size: 1rem; flex-shrink: 0; }
+.date-spot-link.coffee .dsl-ico { background: #fef3c7; }
+.date-spot-link.restaurant .dsl-ico { background: #fee2e2; }
+.date-spot-link.park .dsl-ico { background: #d1fae5; }
+.date-spot-link.bar .dsl-ico { background: #ede9fe; }
+.date-spot-footer { font-size: .67rem; color: var(--bs-secondary-color); margin-top: 6px; text-align: center; }
 </style>
 @endpush
 
 @section('content')
 @php
     /** @var \App\Models\User $me */
+    // Location data for date spot suggestions
+    $myProfile    = auth()->user()->profile;
+    $otherProfile = $other->profile ?? null;
+    $myLat    = $myProfile?->latitude;
+    $myLng    = $myProfile?->longitude;
+    $myCity   = $myProfile?->city;
+    $otherLat = $otherProfile?->latitude;
+    $otherLng = $otherProfile?->longitude;
+    $otherCity = $otherProfile?->city;
+    // Midpoint coordinates (null if either user has no coords)
+    $midLat = ($myLat && $otherLat) ? round(($myLat + $otherLat) / 2, 6) : null;
+    $midLng = ($myLng && $otherLng) ? round(($myLng + $otherLng) / 2, 6) : null;
+    // Best location label for display
+    $dateCity = $myCity ?: $otherCity ?: null;
+    $hasLocation = $midLat || $dateCity;
+
     $me           = auth()->user();
     /** @var \App\Models\User $other */
     $visibleLastSeen = $other->visibleLastSeenTo($me);
@@ -701,6 +747,38 @@ main { padding-bottom: 0 !important; }
             <button type="button" class="chat-act-btn chat-act-tip" id="chatTipBtn" title="Send a credit tip">
                 <i class="bi bi-coin"></i>
             </button>
+
+            {{-- Date spot suggestions --}}
+            @if($hasLocation)
+            <div class="position-relative">
+                <button type="button" class="chat-act-btn date-spot-btn" id="dateSpotBtn"
+                        title="Suggest a date spot"
+                        data-mid-lat="{{ $midLat }}"
+                        data-mid-lng="{{ $midLng }}"
+                        data-city="{{ e($dateCity) }}">
+                    <i class="bi bi-geo-alt-fill"></i>
+                </button>
+                <div id="dateSpotPopover" class="date-spot-popover d-none">
+                    <div class="date-spot-title">
+                        <i class="bi bi-geo-alt-fill text-success"></i> Date Spot Ideas
+                    </div>
+                    <div class="date-spot-location" id="dateSpotLocation">Near you both</div>
+                    <a id="dsCoffee" href="#" target="_blank" rel="noopener" class="date-spot-link coffee">
+                        <span class="dsl-ico">☕</span><span>Coffee Shops</span><i class="bi bi-box-arrow-up-right ms-auto text-muted" style="font-size:.7rem"></i>
+                    </a>
+                    <a id="dsRestaurant" href="#" target="_blank" rel="noopener" class="date-spot-link restaurant">
+                        <span class="dsl-ico">🍽️</span><span>Restaurants</span><i class="bi bi-box-arrow-up-right ms-auto text-muted" style="font-size:.7rem"></i>
+                    </a>
+                    <a id="dsPark" href="#" target="_blank" rel="noopener" class="date-spot-link park">
+                        <span class="dsl-ico">🌳</span><span>Parks &amp; Nature</span><i class="bi bi-box-arrow-up-right ms-auto text-muted" style="font-size:.7rem"></i>
+                    </a>
+                    <a id="dsBar" href="#" target="_blank" rel="noopener" class="date-spot-link bar">
+                        <span class="dsl-ico">🍹</span><span>Bars &amp; Cocktails</span><i class="bi bi-box-arrow-up-right ms-auto text-muted" style="font-size:.7rem"></i>
+                    </a>
+                    <div class="date-spot-footer">Links open Google Maps in a new tab</div>
+                </div>
+            </div>
+            @endif
 
             {{-- Emoji --}}
             <div class="position-relative">
@@ -2085,6 +2163,49 @@ function readAloud(btn) {
         });
     })();
     // ────────────────────────────────────────────────────────────────────────
+
+    // ── Date Spot Suggestions ─────────────────────────────────────────────
+    (function () {
+        const btn     = document.getElementById('dateSpotBtn');
+        const popover = document.getElementById('dateSpotPopover');
+        if (!btn || !popover) return;
+
+        const midLat  = parseFloat(btn.dataset.midLat)  || null;
+        const midLng  = parseFloat(btn.dataset.midLng)  || null;
+        const city    = btn.dataset.city || '';
+
+        function mapsUrl(query) {
+            if (midLat && midLng) {
+                return `https://www.google.com/maps/search/${encodeURIComponent(query)}/@${midLat},${midLng},14z`;
+            }
+            return `https://www.google.com/maps/search/${encodeURIComponent(query + ' ' + city)}`;
+        }
+
+        // Populate links
+        document.getElementById('dsCoffee').href     = mapsUrl('coffee shops');
+        document.getElementById('dsRestaurant').href = mapsUrl('restaurants');
+        document.getElementById('dsPark').href       = mapsUrl('parks');
+        document.getElementById('dsBar').href        = mapsUrl('bars cocktails');
+
+        // Update location label
+        const locLabel = document.getElementById('dateSpotLocation');
+        if (midLat && midLng) {
+            locLabel.textContent = 'Near the midpoint between you both';
+        } else if (city) {
+            locLabel.textContent = `Near ${city}`;
+        } else {
+            locLabel.textContent = 'Nearby';
+        }
+
+        // Toggle popover
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            popover.classList.toggle('d-none');
+        });
+        document.addEventListener('click', () => popover.classList.add('d-none'));
+        popover.addEventListener('click', (e) => e.stopPropagation());
+    })();
+    // ─────────────────────────────────────────────────────────────────────────
 })();
 </script>
 @endpush

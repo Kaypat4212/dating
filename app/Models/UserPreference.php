@@ -13,6 +13,7 @@ class UserPreference extends Model
         // Email notification preferences
         'email_new_message', 'email_new_match', 'email_profile_liked',
         'email_wave_received', 'email_travel_interest', 'email_login_alert',
+        'email_weekly_digest',
     ];
 
     protected function casts(): array
@@ -26,6 +27,7 @@ class UserPreference extends Model
             'email_wave_received'   => 'boolean',
             'email_travel_interest' => 'boolean',
             'email_login_alert'     => 'boolean',
+            'email_weekly_digest'   => 'boolean',
         ];
     }
 

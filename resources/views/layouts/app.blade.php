@@ -159,6 +159,7 @@
             ->count();
     }
     $navPhoto = auth()->check() ? auth()->user()->primaryPhoto : null;
+    $callsEnabled = (bool) \App\Models\SiteSetting::get('voice_calls_enabled', true);
 @endphp
 <nav class="navbar navbar-expand-lg sticky-top shadow-sm" id="mainNav">
     <div class="container">
@@ -341,12 +342,14 @@
                         <li><a class="dropdown-item" href="{{ route('icebreaker.index') }}"><i class="bi bi-snow2 me-2 text-info"></i>Icebreakers</a></li>
                         <li><a class="dropdown-item" href="{{ route('account.show') }}"><i class="bi bi-gear me-2 text-secondary"></i>Settings</a></li>
                         <li><a class="dropdown-item" href="{{ route('invite.index') }}"><i class="bi bi-gift me-2 text-danger"></i>Invite Friends</a></li>
+                        @if($callsEnabled)
                         <li>
                             <a class="dropdown-item d-flex align-items-center justify-content-between" href="{{ route('calls.history') }}" id="navCallHistoryLink">
                                 <span><i class="bi bi-telephone-fill me-2 text-success"></i>Call History</span>
                                 <span class="badge bg-danger rounded-pill d-none" id="missedCallBadgeNav" style="font-size:.65rem"></span>
                             </a>
                         </li>
+                        @endif
                         {{-- Verification link --}}
                         @if(auth()->user()->is_verified)
                         <li><span class="dropdown-item-text small text-success"><i class="bi bi-patch-check-fill me-2"></i>Verified ✅</span></li>
@@ -427,7 +430,7 @@
         <i class="bi bi-search-heart"></i><span>Browse</span>
     </a>
     <a href="{{ route('users.search') }}" class="{{ request()->routeIs('users.search*') ? 'active' : '' }}">
-        <i class="bi bi-person-search"></i><span>Find</span>
+        <i class="bi bi-compass-fill"></i><span>Find</span>
     </a>
     <a href="{{ route('matches.index') }}" class="{{ request()->routeIs('matches.*') ? 'active' : '' }}">
         <i class="bi bi-hearts"></i><span>Matches</span>
@@ -548,6 +551,7 @@
                 }
             });
 
+        @if($callsEnabled)
         // Listen for missed calls via private channel (call-status-changed)
         Echo.private('user.' + userId)
             .listen('.call-status-changed', function (e) {
@@ -558,8 +562,10 @@
                     }
                 }
             });
+        @endif
     }
 
+    @if($callsEnabled)
     // ── Missed call badge ─────────────────────────────────────────────────────
     function updateMissedCallBadge() {
         fetch('/calls/missed-count', { headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } })
@@ -598,6 +604,7 @@
 
     // Poll once on page load
     updateMissedCallBadge();
+    @endif
 })();
 </script>
 @endauth
