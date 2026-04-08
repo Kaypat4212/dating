@@ -75,6 +75,42 @@
                 overflow-y: auto;
             }
         }
+        /* Mobile navbar collapse — scrollable when content overflows */
+        @media (max-width: 991.98px) {
+            .navbar-collapse.show,
+            .navbar-collapse.collapsing {
+                max-height: 70vh;
+                overflow-y: auto;
+                overflow-x: hidden;
+            }
+            /* Scrollable inline dropdowns inside the mobile collapse */
+            .navbar-collapse .dropdown-menu {
+                max-height: 45vh;
+                overflow-y: auto;
+            }
+        }
+        /* All dropdown menus — cap height so they never overflow the viewport */
+        .dropdown-menu {
+            max-height: calc(100vh - 100px);
+            overflow-y: auto;
+        }
+        /* Thin custom scrollbar for navbar collapse and dropdowns */
+        .navbar-collapse::-webkit-scrollbar,
+        .dropdown-menu::-webkit-scrollbar,
+        .navbar-dropdown-menu::-webkit-scrollbar {
+            width: 4px;
+        }
+        .navbar-collapse::-webkit-scrollbar-track,
+        .dropdown-menu::-webkit-scrollbar-track,
+        .navbar-dropdown-menu::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .navbar-collapse::-webkit-scrollbar-thumb,
+        .dropdown-menu::-webkit-scrollbar-thumb,
+        .navbar-dropdown-menu::-webkit-scrollbar-thumb {
+            background: rgba(var(--bs-secondary-rgb), .3);
+            border-radius: 4px;
+        }
         /* Unread message blinking dot on bottom nav */
         @keyframes msgPulse {
             0%, 100% { opacity:1; transform:scale(1); }
@@ -395,6 +431,9 @@
     </a>
     <a href="{{ route('matches.index') }}" class="{{ request()->routeIs('matches.*') ? 'active' : '' }}">
         <i class="bi bi-hearts"></i><span>Matches</span>
+    </a>
+    <a href="{{ route('feed.index') }}" class="{{ request()->routeIs('feed.*') ? 'active' : '' }}">
+        <i class="bi bi-grid-1x2-fill"></i><span>Feed</span>
     </a>
     <a href="{{ route('conversations.index') }}" class="{{ request()->routeIs('conversations.*') ? 'active' : '' }}" style="position:relative">
         <i class="bi bi-chat-heart-fill"></i>
