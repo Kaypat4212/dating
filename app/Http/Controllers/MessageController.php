@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\Conversation;
 use App\Models\Message;
 use App\Models\SiteSetting;
-use App\Notifications\FeatureUsageNotification;
 use App\Services\ActivityLogger;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -128,15 +127,7 @@ class MessageController extends Controller
         $partner = $match->getOtherUser($user->id);
         try { $partner->notify(new \App\Notifications\NewMessageNotification($message, $user)); } catch (\Throwable) {}
 
-        if (SiteSetting::get('email_feature_usage_enabled', true)) {
-            try {
-                $user->notify(new FeatureUsageNotification(
-                    feature: 'Message Sent',
-                    summary: "You sent a message to {$partner->name}.",
-                    url: route('conversations.show', $conversation),
-                ));
-            } catch (\Throwable) {}
-        }
+        // NOTE: No self-notification for sender — only recipient gets emailed.
 
         return response()->json([
             'message' => [

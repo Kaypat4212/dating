@@ -64,6 +64,39 @@
                 </div>
             </div>
 
+            {{-- Read Receipts --}}
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-transparent fw-semibold">
+                    <i class="bi bi-check2-all me-2 text-primary"></i>Read Receipts
+                    <span class="badge bg-warning text-dark ms-2 small">Premium</span>
+                </div>
+                <div class="card-body d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="fw-semibold">
+                            {{ ($user->read_receipts_enabled ?? true) ? 'Read receipts on' : 'Read receipts off' }}
+                        </div>
+                        <div class="text-muted small">
+                            When on, your matches see blue double-ticks when you've read their message.
+                            When off, they see grey ticks only.
+                        </div>
+                        @if(!$user->isPremiumActive())
+                        <div class="text-warning small mt-1"><i class="bi bi-lock-fill me-1"></i>Requires any Premium plan</div>
+                        @endif
+                    </div>
+                    @if($user->isPremiumActive())
+                    <form method="POST" action="{{ route('account.read-receipts') }}">@csrf
+                        <button type="submit" class="btn btn-sm {{ ($user->read_receipts_enabled ?? true) ? 'btn-primary' : 'btn-outline-secondary' }}">
+                            {{ ($user->read_receipts_enabled ?? true) ? 'Enabled' : 'Disabled' }}
+                        </button>
+                    </form>
+                    @else
+                    <a href="{{ route('premium.show') }}" class="btn btn-sm btn-warning">
+                        <i class="bi bi-star-fill me-1"></i>Upgrade
+                    </a>
+                    @endif
+                </div>
+            </div>
+
             {{-- Photo Privacy --}}
             <div class="card border-0 shadow-sm mb-4">
                 <div class="card-header bg-transparent fw-semibold">

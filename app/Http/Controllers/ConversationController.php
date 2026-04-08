@@ -42,11 +42,29 @@ class ConversationController extends Controller
             'You do not have access to this conversation.'
         );
 
-        // Mark all messages from the other user as read
-        $conversation->messages()
+        // Mark all messages from the other user as read and broadcast "seen" event
+        $unreadCount = $conversation->messages()
             ->where('sender_id', '!=', $user->id)
             ->whereNull('read_at')
-            ->update(['read_at' => now()]);
+            ->count();
+
+        if ($unreadCount > 0) {
+            $conversation->messages()
+                ->where('sender_id', '!=', $user->id)
+                ->whereNull('read_at')
+                ->update(['read_at' => now()]);
+
+            // Broadcast real-time "seen" to the sender — only if user allows read receipts
+            if ($user->read_receipts_enabled !== false) {
+                try {
+                    broadcast(new \App\Events\MessagesRead(
+                        $conversation->id,
+                        $user->id,
+                        now()->toIso8601String()
+                    ));
+                } catch (\Throwable) {}
+            }
+        }
 
         $messages = $conversation->messages()
             ->notExpired()

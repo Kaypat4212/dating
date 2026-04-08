@@ -153,6 +153,28 @@ class AccountController extends Controller
     }
 
     /**
+     * Toggle read receipts — Premium feature.
+     * When disabled, the user's read_at is still stamped but never broadcast to senders.
+     */
+    public function toggleReadReceipts(Request $request): RedirectResponse
+    {
+        $user = $request->user();
+
+        if (! $user->isPremiumActive()) {
+            return back()->withErrors(['read_receipts' => 'Read receipts require an active Premium plan.']);
+        }
+
+        $user->update(['read_receipts_enabled' => ! ($user->read_receipts_enabled ?? true)]);
+
+        return back()->with(
+            'success',
+            ($user->read_receipts_enabled ?? true)
+                ? 'Read receipts are now enabled — your matches can see when you\'ve read their messages.'
+                : 'Read receipts are now disabled — your matches will only see grey ticks.'
+        );
+    }
+
+    /**
      * View the list of users blocked by the authenticated user.
      */
     public function blockedUsers(Request $request): \Illuminate\View\View

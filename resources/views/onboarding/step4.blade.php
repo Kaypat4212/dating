@@ -514,7 +514,7 @@
         <div class="mt-2 rounded-3 p-3 text-center" style="background:rgba(249,168,212,.06);border:1px dashed rgba(249,168,212,.25)">
             <p class="mb-1 small fw-semibold" style="color:#f9a8d4"><i class="bi bi-stars me-1"></i>Premium Feature</p>
             <p class="mb-2 small" style="color:rgba(255,255,255,.45)">Upgrade to save up to 10 filter presets and switch between them instantly.</p>
-            <a href="{{ route('premium.index') }}" class="btn btn-sm fw-semibold"
+            <a href="{{ route('premium.show') }}" class="btn btn-sm fw-semibold"
                style="background:linear-gradient(135deg,#f43f5e,#a855f7);color:#fff;border:none;border-radius:.65rem">
                 Upgrade to Premium
             </a>

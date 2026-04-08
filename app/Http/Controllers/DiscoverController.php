@@ -132,6 +132,25 @@ class DiscoverController extends Controller
             $query->where('profiles.country', $filterCountry);
         }
 
+        // ── Dealbreaker hard-filters (apply current user's dealbreakers) ──────
+        $myDealbreakers = $user->profile?->dealbreakers ?? [];
+        foreach ($myDealbreakers as $db) {
+            switch ($db) {
+                case 'no_smokers':
+                    $query->where(fn($q) => $q->whereNull('profiles.smoking')->orWhere('profiles.smoking', 'never'));
+                    break;
+                case 'no_drinkers':
+                    $query->where(fn($q) => $q->whereNull('profiles.drinking')->orWhere('profiles.drinking', 'never'));
+                    break;
+                case 'must_want_kids':
+                    $query->where('profiles.wants_children', true);
+                    break;
+                case 'no_kids':
+                    $query->where(fn($q) => $q->whereNull('profiles.has_children')->orWhere('profiles.has_children', false));
+                    break;
+            }
+        }
+
         // Distance filter (Haversine)
         $requestKm = $request->filled('max_distance_km') ? (int) $request->input('max_distance_km') : null;
         $maxKm     = $requestKm ?? $prefs?->max_distance_km;

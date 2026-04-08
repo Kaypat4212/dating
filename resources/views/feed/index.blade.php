@@ -25,7 +25,7 @@
                     <div class="overflow-hidden">
                         <div class="fw-semibold text-truncate">{{ auth()->user()->name }}</div>
                         <a href="{{ route('profile.show', auth()->user()->username) }}"
-                           class="text-muted text-decoration-none small">@{{ auth()->user()->username }}</a>
+                           class="text-muted text-decoration-none small">{{ '@' . auth()->user()->username }}</a>
                     </div>
                 </div>
             </div>

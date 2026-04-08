@@ -6,26 +6,40 @@
         <div class="col-lg-8">
             <h4 class="fw-bold mb-4"><i class="bi bi-pencil-square me-2 text-primary"></i>Edit Your Profile</h4>
 
-            {{-- Profile Strength --}}
-            @php $completion = $profile?->completion_percent ?? 0; @endphp
-            <div class="card border-0 shadow-sm mb-4 {{ $completion >= 80 ? 'border-success' : '' }}">
+            {{-- Profile Strength Ring --}}
+            @php
+                $completion = $profile?->completion_percent ?? 0;
+                $circumference = 251; // 2*pi*40 ≈ 251
+                $dashoffset = $circumference - ($completion / 100) * $circumference;
+                $ringColor = $completion >= 80 ? '#22c55e' : ($completion >= 50 ? '#eab308' : '#ef4444');
+            @endphp
+            <div class="card border-0 shadow-sm mb-4">
                 <div class="card-body py-3">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <span class="fw-semibold small"><i class="bi bi-bar-chart-fill me-1 text-primary"></i>Profile Strength</span>
-                        <span class="fw-bold {{ $completion >= 80 ? 'text-success' : ($completion >= 50 ? 'text-warning' : 'text-danger') }}">
-                            {{ $completion }}%
-                        </span>
+                    <div class="d-flex align-items-center gap-4">
+                        {{-- SVG Ring --}}
+                        <div style="flex-shrink:0">
+                            <svg width="80" height="80" viewBox="0 0 90 90">
+                                <circle cx="45" cy="45" r="40" fill="none" stroke="#e9ecef" stroke-width="8"/>
+                                <circle cx="45" cy="45" r="40" fill="none"
+                                    stroke="{{ $ringColor }}" stroke-width="8"
+                                    stroke-dasharray="{{ $circumference }}"
+                                    stroke-dashoffset="{{ $dashoffset }}"
+                                    stroke-linecap="round"
+                                    transform="rotate(-90 45 45)"
+                                    style="transition:stroke-dashoffset .8s ease"/>
+                                <text x="45" y="50" text-anchor="middle" font-size="16" font-weight="700" fill="{{ $ringColor }}">{{ $completion }}%</text>
+                            </svg>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="fw-semibold mb-1"><i class="bi bi-bar-chart-fill me-1 text-primary"></i>Profile Strength</div>
+                            <p class="small text-muted mb-0">
+                                @if($completion < 40) Add a headline, bio, and lifestyle details to stand out!
+                                @elseif($completion < 80) Looking good! More details get you 3× more matches.
+                                @else 🌟 Great profile! You're showing up at your best.
+                                @endif
+                            </p>
+                        </div>
                     </div>
-                    <div class="progress mb-2" style="height:10px;border-radius:6px">
-                        <div class="progress-bar {{ $completion >= 80 ? 'bg-success' : ($completion >= 50 ? 'bg-warning' : 'bg-danger') }}"
-                             style="width:{{ $completion }}%;transition:width .5s ease"></div>
-                    </div>
-                    <p class="small text-muted mb-0">
-                        @if($completion < 40) Add a headline, bio, and lifestyle details to stand out!
-                        @elseif($completion < 80) Looking good! Adding more details can get you 3× more matches.
-                        @else 🌟 Great profile! You're showing up at your best.
-                        @endif
-                    </p>
                 </div>
             </div>
 
@@ -159,6 +173,45 @@
                                 <input class="form-check-input" type="checkbox" name="wants_children" id="wantsKids" value="1" {{ old('wants_children', $profile?->wants_children) ? 'checked' : '' }}>
                                 <label class="form-check-label" for="wantsKids">Open to having children</label>
                             </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label"><i class="bi bi-clock me-1 text-success"></i>Availability Status</label>
+                            <select name="availability_status" class="form-select">
+                                <option value="">Not specified</option>
+                                @foreach(['free_tonight' => '🟢 Free tonight','busy_this_week' => '🔴 Busy this week','looking_irl' => '📍 Looking to meet IRL','open_to_chat' => '💬 Open to chat','offline' => '⚫ Offline'] as $val => $label)
+                                <option value="{{ $val }}" {{ old('availability_status', $profile?->availability_status) === $val ? 'selected' : '' }}>{{ $label }}</option>
+                                @endforeach
+                            </select>
+                            <div class="form-text">Let matches know how reachable you are today.</div>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Dealbreakers --}}
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-transparent fw-semibold"><i class="bi bi-shield-x me-2 text-danger"></i>Dealbreakers</div>
+                    <div class="card-body">
+                        <p class="small text-muted mb-3">People who don't match these are automatically hidden from your discovery.</p>
+                        @php
+                            $currentDealbreakers = old('dealbreakers', $profile?->dealbreakers ?? []);
+                        @endphp
+                        <div class="row g-2">
+                            @foreach([
+                                'no_smokers'        => '🚭 No Smokers',
+                                'no_drinkers'       => '🍷 No Drinkers',
+                                'must_want_kids'    => '👶 Must Want Kids',
+                                'no_kids'           => '🚫 No Existing Kids',
+                                'same_religion'     => '🕊️ Same Religion',
+                                'veggies_only'      => '🥗 Vegetarian/Vegan Only',
+                                'no_long_distance'  => '📍 No Long Distance',
+                            ] as $val => $label)
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="dealbreakers[]" id="db_{{ $val }}" value="{{ $val }}" {{ in_array($val, $currentDealbreakers) ? 'checked' : '' }}>
+                                    <label class="form-check-label" for="db_{{ $val }}">{{ $label }}</label>
+                                </div>
+                            </div>
+                            @endforeach
                         </div>
                     </div>
                 </div>

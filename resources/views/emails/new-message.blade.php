@@ -1,18 +1,18 @@
 @component('mail::message')
-# New Message from {{ $sender->name }} 💬
+# {{ $sender->name }} sent you a message 💬
 
-Hi **{{ $user->name }}**, you have a new message waiting!
+Hi **{{ $user->name }}**, you have a new message waiting for you on **{{ $appName }}**!
 
 @component('mail::panel')
-**{{ $sender->name }} says:**
+**From:** {{ $sender->name }}
 
-*"{{ $preview }}"*
+*The message content is private — tap the button below to read it.*
 @endcomponent
 
 Don't leave them waiting — log in and reply now!
 
 @component('mail::button', ['url' => $conversationUrl, 'color' => 'red'])
-Read & Reply
+View Message
 @endcomponent
 
 Happy chatting,

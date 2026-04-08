@@ -583,10 +583,16 @@ main { padding-bottom: 0 !important; }
                 <div class="message-meta d-flex align-items-center gap-1">
                     {{ $msg->created_at->format('g:i A') }}
                     @if($isMe)
-                        @if($msg->read_at)
-                            <i class="bi bi-check2-all text-primary" title="Seen {{ $msg->read_at->format('g:i A') }}"></i>
+                        @if($msg->read_at && $me->isPremiumActive() && $other->read_receipts_enabled !== false)
+                            <i class="bi bi-check2-all text-primary read-receipt-icon"
+                               data-msg-id="{{ $msg->id }}"
+                               title="Seen {{ $msg->read_at->format('g:i A') }}"></i>
+                        @elseif($msg->read_at)
+                            <i class="bi bi-check2-all text-muted read-receipt-icon"
+                               data-msg-id="{{ $msg->id }}" title="Delivered"></i>
                         @else
-                            <i class="bi bi-check2 text-muted" title="Delivered"></i>
+                            <i class="bi bi-check2 text-muted read-receipt-icon"
+                               data-msg-id="{{ $msg->id }}" title="Sent"></i>
                         @endif
                     @endif
                 </div>
@@ -1554,7 +1560,10 @@ const voiceCall = (() => {
     function appendBubble(body, isMe, createdAt, type = 'text', attachUrl = null, attachName = null, id = null, expiresAt = null) {
         typingRow.classList.add('d-none');
         const t   = new Date(createdAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-        const chk = isMe ? '<i class="bi bi-check2 text-muted"></i>' : '';
+        // Show sent-tick for my messages; premium users get read-receipt upgrades via broadcast
+        const chk = isMe
+            ? `<i class="bi bi-check2 text-muted read-receipt-icon"${id ? ` data-msg-id="${id}"` : ''} title="Sent"></i>`
+            : '';
 
         const row = document.createElement('div');
         row.className = `msg-row ${isMe ? 'me' : 'them'} group-start`;
@@ -1633,6 +1642,19 @@ const voiceCall = (() => {
                     appendBubble(e.body, false, e.created_at, e.type ?? 'text',
                                  e.attachment_url ?? null, e.attachment_name ?? null, e.id ?? null);
                 }
+            })
+            .listen('.messages.read', e => {
+                // Recipient read the conversation — upgrade all my sent ticks to blue "seen"
+                @if(auth()->user()->isPremiumActive())
+                if (e.reader_user_id !== myId) {
+                    document.querySelectorAll('.read-receipt-icon').forEach(icon => {
+                        if (icon.classList.contains('bi-check2') || icon.classList.contains('bi-check2-all')) {
+                            icon.className = 'bi bi-check2-all text-primary read-receipt-icon';
+                            icon.title = 'Seen';
+                        }
+                    });
+                }
+                @endif
             })
             .listen('.user.typing', e => {
                 if (e.user_id !== myId) {

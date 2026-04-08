@@ -87,9 +87,19 @@ class LikeController extends Controller
             return redirect()->back()->with('error', 'Action not allowed.');
         }
 
-        // Pass action (swipe left) — acknowledge but do not record a Like
+        // Pass action (swipe left) — acknowledge but do record a ProfilePass
         if ($request->input('action') === 'pass') {
             try { $this->elo->onPass($user); } catch (\Throwable) {}
+            // Record the pass for Second Chance Queue (silently ignore duplicates)
+            try {
+                \App\Models\ProfilePass::firstOrCreate([
+                    'passer_id' => $sender->id,
+                    'passed_id' => $user->id,
+                ], [
+                    'passed_at'   => now(),
+                    'resurfaced'  => false,
+                ]);
+            } catch (\Throwable) {}
             if ($request->expectsJson() || $request->ajax()) {
                 return response()->json(['passed' => true]);
             }
@@ -135,6 +145,12 @@ class LikeController extends Controller
             $user->notify(new \App\Notifications\ProfileLikedNotification($sender));
         } catch (\Throwable) {}
 
+        // Award like-received badges to the receiver
+        try {
+            $likesReceived = \App\Models\Like::where('receiver_id', $user->id)->count();
+            \App\Services\BadgeService::checkLikeBadges($user, $likesReceived);
+        } catch (\Throwable) {}
+
         if (SiteSetting::get('email_feature_usage_enabled', true)) {
             try {
                 $sender->notify(new FeatureUsageNotification(
@@ -166,6 +182,14 @@ class LikeController extends Controller
                 // Match created - notify both users
                 try { $user->notify(new \App\Notifications\NewMatchNotification($match, $sender)); } catch (\Throwable) {}
                 try { $sender->notify(new \App\Notifications\NewMatchNotification($match, $user)); } catch (\Throwable) {}
+
+                // Award match badges to both parties
+                try {
+                    $senderMatchCount = \App\Models\UserMatch::where('user1_id', $sender->id)->orWhere('user2_id', $sender->id)->count();
+                    $receiverMatchCount = \App\Models\UserMatch::where('user1_id', $user->id)->orWhere('user2_id', $user->id)->count();
+                    \App\Services\BadgeService::checkMatchBadges($sender, $senderMatchCount);
+                    \App\Services\BadgeService::checkMatchBadges($user, $receiverMatchCount);
+                } catch (\Throwable) {}
 
                 // Elo boost for mutual match
                 try { $this->elo->onMatch($sender, $user); } catch (\Throwable) {}

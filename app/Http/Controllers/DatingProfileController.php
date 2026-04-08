@@ -126,6 +126,9 @@ class DatingProfileController extends Controller
             'country'           => 'nullable|max:100',
             'latitude'          => 'nullable|numeric|between:-90,90',
             'longitude'         => 'nullable|numeric|between:-180,180',
+            'availability_status' => 'nullable|in:free_tonight,busy_this_week,looking_irl,open_to_chat,offline',
+            'dealbreakers'      => 'nullable|array',
+            'dealbreakers.*'    => 'string|in:no_smokers,no_drinkers,must_want_kids,no_kids,same_religion,veggies_only,no_long_distance',
         ]);
 
         // ── Save user name / username ──────────────────────────────────────────
@@ -157,6 +160,8 @@ class DatingProfileController extends Controller
             'country'           => $request->input('country'),
             'latitude'          => $request->input('latitude') ?: null,
             'longitude'         => $request->input('longitude') ?: null,
+            'availability_status' => $request->input('availability_status') ?: null,
+            'dealbreakers'      => $request->input('dealbreakers') ?: null,
         ], fn($v) => $v !== null && $v !== '');
 
         // Always persist wants_children (checkbox can be unchecked)

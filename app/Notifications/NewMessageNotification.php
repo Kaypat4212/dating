@@ -35,27 +35,30 @@ class NewMessageNotification extends Notification implements ShouldQueue
 
     public function toMail(object $notifiable): MailMessage
     {
+        $convUrl = route('conversations.show', $this->message->conversation_id);
+        $appName = config('app.name', 'HeartsConnect');
+
         $tpl = EmailTemplate::findByKey('new_message');
         if ($tpl) {
             ['subject' => $subject, 'html' => $html] = $tpl->render([
                 '{user_name}'        => $notifiable->name,
                 '{sender_name}'      => $this->sender->name,
-                '{message_preview}'  => substr($this->message->body, 0, 120),
-                '{conversation_url}' => route('conversations.show', $this->message->conversation_id),
-                '{app_name}'         => config('app.name'),
+                '{message_preview}'  => '● ● ●',   // blurred — never expose content in email
+                '{conversation_url}' => $convUrl,
+                '{app_name}'         => $appName,
                 '{app_url}'          => config('app.url'),
             ]);
             return (new MailMessage)->subject($subject)->view('emails.dynamic', ['html' => $html, 'subject' => $subject]);
         }
 
         return (new MailMessage)
-            ->subject("{$this->sender->name} sent you a message 💬")
+            ->subject("{$this->sender->name} sent you a message on {$appName} 💬")
             ->markdown('emails.new-message', [
                 'user'            => $notifiable,
                 'sender'          => $this->sender,
-                'preview'         => substr($this->message->body, 0, 120),
-                'conversationUrl' => route('conversations.show', $this->message->conversation_id),
-                'appName'         => config('app.name', 'HeartsConnect'),
+                'blurred'         => true,           // tells template to blur content
+                'conversationUrl' => $convUrl,
+                'appName'         => $appName,
                 'appUrl'          => config('app.url'),
             ]);
     }

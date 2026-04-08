@@ -66,6 +66,7 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser, Has
         'referral_code', 'referred_by',
         'elo_score',
         'login_streak', 'last_checkin_date', 'streak_freeze_count',
+        'read_receipts_enabled',
     ];
 
     protected $hidden = [
@@ -116,7 +117,8 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser, Has
             'premium_expires_at' => 'datetime',
             'is_banned'         => 'boolean',
             'is_verified'       => 'boolean',
-            'hide_last_seen'    => 'boolean',
+            'hide_last_seen'         => 'boolean',
+            'read_receipts_enabled'  => 'boolean',
             'last_active_at'        => 'datetime',
             'email_otp_expires_at'  => 'datetime',
             'profile_complete'      => 'boolean',
@@ -183,6 +185,13 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser, Has
     public function matchesAsUser2(): HasMany
     {
         return $this->hasMany(UserMatch::class, 'user2_id');
+    }
+
+    public function badges(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(Badge::class, 'user_badges')
+                    ->withPivot('earned_at', 'is_pinned')
+                    ->orderByPivot('earned_at', 'desc');
     }
 
     public function blocks(): HasMany

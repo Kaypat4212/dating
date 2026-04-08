@@ -16,6 +16,7 @@ class Profile extends Model
         'latitude', 'longitude', 'city', 'state', 'country',
         'views_count', 'is_paused', 'private_photos',
         'location_updates_count',
+        'availability_status', 'vibe_badge', 'dealbreakers',
     ];
 
     protected function casts(): array
@@ -27,6 +28,7 @@ class Profile extends Model
             'is_paused'               => 'boolean',
             'private_photos'          => 'boolean',
             'location_updates_count'  => 'integer',
+            'dealbreakers'            => 'array',
         ];
     }
 
@@ -57,7 +59,10 @@ class Profile extends Model
 
     public function getCompletionPercentAttribute(): int
     {
-        $fields = ['headline', 'bio', 'height_cm', 'body_type', 'relationship_goal'];
+        $fields = [
+            'headline', 'bio', 'height_cm', 'body_type', 'relationship_goal',
+            'occupation', 'education', 'availability_status',
+        ];
         $filled = collect($fields)->filter(fn($f) => !empty($this->$f))->count();
         return (int) (($filled / count($fields)) * 100);
     }

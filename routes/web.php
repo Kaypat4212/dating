@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\ImpersonateController;
 use App\Http\Controllers\Admin\FundingActionController;
 use App\Http\Controllers\Admin\WalletFundingActionController;
 use App\Http\Controllers\AiController;
+use App\Http\Controllers\BadgeController;
 use App\Http\Controllers\BlogController;
 use App\Http\Controllers\ChatRoomController;
 use App\Http\Controllers\ForumController;
@@ -250,6 +251,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/account/pause',           [AccountController::class, 'pause'])->name('account.pause');
         Route::post('/account/last-seen',       [AccountController::class, 'toggleLastSeen'])->name('account.last-seen');
         Route::post('/account/private-photos',  [AccountController::class, 'togglePrivatePhotos'])->name('account.private-photos');
+        Route::post('/account/read-receipts',   [AccountController::class, 'toggleReadReceipts'])->name('account.read-receipts');
         Route::get('/account/blocked',          [AccountController::class, 'blockedUsers'])->name('account.blocked');
         Route::post('/account/secret-word',     [AccountController::class, 'saveSecretWord'])->name('account.secret-word');
         Route::post('/account/notification-preferences', [AccountController::class, 'updateNotificationPreferences'])->name('account.notification-prefs');
@@ -401,6 +403,26 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         // ── Daily Streak check-in ─────────────────────────────────────────────
         Route::post('/checkin',                                [\App\Http\Controllers\StreakController::class, 'checkin'])->name('streak.checkin');
+
+        // ── Badges & Achievements ─────────────────────────────────────────────
+        Route::get('/badges',                     [BadgeController::class, 'index'])->name('badges.index');
+        Route::post('/badges/{badge}/pin',        [BadgeController::class, 'togglePin'])->name('badges.pin');
+
+        // ── Vibe Check Quiz ───────────────────────────────────────────────────
+        Route::get('/vibe-quiz',                  [\App\Http\Controllers\VibeQuizController::class, 'show'])->name('vibe.quiz');
+        Route::post('/vibe-quiz',                 [\App\Http\Controllers\VibeQuizController::class, 'submit'])->name('vibe.submit');
+
+        // ── Second Chance Queue ───────────────────────────────────────────────
+        Route::get('/second-chance',              [\App\Http\Controllers\SecondChanceController::class, 'index'])->name('second-chance.index');
+
+        // ── Question of the Day ───────────────────────────────────────────────
+        Route::get('/question-of-the-day',        [\App\Http\Controllers\MatchQuestionController::class, 'index'])->name('match-question.index');
+        Route::post('/question-of-the-day',       [\App\Http\Controllers\MatchQuestionController::class, 'answer'])->name('match-question.answer');
+
+        // ── Safe Date Check-In ────────────────────────────────────────────────
+        Route::get('/safe-date',                  [\App\Http\Controllers\SafeDateController::class, 'index'])->name('safe-date.index');
+        Route::post('/safe-date',                 [\App\Http\Controllers\SafeDateController::class, 'store'])->name('safe-date.store');
+        Route::post('/safe-date/{checkin}/safe',  [\App\Http\Controllers\SafeDateController::class, 'markSafe'])->name('safe-date.safe');
 
         // ── What's New Announcements ──────────────────────────────────────────
         Route::get('/whats-new',                          [AnnouncementController::class, 'index'])->name('announcements.index');

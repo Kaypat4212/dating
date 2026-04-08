@@ -199,6 +199,18 @@
                     </a>
                 </li>
                 <li class="nav-item">
+                    <a class="nav-link {{ request()->routeIs('badges.*') ? 'active fw-semibold' : '' }}" href="{{ route('badges.index') }}">
+                        <i class="bi bi-trophy me-1"></i>Badges
+                        @php $newBadgeCount = auth()->user()?->badges()->wherePivot('earned_at', '>=', now()->subHours(24))->count() ?? 0; @endphp
+                        @if($newBadgeCount > 0)<span class="badge bg-warning text-dark ms-1" style="font-size:.6rem">{{ $newBadgeCount }} new</span>@endif
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {{ request()->routeIs('like.who-liked-me') ? 'active fw-semibold' : '' }}" href="{{ route('like.who-liked-me') }}">
+                        <i class="bi bi-heart-fill text-danger me-1"></i>Liked You
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link {{ request()->routeIs('wave.*') ? 'active fw-semibold' : '' }}" href="{{ route('wave.received') }}">
                         <i class="bi bi-hand-wave me-1"></i>Waves
                     </a>
@@ -215,6 +227,19 @@
                         <li><a class="dropdown-item" href="{{ route('chat-rooms.index') }}"><i class="bi bi-chat-dots me-2 text-info"></i>Chat Rooms</a></li>
                         <li><a class="dropdown-item" href="{{ route('travel.index') }}"><i class="bi bi-airplane me-2 text-warning"></i>Travel Buddy</a></li>
                         <li><a class="dropdown-item" href="{{ route('speed-dating.index') }}"><i class="bi bi-lightning-charge me-2 text-danger"></i>Coffee Break ☕</a></li>
+                    </ul>
+                </li>
+                {{-- Features dropdown --}}
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle {{ request()->routeIs('vibe.*') || request()->routeIs('second-chance.*') || request()->routeIs('match-question.*') || request()->routeIs('safe-date.*') ? 'active fw-semibold' : '' }}"
+                       href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="bi bi-stars me-1"></i>Features
+                    </a>
+                    <ul class="dropdown-menu shadow border-0">
+                        <li><a class="dropdown-item" href="{{ route('vibe.quiz') }}"><i class="bi bi-stars me-2 text-purple" style="color:#7b2ff7"></i>Vibe Check Quiz</a></li>
+                        <li><a class="dropdown-item" href="{{ route('match-question.index') }}"><i class="bi bi-calendar-heart me-2 text-info"></i>Question of the Day</a></li>
+                        <li><a class="dropdown-item" href="{{ route('second-chance.index') }}"><i class="bi bi-arrow-repeat me-2 text-warning"></i>Second Chance Queue</a></li>
+                        <li><a class="dropdown-item" href="{{ route('safe-date.index') }}"><i class="bi bi-shield-check me-2 text-success"></i>Safe Date Check-In</a></li>
                     </ul>
                 </li>
             </ul>

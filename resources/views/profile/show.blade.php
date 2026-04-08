@@ -182,6 +182,47 @@
                     </div>
                     @endif
 
+                    {{-- Availability Status --}}
+                    @if($profile && $profile->availability_status)
+                    @php
+                        $availLabels = [
+                            'free_tonight'  => ['🟢', 'Free tonight',     'success'],
+                            'busy_this_week'=> ['🔴', 'Busy this week',   'danger'],
+                            'looking_irl'   => ['📍', 'Looking to meet IRL','info'],
+                            'open_to_chat'  => ['💬', 'Open to chat',     'primary'],
+                            'offline'       => ['⚫', 'Offline',          'secondary'],
+                        ];
+                        [$avIcon, $avLabel, $avColor] = $availLabels[$profile->availability_status] ?? ['⚪', $profile->availability_status, 'secondary'];
+                    @endphp
+                    <div class="mb-3">
+                        <span class="badge bg-{{ $avColor }}-subtle text-{{ $avColor }}-emphasis px-3 py-2 rounded-pill fs-6">
+                            {{ $avIcon }} {{ $avLabel }}
+                        </span>
+                    </div>
+                    @endif
+
+                    {{-- Vibe Badge --}}
+                    @if($profile && $profile->vibe_badge)
+                    @php
+                        $vibeLabels = [
+                            'adventurer'       => ['🏕️', 'The Adventurer'],
+                            'homebody'         => ['🛋️', 'The Homebody'],
+                            'social_butterfly' => ['🦋', 'The Social Butterfly'],
+                            'intellectual'     => ['🧠', 'The Intellectual'],
+                            'romantic'         => ['🌹', 'The Romantic'],
+                            'wild_card'        => ['🃏', 'The Wild Card'],
+                        ];
+                        [$vbIcon, $vbLabel] = $vibeLabels[$profile->vibe_badge] ?? ['✨', ucfirst($profile->vibe_badge)];
+                    @endphp
+                    <div class="mb-3">
+                        <span class="badge px-3 py-2 rounded-pill fs-6"
+                              style="background:linear-gradient(135deg,#f5f0ff,#ede9fe);color:#5b21b6;border:1px solid #c4b5fd"
+                              title="Vibe type">
+                            {{ $vbIcon }} {{ $vbLabel }}
+                        </span>
+                    </div>
+                    @endif
+
                     {{-- Interests --}}
                     @if($profile && $profile->interests->isNotEmpty())
                     <div class="mt-4">
@@ -210,6 +251,23 @@
                                 <span class="text-muted" style="font-size:.7rem">{{ $vp->duration_seconds }}s &middot; {{ $vp->plays_count }} plays</span>
                                 @endif
                             </div>
+                            @endforeach
+                        </div>
+                    </div>
+                    @endif
+
+                    {{-- Pinned Badges --}}
+                    @php $pinnedBadges = $profileUser->badges()->wherePivot('is_pinned', true)->get(); @endphp
+                    @if($pinnedBadges->isNotEmpty())
+                    <div class="mt-4">
+                        <h6 class="fw-bold mb-3"><i class="bi bi-trophy-fill text-warning me-2"></i>Badges</h6>
+                        <div class="d-flex flex-wrap gap-2">
+                            @foreach($pinnedBadges as $badge)
+                            <span class="badge rounded-pill d-flex align-items-center gap-1 px-3 py-2"
+                                  style="background:linear-gradient(135deg,#fff9f0,#fde68a);color:#92400e;font-size:.8rem;border:1px solid #fde68a"
+                                  title="{{ $badge->description }}">
+                                {{ $badge->emoji }} {{ $badge->name }}
+                            </span>
                             @endforeach
                         </div>
                     </div>

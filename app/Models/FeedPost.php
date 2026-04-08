@@ -12,13 +12,17 @@ class FeedPost extends Model
     protected $fillable = [
         'user_id', 'body', 'media_path', 'media_type',
         'original_post_id', 'likes_count', 'comments_count', 'reposts_count', 'is_active',
+        'post_type', 'poll_question', 'poll_options',
     ];
 
     protected $appends = ['media_url'];
 
     protected function casts(): array
     {
-        return ['is_active' => 'boolean'];
+        return [
+            'is_active'    => 'boolean',
+            'poll_options' => 'array',
+        ];
     }
 
     // ── Relationships ─────────────────────────────────────────────────────────
