@@ -388,6 +388,20 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // ── Disappearing message timer ────────────────────────────────────────
         Route::patch('/messages/{conversation}/disappear', [ConversationController::class, 'setDisappearTimer'])->name('conversations.disappear');
 
+        // ── Social Feed ───────────────────────────────────────────────────────
+        Route::get('/feed',                                    [\App\Http\Controllers\FeedController::class, 'index'])->name('feed.index');
+        Route::post('/feed',                                   [\App\Http\Controllers\FeedController::class, 'store'])->name('feed.store');
+        Route::delete('/feed/{post}',                          [\App\Http\Controllers\FeedController::class, 'destroy'])->name('feed.destroy');
+        Route::post('/feed/{post}/like',                       [\App\Http\Controllers\FeedController::class, 'like'])->name('feed.like');
+        Route::post('/feed/{post}/repost',                     [\App\Http\Controllers\FeedController::class, 'repost'])->name('feed.repost');
+        Route::post('/feed/{post}/comment',                    [\App\Http\Controllers\FeedController::class, 'comment'])->name('feed.comment');
+        Route::get('/feed/{post}/comments',                    [\App\Http\Controllers\FeedController::class, 'comments'])->name('feed.comments');
+        Route::delete('/feed/comments/{comment}',              [\App\Http\Controllers\FeedController::class, 'destroyComment'])->name('feed.comment.destroy');
+        Route::post('/feed/comments/{comment}/like',           [\App\Http\Controllers\FeedController::class, 'likeComment'])->name('feed.comment.like');
+
+        // ── Daily Streak check-in ─────────────────────────────────────────────
+        Route::post('/checkin',                                [\App\Http\Controllers\StreakController::class, 'checkin'])->name('streak.checkin');
+
         // ── What's New Announcements ──────────────────────────────────────────
         Route::get('/whats-new',                          [AnnouncementController::class, 'index'])->name('announcements.index');
         Route::get('/whats-new/unread',                   [AnnouncementController::class, 'unread'])->name('announcements.unread');

@@ -65,6 +65,7 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser, Has
         'registration_ip', 'last_login_ip', 'last_login_at',
         'referral_code', 'referred_by',
         'elo_score',
+        'login_streak', 'last_checkin_date', 'streak_freeze_count',
     ];
 
     protected $hidden = [
@@ -124,6 +125,9 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser, Has
             'passport_mode'         => 'boolean',
             'totp_recovery_codes'   => 'array',
             'location_filter_uses'  => 'integer',
+            'login_streak'          => 'integer',
+            'last_checkin_date'     => 'date',
+            'streak_freeze_count'   => 'integer',
         ];
     }
 

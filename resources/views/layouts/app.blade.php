@@ -194,6 +194,11 @@
                     </a>
                 </li>
                 <li class="nav-item">
+                    <a class="nav-link {{ request()->routeIs('feed.*') ? 'active fw-semibold' : '' }}" href="{{ route('feed.index') }}">
+                        <i class="bi bi-grid-1x2 me-1"></i>Feed
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link {{ request()->routeIs('wave.*') ? 'active fw-semibold' : '' }}" href="{{ route('wave.received') }}">
                         <i class="bi bi-hand-wave me-1"></i>Waves
                     </a>
@@ -239,6 +244,13 @@
                     <i class="bi bi-coin"></i>
                     {{ number_format(auth()->user()->credit_balance) }} credits
                 </a>
+
+                {{-- Login Streak --}}
+                @if(auth()->user()->login_streak > 0)
+                <span class="btn btn-sm btn-outline-warning d-none d-lg-inline-flex align-items-center gap-1 fw-semibold" title="Daily check-in streak" id="streakBadge" style="cursor:default">
+                    🔥 {{ auth()->user()->login_streak }}
+                </span>
+                @endif
 
                 <button class="btn btn-sm btn-outline-secondary" data-theme-toggle title="Toggle dark/light mode" aria-label="Toggle theme">
                     <i class="bi bi-moon-stars-fill" data-theme-icon></i>
@@ -613,6 +625,24 @@
 
 {{-- ── What's New Modal ───────────────────────────────────────────────────── --}}
 <x-whats-new-modal />
+
+{{-- ── Daily Streak auto-checkin ─────────────────────────────────────────── --}}
+@auth
+<script>
+(function () {
+    var today = new Date().toDateString();
+    if (sessionStorage.getItem('streak_checked') === today) return;
+    sessionStorage.setItem('streak_checked', today);
+    fetch('{{ route("streak.checkin") }}', {
+        method: 'POST',
+        headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' },
+    }).then(r => r.json()).then(data => {
+        var el = document.getElementById('streakBadge');
+        if (el) el.innerHTML = '🔥 ' + data.streak;
+    }).catch(() => {});
+})();
+</script>
+@endauth
 
 </body>
 </html>
