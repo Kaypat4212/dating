@@ -12,6 +12,7 @@ use App\Http\Controllers\ForumController;
 use App\Http\Controllers\InviteController;
 use App\Http\Controllers\IcebreakerController;
 use App\Http\Controllers\ProfileExtrasController;
+use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\TravelController;
 use App\Http\Controllers\BlockController;
 use App\Http\Controllers\FeatureRequestController;
@@ -128,7 +129,15 @@ require __DIR__ . '/auth.php';
 // ─── Tipping feature routes ──────────────────────────────────────────────────
 require __DIR__ . '/tips.php';
 
-// ─── Authenticated routes ────────────────────────────────────────────────────
+// ─── Reviews (public read + submit; comments/helpful require auth) ────────────
+Route::prefix('reviews')->name('reviews.')->group(function () {
+    Route::get('/',                      [ReviewController::class, 'index'])->name('index');
+    Route::post('/',                     [ReviewController::class, 'store'])->name('store');
+    Route::post('/{review}/comment',     [ReviewController::class, 'storeComment'])->name('comment.store');
+    Route::post('/{review}/helpful',     [ReviewController::class, 'helpful'])->name('helpful');
+});
+
+// ─── Authenticated routes ─────────────────────────────────────────────────────
 Route::middleware(['auth', 'verified'])->group(function () {
 
     // ── Onboarding / Profile Setup ───────────────────────────────────────────
