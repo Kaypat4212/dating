@@ -78,15 +78,85 @@ class EnvEditor extends Page
             'telegram_bot_token' => env('TELEGRAM_BOT_TOKEN', ''),
             'telegram_chat_id' => env('TELEGRAM_CHAT_ID', ''),
             
-            // Broadcasting
-            'broadcast_connection' => env('BROADCAST_CONNECTION', 'log'),
-            
+            // Broadcasting / Pusher / Reverb
+            'broadcast_connection'   => env('BROADCAST_CONNECTION', 'log'),
+            'pusher_app_id'          => env('PUSHER_APP_ID', ''),
+            'pusher_app_key'         => env('PUSHER_APP_KEY', ''),
+            'pusher_app_secret'      => env('PUSHER_APP_SECRET', ''),
+            'pusher_app_cluster'     => env('PUSHER_APP_CLUSTER', 'mt1'),
+            'reverb_app_id'          => env('REVERB_APP_ID', ''),
+            'reverb_app_key'         => env('REVERB_APP_KEY', ''),
+            'reverb_app_secret'      => env('REVERB_APP_SECRET', ''),
+            'reverb_host'            => env('REVERB_HOST', 'localhost'),
+            'reverb_port'            => env('REVERB_PORT', '8080'),
+
             // Queue
             'queue_connection' => env('QUEUE_CONNECTION', 'database'),
-            
+
             // Session
-            'session_driver' => env('SESSION_DRIVER', 'file'),
+            'session_driver'   => env('SESSION_DRIVER', 'file'),
             'session_lifetime' => env('SESSION_LIFETIME', 120),
+
+            // Stripe
+            'stripe_key'        => env('STRIPE_KEY', ''),
+            'stripe_secret'     => env('STRIPE_SECRET', ''),
+            'stripe_webhook'    => env('STRIPE_WEBHOOK_SECRET', ''),
+
+            // PayPal
+            'paypal_client_id'     => env('PAYPAL_CLIENT_ID', ''),
+            'paypal_client_secret' => env('PAYPAL_CLIENT_SECRET', ''),
+            'paypal_mode'          => env('PAYPAL_MODE', 'sandbox'),
+
+            // Google OAuth
+            'google_client_id'     => env('GOOGLE_CLIENT_ID', ''),
+            'google_client_secret' => env('GOOGLE_CLIENT_SECRET', ''),
+            'google_redirect'      => env('GOOGLE_REDIRECT_URI', ''),
+
+            // Facebook OAuth
+            'facebook_client_id'     => env('FACEBOOK_CLIENT_ID', ''),
+            'facebook_client_secret' => env('FACEBOOK_CLIENT_SECRET', ''),
+
+            // Cloudinary (media storage)
+            'cloudinary_url'            => env('CLOUDINARY_URL', ''),
+            'cloudinary_cloud_name'     => env('CLOUDINARY_CLOUD_NAME', ''),
+            'cloudinary_api_key'        => env('CLOUDINARY_API_KEY', ''),
+            'cloudinary_api_secret'     => env('CLOUDINARY_API_SECRET', ''),
+
+            // AWS S3 (file storage)
+            'aws_access_key_id'     => env('AWS_ACCESS_KEY_ID', ''),
+            'aws_secret_access_key' => env('AWS_SECRET_ACCESS_KEY', ''),
+            'aws_default_region'    => env('AWS_DEFAULT_REGION', 'us-east-1'),
+            'aws_bucket'            => env('AWS_BUCKET', ''),
+            'aws_url'               => env('AWS_URL', ''),
+
+            // Twilio (SMS / calls)
+            'twilio_sid'          => env('TWILIO_SID', ''),
+            'twilio_auth_token'   => env('TWILIO_AUTH_TOKEN', ''),
+            'twilio_phone_number' => env('TWILIO_PHONE_NUMBER', ''),
+
+            // Daily.co (video/voice calls)
+            'daily_api_key'  => env('DAILY_API_KEY', ''),
+            'daily_domain'   => env('DAILY_DOMAIN', ''),
+
+            // Agora (alternative video)
+            'agora_app_id'          => env('AGORA_APP_ID', ''),
+            'agora_app_certificate' => env('AGORA_APP_CERTIFICATE', ''),
+
+            // Firebase (push notifications)
+            'firebase_project_id'   => env('FIREBASE_PROJECT_ID', ''),
+            'firebase_server_key'   => env('FIREBASE_SERVER_KEY', ''),
+            'firebase_credentials'  => env('FIREBASE_CREDENTIALS', ''),
+
+            // Google Maps / Places
+            'google_maps_key' => env('GOOGLE_MAPS_API_KEY', ''),
+
+            // OpenAI (alternative to Groq)
+            'openai_api_key' => env('OPENAI_API_KEY', ''),
+            'openai_org_id'  => env('OPENAI_ORGANIZATION', ''),
+
+            // reCAPTCHA
+            'recaptcha_site_key'   => env('RECAPTCHA_SITE_KEY', ''),
+            'recaptcha_secret_key' => env('RECAPTCHA_SECRET_KEY', ''),
         ];
     }
 
@@ -223,6 +293,233 @@ class EnvEditor extends Page
                             ->visible(fn ($get) => $get('telegram_enabled')),
                     ])->columns(2),
                 
+                Section::make('💳 Stripe Payments')
+                    ->icon('heroicon-o-credit-card')
+                    ->description('Stripe API keys — get them at dashboard.stripe.com → Developers → API Keys')
+                    ->collapsible()->collapsed()
+                    ->schema([
+                        Forms\Components\TextInput::make('stripe_key')
+                            ->label('Publishable Key (pk_...)')
+                            ->placeholder('pk_live_...')
+                            ->helperText('Safe to expose to clients'),
+                        Forms\Components\TextInput::make('stripe_secret')
+                            ->label('Secret Key (sk_...)')
+                            ->password()->revealable()
+                            ->placeholder('sk_live_...'),
+                        Forms\Components\TextInput::make('stripe_webhook')
+                            ->label('Webhook Secret (whsec_...)')
+                            ->password()->revealable()
+                            ->placeholder('whsec_...')
+                            ->helperText('dashboard.stripe.com → Webhooks → signing secret'),
+                    ])->columns(2),
+
+                Section::make('💰 PayPal')
+                    ->icon('heroicon-o-banknotes')
+                    ->description('developer.paypal.com → Apps & Credentials')
+                    ->collapsible()->collapsed()
+                    ->schema([
+                        Forms\Components\Select::make('paypal_mode')
+                            ->label('Mode')
+                            ->options(['sandbox' => 'Sandbox (testing)', 'live' => 'Live']),
+                        Forms\Components\TextInput::make('paypal_client_id')
+                            ->label('Client ID'),
+                        Forms\Components\TextInput::make('paypal_client_secret')
+                            ->label('Client Secret')
+                            ->password()->revealable(),
+                    ])->columns(2),
+
+                Section::make('🔐 Google OAuth & Maps')
+                    ->icon('heroicon-o-identification')
+                    ->description('console.cloud.google.com → APIs & Services → Credentials')
+                    ->collapsible()->collapsed()
+                    ->schema([
+                        Forms\Components\TextInput::make('google_client_id')
+                            ->label('OAuth Client ID')
+                            ->placeholder('XXXXXXXXX.apps.googleusercontent.com'),
+                        Forms\Components\TextInput::make('google_client_secret')
+                            ->label('OAuth Client Secret')
+                            ->password()->revealable(),
+                        Forms\Components\TextInput::make('google_redirect')
+                            ->label('OAuth Redirect URI')
+                            ->placeholder('https://heartsconnect.cc/auth/google/callback'),
+                        Forms\Components\TextInput::make('google_maps_key')
+                            ->label('Google Maps / Places API Key')
+                            ->password()->revealable()
+                            ->placeholder('AIza...'),
+                    ])->columns(2),
+
+                Section::make('📘 Facebook OAuth')
+                    ->icon('heroicon-o-identification')
+                    ->description('developers.facebook.com → Your App → Settings → Basic')
+                    ->collapsible()->collapsed()
+                    ->schema([
+                        Forms\Components\TextInput::make('facebook_client_id')
+                            ->label('App ID'),
+                        Forms\Components\TextInput::make('facebook_client_secret')
+                            ->label('App Secret')
+                            ->password()->revealable(),
+                    ])->columns(2),
+
+                Section::make('🖼️ Cloudinary (Media Storage)')
+                    ->icon('heroicon-o-photo')
+                    ->description('cloudinary.com → Dashboard → API Keys')
+                    ->collapsible()->collapsed()
+                    ->schema([
+                        Forms\Components\TextInput::make('cloudinary_cloud_name')
+                            ->label('Cloud Name'),
+                        Forms\Components\TextInput::make('cloudinary_api_key')
+                            ->label('API Key'),
+                        Forms\Components\TextInput::make('cloudinary_api_secret')
+                            ->label('API Secret')
+                            ->password()->revealable(),
+                        Forms\Components\TextInput::make('cloudinary_url')
+                            ->label('Cloudinary URL (optional)')
+                            ->placeholder('cloudinary://API_KEY:API_SECRET@CLOUD_NAME')
+                            ->columnSpanFull(),
+                    ])->columns(2),
+
+                Section::make('☁️ AWS S3 (File Storage)')
+                    ->icon('heroicon-o-server')
+                    ->description('aws.amazon.com → IAM → Users → Security Credentials')
+                    ->collapsible()->collapsed()
+                    ->schema([
+                        Forms\Components\TextInput::make('aws_access_key_id')
+                            ->label('Access Key ID'),
+                        Forms\Components\TextInput::make('aws_secret_access_key')
+                            ->label('Secret Access Key')
+                            ->password()->revealable(),
+                        Forms\Components\TextInput::make('aws_default_region')
+                            ->label('Region')
+                            ->placeholder('us-east-1'),
+                        Forms\Components\TextInput::make('aws_bucket')
+                            ->label('Bucket Name'),
+                        Forms\Components\TextInput::make('aws_url')
+                            ->label('Custom CDN URL (optional)')
+                            ->placeholder('https://cdn.heartsconnect.cc'),
+                    ])->columns(2),
+
+                Section::make('📱 Twilio (SMS / Calls)')
+                    ->icon('heroicon-o-phone-arrow-up-right')
+                    ->description('console.twilio.com → Account Info')
+                    ->collapsible()->collapsed()
+                    ->schema([
+                        Forms\Components\TextInput::make('twilio_sid')
+                            ->label('Account SID')
+                            ->placeholder('AC...'),
+                        Forms\Components\TextInput::make('twilio_auth_token')
+                            ->label('Auth Token')
+                            ->password()->revealable(),
+                        Forms\Components\TextInput::make('twilio_phone_number')
+                            ->label('From Phone Number')
+                            ->placeholder('+1234567890'),
+                    ])->columns(2),
+
+                Section::make('🎥 Daily.co (Video Calls)')
+                    ->icon('heroicon-o-video-camera')
+                    ->description('dashboard.daily.co → Developers → API keys')
+                    ->collapsible()->collapsed()
+                    ->schema([
+                        Forms\Components\TextInput::make('daily_api_key')
+                            ->label('API Key')
+                            ->password()->revealable(),
+                        Forms\Components\TextInput::make('daily_domain')
+                            ->label('Daily Domain')
+                            ->placeholder('yourapp.daily.co'),
+                    ])->columns(2),
+
+                Section::make('📡 Agora (Alternative Video)')
+                    ->icon('heroicon-o-signal')
+                    ->description('console.agora.io → Project Management')
+                    ->collapsible()->collapsed()
+                    ->schema([
+                        Forms\Components\TextInput::make('agora_app_id')
+                            ->label('App ID'),
+                        Forms\Components\TextInput::make('agora_app_certificate')
+                            ->label('App Certificate')
+                            ->password()->revealable(),
+                    ])->columns(2),
+
+                Section::make('🔔 Firebase (Push Notifications)')
+                    ->icon('heroicon-o-bell-alert')
+                    ->description('console.firebase.google.com → Project Settings → Service Accounts')
+                    ->collapsible()->collapsed()
+                    ->schema([
+                        Forms\Components\TextInput::make('firebase_project_id')
+                            ->label('Project ID'),
+                        Forms\Components\TextInput::make('firebase_server_key')
+                            ->label('Server Key (FCM Legacy)')
+                            ->password()->revealable(),
+                        Forms\Components\TextInput::make('firebase_credentials')
+                            ->label('Service Account JSON path (or base64)')
+                            ->helperText('Path to service account JSON file, e.g. storage/app/firebase.json')
+                            ->columnSpanFull(),
+                    ])->columns(2),
+
+                Section::make('🤖 OpenAI (Alternative to Groq)')
+                    ->icon('heroicon-o-cpu-chip')
+                    ->description('platform.openai.com → API Keys')
+                    ->collapsible()->collapsed()
+                    ->schema([
+                        Forms\Components\TextInput::make('openai_api_key')
+                            ->label('API Key')
+                            ->password()->revealable()
+                            ->placeholder('sk-...'),
+                        Forms\Components\TextInput::make('openai_org_id')
+                            ->label('Organization ID (optional)')
+                            ->placeholder('org-...'),
+                    ])->columns(2),
+
+                Section::make('🤖 reCAPTCHA')
+                    ->icon('heroicon-o-shield-check')
+                    ->description('google.com/recaptcha → Admin Console')
+                    ->collapsible()->collapsed()
+                    ->schema([
+                        Forms\Components\TextInput::make('recaptcha_site_key')
+                            ->label('Site Key'),
+                        Forms\Components\TextInput::make('recaptcha_secret_key')
+                            ->label('Secret Key')
+                            ->password()->revealable(),
+                    ])->columns(2),
+
+                Section::make('📡 Pusher / Reverb (Real-time)')
+                    ->icon('heroicon-o-bolt')
+                    ->description('pusher.com → App Keys   OR   self-hosted Laravel Reverb')
+                    ->collapsible()->collapsed()
+                    ->schema([
+                        Forms\Components\Select::make('broadcast_connection')
+                            ->label('Broadcasting Driver')
+                            ->options([
+                                'log'    => 'Log (disabled)',
+                                'reverb' => 'Reverb (self-hosted)',
+                                'pusher' => 'Pusher',
+                                'redis'  => 'Redis',
+                            ]),
+                        Forms\Components\TextInput::make('pusher_app_id')
+                            ->label('Pusher App ID'),
+                        Forms\Components\TextInput::make('pusher_app_key')
+                            ->label('Pusher App Key'),
+                        Forms\Components\TextInput::make('pusher_app_secret')
+                            ->label('Pusher App Secret')
+                            ->password()->revealable(),
+                        Forms\Components\TextInput::make('pusher_app_cluster')
+                            ->label('Pusher Cluster')
+                            ->placeholder('mt1'),
+                        Forms\Components\TextInput::make('reverb_app_id')
+                            ->label('Reverb App ID'),
+                        Forms\Components\TextInput::make('reverb_app_key')
+                            ->label('Reverb App Key'),
+                        Forms\Components\TextInput::make('reverb_app_secret')
+                            ->label('Reverb App Secret')
+                            ->password()->revealable(),
+                        Forms\Components\TextInput::make('reverb_host')
+                            ->label('Reverb Host')
+                            ->placeholder('localhost'),
+                        Forms\Components\TextInput::make('reverb_port')
+                            ->label('Reverb Port')
+                            ->numeric()
+                            ->placeholder('8080'),
+                    ])->columns(2),
+
                 Section::make('System Configuration')
                     ->schema([
                         Forms\Components\Select::make('broadcast_connection')
@@ -319,9 +616,79 @@ class EnvEditor extends Page
                 'TELEGRAM_CHAT_ID' => $data['telegram_chat_id'] ?? '',
                 
                 'BROADCAST_CONNECTION' => $data['broadcast_connection'],
-                'QUEUE_CONNECTION' => $data['queue_connection'],
-                'SESSION_DRIVER' => $data['session_driver'],
-                'SESSION_LIFETIME' => $data['session_lifetime'],
+                'QUEUE_CONNECTION'      => $data['queue_connection'],
+                'SESSION_DRIVER'        => $data['session_driver'],
+                'SESSION_LIFETIME'      => $data['session_lifetime'],
+
+                // Stripe
+                'STRIPE_KEY'            => $data['stripe_key'] ?? '',
+                'STRIPE_SECRET'         => $data['stripe_secret'] ?? '',
+                'STRIPE_WEBHOOK_SECRET' => $data['stripe_webhook'] ?? '',
+
+                // PayPal
+                'PAYPAL_CLIENT_ID'     => $data['paypal_client_id'] ?? '',
+                'PAYPAL_CLIENT_SECRET' => $data['paypal_client_secret'] ?? '',
+                'PAYPAL_MODE'          => $data['paypal_mode'] ?? 'sandbox',
+
+                // Google
+                'GOOGLE_CLIENT_ID'     => $data['google_client_id'] ?? '',
+                'GOOGLE_CLIENT_SECRET' => $data['google_client_secret'] ?? '',
+                'GOOGLE_REDIRECT_URI'  => $data['google_redirect'] ?? '',
+                'GOOGLE_MAPS_API_KEY'  => $data['google_maps_key'] ?? '',
+
+                // Facebook
+                'FACEBOOK_CLIENT_ID'     => $data['facebook_client_id'] ?? '',
+                'FACEBOOK_CLIENT_SECRET' => $data['facebook_client_secret'] ?? '',
+
+                // Cloudinary
+                'CLOUDINARY_URL'        => $data['cloudinary_url'] ?? '',
+                'CLOUDINARY_CLOUD_NAME' => $data['cloudinary_cloud_name'] ?? '',
+                'CLOUDINARY_API_KEY'    => $data['cloudinary_api_key'] ?? '',
+                'CLOUDINARY_API_SECRET' => $data['cloudinary_api_secret'] ?? '',
+
+                // AWS S3
+                'AWS_ACCESS_KEY_ID'     => $data['aws_access_key_id'] ?? '',
+                'AWS_SECRET_ACCESS_KEY' => $data['aws_secret_access_key'] ?? '',
+                'AWS_DEFAULT_REGION'    => $data['aws_default_region'] ?? 'us-east-1',
+                'AWS_BUCKET'            => $data['aws_bucket'] ?? '',
+                'AWS_URL'               => $data['aws_url'] ?? '',
+
+                // Twilio
+                'TWILIO_SID'          => $data['twilio_sid'] ?? '',
+                'TWILIO_AUTH_TOKEN'   => $data['twilio_auth_token'] ?? '',
+                'TWILIO_PHONE_NUMBER' => $data['twilio_phone_number'] ?? '',
+
+                // Daily.co
+                'DAILY_API_KEY' => $data['daily_api_key'] ?? '',
+                'DAILY_DOMAIN'  => $data['daily_domain'] ?? '',
+
+                // Agora
+                'AGORA_APP_ID'          => $data['agora_app_id'] ?? '',
+                'AGORA_APP_CERTIFICATE' => $data['agora_app_certificate'] ?? '',
+
+                // Firebase
+                'FIREBASE_PROJECT_ID'  => $data['firebase_project_id'] ?? '',
+                'FIREBASE_SERVER_KEY'  => $data['firebase_server_key'] ?? '',
+                'FIREBASE_CREDENTIALS' => $data['firebase_credentials'] ?? '',
+
+                // OpenAI
+                'OPENAI_API_KEY'      => $data['openai_api_key'] ?? '',
+                'OPENAI_ORGANIZATION' => $data['openai_org_id'] ?? '',
+
+                // reCAPTCHA
+                'RECAPTCHA_SITE_KEY'   => $data['recaptcha_site_key'] ?? '',
+                'RECAPTCHA_SECRET_KEY' => $data['recaptcha_secret_key'] ?? '',
+
+                // Pusher / Reverb
+                'PUSHER_APP_ID'      => $data['pusher_app_id'] ?? '',
+                'PUSHER_APP_KEY'     => $data['pusher_app_key'] ?? '',
+                'PUSHER_APP_SECRET'  => $data['pusher_app_secret'] ?? '',
+                'PUSHER_APP_CLUSTER' => $data['pusher_app_cluster'] ?? 'mt1',
+                'REVERB_APP_ID'      => $data['reverb_app_id'] ?? '',
+                'REVERB_APP_KEY'     => $data['reverb_app_key'] ?? '',
+                'REVERB_APP_SECRET'  => $data['reverb_app_secret'] ?? '',
+                'REVERB_HOST'        => $data['reverb_host'] ?? 'localhost',
+                'REVERB_PORT'        => $data['reverb_port'] ?? '8080',
             ];
             
             foreach ($updates as $key => $value) {
