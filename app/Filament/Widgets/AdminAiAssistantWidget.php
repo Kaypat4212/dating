@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Http;
 
 class AdminAiAssistantWidget extends Widget
 {
-    protected static string $view = 'filament.widgets.admin-ai-assistant';
+    protected string $view = 'filament.widgets.admin-ai-assistant';
 
     protected static ?int $sort = 10;
 
