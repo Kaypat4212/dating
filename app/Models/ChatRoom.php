@@ -28,6 +28,7 @@ class ChatRoom extends Model
         'creator_id', 'name', 'slug', 'description', 'avatar',
         'type', 'max_members', 'members_count', 'messages_count',
         'is_active', 'requires_approval', 'interests', 'location',
+        'is_private', 'invite_token',
     ];
 
     protected function casts(): array
@@ -36,7 +37,23 @@ class ChatRoom extends Model
             'interests'         => 'array',
             'is_active'         => 'boolean',
             'requires_approval' => 'boolean',
+            'is_private'        => 'boolean',
         ];
+    }
+
+    /** Generate a unique invite token for this room. */
+    public function generateInviteToken(): string
+    {
+        $token = bin2hex(random_bytes(16));
+        $this->update(['invite_token' => $token]);
+        return $token;
+    }
+
+    /** Whether a given user can see/join this room. */
+    public function isAccessibleBy(int $userId): bool
+    {
+        if (! $this->is_private) return true;
+        return $this->members()->where('user_id', $userId)->exists();
     }
 
     public function creator(): BelongsTo

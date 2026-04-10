@@ -350,6 +350,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::prefix('chat-rooms')->name('chat-rooms.')->group(function () {
             Route::get('/',                       [ChatRoomController::class, 'index'])->name('index');
             Route::post('/',                      [ChatRoomController::class, 'store'])->name('store');
+            Route::get('/join/{token}',           [ChatRoomController::class, 'joinViaToken'])->name('join-token');
             Route::get('/{chatRoom:slug}',        [ChatRoomController::class, 'show'])->name('show');
             Route::post('/{chatRoom:slug}/send',  [ChatRoomController::class, 'sendMessage'])->name('send');
             Route::get('/{chatRoom:slug}/messages',[ChatRoomController::class, 'messages'])->name('messages');

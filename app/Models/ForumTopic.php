@@ -27,7 +27,7 @@ class ForumTopic extends Model
         'category_id', 'user_id', 'title', 'slug', 'content', 'tags',
         'is_pinned', 'is_locked', 'is_answered', 'is_flagged',
         'views_count', 'replies_count', 'likes_count',
-        'last_reply_user_id', 'last_reply_at',
+        'last_reply_user_id', 'last_reply_at', 'share_token',
     ];
 
     protected function casts(): array

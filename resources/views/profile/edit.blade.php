@@ -168,11 +168,14 @@
                                 @endforeach
                             </select>
                         </div>
-                        <div class="col-12">
-                            <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" name="wants_children" id="wantsKids" value="1" {{ old('wants_children', $profile?->wants_children) ? 'checked' : '' }}>
-                                <label class="form-check-label" for="wantsKids">Open to having children</label>
-                            </div>
+                        <div class="col-md-6">
+                            <label class="form-label"><i class="bi bi-emoji-smile me-1 text-info"></i>Wants Children</label>
+                            <select name="wants_children" class="form-select">
+                                <option value="">Not specified</option>
+                                @foreach(['yes' => 'Yes, I want kids','no' => 'No, I don\'t want kids','open' => 'Open to it','not_sure' => 'Not sure yet'] as $val => $label)
+                                <option value="{{ $val }}" {{ old('wants_children', $profile?->wants_children) === $val ? 'selected' : '' }}>{{ $label }}</option>
+                                @endforeach
+                            </select>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label"><i class="bi bi-clock me-1 text-success"></i>Availability Status</label>

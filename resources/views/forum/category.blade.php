@@ -23,6 +23,11 @@
         <a href="{{ route('forum.create-topic', $category->slug) }}" class="btn btn-primary btn-sm">
             <i class="bi bi-plus-lg me-1"></i>New Topic
         </a>
+        <button type="button" class="btn btn-sm btn-outline-secondary"
+                onclick="navigator.clipboard.writeText('{{ route('forum.category', $category->slug) }}').then(() => { this.innerHTML='<i class=\'bi bi-check-lg me-1\'></i>Copied!'; setTimeout(() => { this.innerHTML='<i class=\'bi bi-share me-1\'></i>Share'; }, 2000); })"
+                title="Copy link to this category">
+            <i class="bi bi-share me-1"></i>Share
+        </button>
     </div>
 
     @if($topics->isEmpty())

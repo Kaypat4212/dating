@@ -14,16 +14,22 @@ class ChatRoomController extends Controller
 {
     public function index(): View
     {
+        $userId = Auth::id();
+
+        // Public rooms (non-private) paginated
         $rooms = ChatRoom::where('is_active', true)
+            ->where('is_private', false)
             ->withCount('members')
             ->with('creator')
             ->orderByDesc('messages_count')
             ->paginate(16);
 
-        $myRooms = ChatRoom::whereHas('members', fn($q) => $q->where('user_id', Auth::id()))
+        // Rooms the user is a member of (including private ones)
+        $myRooms = ChatRoom::whereHas('members', fn($q) => $q->where('user_id', $userId))
             ->where('is_active', true)
             ->with('creator')
-            ->limit(6)
+            ->orderByDesc('updated_at')
+            ->limit(10)
             ->get();
 
         return view('chat-rooms.index', compact('rooms', 'myRooms'));
@@ -34,6 +40,11 @@ class ChatRoomController extends Controller
         abort_unless($chatRoom->is_active, 404);
 
         $user = Auth::user();
+
+        // Private rooms — only members can access (not via token here; token handled by joinViaToken)
+        if ($chatRoom->is_private && ! $chatRoom->isAccessibleBy($user->id)) {
+            abort(403, 'This is a private room. You need an invite link to join.');
+        }
 
         // Location-type rooms require the user to have their location set
         if ($chatRoom->type === 'location') {
@@ -47,8 +58,8 @@ class ChatRoomController extends Controller
         /** @var ChatRoomMember|null $member */
         $member = $chatRoom->members()->where('user_id', $user->id)->first();
 
-        // Auto-join public rooms
-        if (!$member && $chatRoom->type === 'public') {
+        // Auto-join public (non-private) rooms
+        if (!$member && ! $chatRoom->is_private && $chatRoom->type === 'public') {
             $chatRoom->members()->create([
                 'user_id' => $user->id,
                 'role'    => 'member',
@@ -80,16 +91,21 @@ class ChatRoomController extends Controller
             'name'        => ['required', 'string', 'min:3', 'max:80'],
             'description' => ['nullable', 'string', 'max:500'],
             'type'        => ['required', 'in:public,private,interest,location'],
+            'is_private'  => ['nullable', 'boolean'],
         ]);
 
+        $isPrivate = $request->boolean('is_private') || $request->type === 'private';
         $slug = Str::slug($request->name) . '-' . time();
+        $token = $isPrivate ? bin2hex(random_bytes(16)) : null;
 
         $room = ChatRoom::create([
-            'creator_id'  => Auth::id(),
-            'name'        => $request->name,
-            'slug'        => $slug,
-            'description' => $request->description,
-            'type'        => $request->type,
+            'creator_id'   => Auth::id(),
+            'name'         => $request->name,
+            'slug'         => $slug,
+            'description'  => $request->description,
+            'type'         => $isPrivate ? 'private' : $request->type,
+            'is_private'   => $isPrivate,
+            'invite_token' => $token,
         ]);
 
         $room->members()->create([
@@ -99,7 +115,7 @@ class ChatRoomController extends Controller
         $room->increment('members_count');
 
         return redirect()->route('chat-rooms.show', $room->slug)
-            ->with('success', 'Room created!');
+            ->with('success', 'Room created!' . ($isPrivate ? ' Share the invite link with people you want to add.' : ''));
     }
 
     public function sendMessage(Request $request, ChatRoom $chatRoom)
@@ -135,7 +151,14 @@ class ChatRoomController extends Controller
 
     public function join(ChatRoom $chatRoom): \Illuminate\Http\RedirectResponse
     {
-        abort_unless($chatRoom->is_active && in_array($chatRoom->type, ['public', 'location']), 403, 'This room is not open for joining.');
+        abort_unless($chatRoom->is_active, 404);
+
+        // Private rooms require invite token, not direct join
+        if ($chatRoom->is_private) {
+            abort(403, 'This is a private room. You need an invite link.');
+        }
+
+        abort_unless(in_array($chatRoom->type, ['public', 'location']), 403, 'This room is not open for joining.');
 
         // Location rooms require the user to have their location set
         if ($chatRoom->type === 'location') {
@@ -153,6 +176,22 @@ class ChatRoomController extends Controller
         }
 
         return redirect()->route('chat-rooms.show', $chatRoom->slug);
+    }
+
+    /** Join a private room via invite token (GET so the link is clickable). */
+    public function joinViaToken(string $token): \Illuminate\Http\RedirectResponse
+    {
+        $room = ChatRoom::where('invite_token', $token)->where('is_active', true)->firstOrFail();
+        $userId = Auth::id();
+
+        $existing = $room->members()->where('user_id', $userId)->first();
+        if (! $existing) {
+            $room->members()->create(['user_id' => $userId, 'role' => 'member']);
+            $room->increment('members_count');
+        }
+
+        return redirect()->route('chat-rooms.show', $room->slug)
+            ->with('success', 'You joined the private room: ' . $room->name);
     }
 
     public function leave(ChatRoom $chatRoom): \Illuminate\Http\RedirectResponse

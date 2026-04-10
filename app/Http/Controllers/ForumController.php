@@ -117,6 +117,7 @@ class ForumController extends Controller
             'content'        => $this->sanitizeHtml($request->input('content')),
             'tags'           => $tags,
             'last_reply_at'  => now(),
+            'share_token'    => bin2hex(random_bytes(8)),
         ]);
 
         return redirect()->route('forum.topic', [$category->slug, $topic->slug])

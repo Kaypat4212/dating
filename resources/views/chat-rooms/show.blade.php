@@ -14,11 +14,33 @@
                             <i class="bi bi-arrow-left"></i>
                         </a>
                         <div>
-                            <div class="fw-bold">{{ $chatRoom->name }}</div>
+                            <div class="fw-bold d-flex align-items-center gap-2">
+                                {{ $chatRoom->name }}
+                                @if($chatRoom->is_private)
+                                <span class="badge bg-secondary" style="font-size:.65rem"><i class="bi bi-lock-fill me-1"></i>Private</span>
+                                @endif
+                            </div>
                             <small class="text-muted"><i class="bi bi-people me-1"></i>{{ $chatRoom->members_count }} members</small>
                         </div>
                     </div>
-                    <div class="d-flex gap-2">
+                    <div class="d-flex gap-2 align-items-center">
+                        {{-- Share / Invite link button --}}
+                        @if($chatRoom->is_private && $chatRoom->invite_token)
+                        <button type="button" class="btn btn-sm btn-outline-success"
+                                onclick="copyRoomInvite(this)"
+                                data-invite-url="{{ url('/chat-rooms/join/' . $chatRoom->invite_token) }}"
+                                title="Copy invite link">
+                            <i class="bi bi-link-45deg me-1"></i>Invite Link
+                        </button>
+                        @else
+                        <button type="button" class="btn btn-sm btn-outline-secondary"
+                                onclick="copyShareLink(this)"
+                                data-share-url="{{ route('chat-rooms.show', $chatRoom->slug) }}"
+                                title="Share this room">
+                            <i class="bi bi-share me-1"></i>Share
+                        </button>
+                        @endif
+
                         @if($member->role !== 'admin')
                         <form action="{{ route('chat-rooms.leave', $chatRoom->slug) }}" method="POST">
                             @csrf
@@ -181,6 +203,25 @@
             });
         } catch(e) {}
     }, 3000);
+
+    // ── Share / Invite helpers ──────────────────────────────────────────────
+    function copyRoomInvite(btn) {
+        var url = btn.dataset.inviteUrl;
+        navigator.clipboard.writeText(url).then(function () {
+            var orig = btn.innerHTML;
+            btn.innerHTML = '<i class="bi bi-check-lg me-1"></i>Copied!';
+            btn.classList.replace('btn-outline-success', 'btn-success');
+            setTimeout(function () { btn.innerHTML = orig; btn.classList.replace('btn-success', 'btn-outline-success'); }, 2000);
+        });
+    }
+    function copyShareLink(btn) {
+        var url = btn.dataset.shareUrl;
+        navigator.clipboard.writeText(url).then(function () {
+            var orig = btn.innerHTML;
+            btn.innerHTML = '<i class="bi bi-check-lg me-1"></i>Copied!';
+            setTimeout(function () { btn.innerHTML = orig; }, 2000);
+        });
+    }
 })();
 </script>
 @endpush

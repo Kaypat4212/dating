@@ -120,7 +120,7 @@ class DatingProfileController extends Controller
             'relationship_goal' => 'nullable|in:casual,long_term,marriage,friendship,unsure,serious,open',
             'smoking_habit'     => 'nullable|in:never,sometimes,occasionally,regularly,trying_to_quit',
             'drinking_habit'    => 'nullable|in:never,socially,regularly',
-            'wants_children'    => 'nullable',
+            'wants_children'    => 'nullable|in:yes,no,open,not_sure',
             'city'              => 'nullable|max:100',
             'state'             => 'nullable|max:100',
             'country'           => 'nullable|max:100',
@@ -154,7 +154,7 @@ class DatingProfileController extends Controller
             'relationship_goal' => $request->input('relationship_goal'),
             'smoking'           => $request->input('smoking_habit'),
             'drinking'          => $request->input('drinking_habit'),
-            'wants_children'    => $request->has('wants_children') ? (bool) $request->input('wants_children') : false,
+            'wants_children'    => $request->input('wants_children') ?: null,
             'city'              => $request->input('city'),
             'state'             => $request->input('state'),
             'country'           => $request->input('country'),
@@ -163,9 +163,6 @@ class DatingProfileController extends Controller
             'availability_status' => $request->input('availability_status') ?: null,
             'dealbreakers'      => $request->input('dealbreakers') ?: null,
         ], fn($v) => $v !== null && $v !== '');
-
-        // Always persist wants_children (checkbox can be unchecked)
-        $profileData['wants_children'] = $request->has('wants_children');
 
         $profile = $user->profile()->updateOrCreate(['user_id' => $user->id], $profileData);
 

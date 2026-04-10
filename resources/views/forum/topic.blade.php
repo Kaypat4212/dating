@@ -27,6 +27,13 @@
                                 &bull; <i class="bi bi-eye me-1"></i>{{ $topic->views_count }} views
                             </small>
                         </div>
+                        <div class="ms-auto">
+                            <button type="button" class="btn btn-sm btn-outline-secondary"
+                                    onclick="navigator.clipboard.writeText('{{ route('forum.topic', [$category->slug, $topic->slug]) }}').then(() => { this.innerHTML='<i class=\'bi bi-check-lg me-1\'></i>Copied!'; setTimeout(() => { this.innerHTML='<i class=\'bi bi-share me-1\'></i>Share'; }, 2000); })"
+                                    title="Copy link to this topic">
+                                <i class="bi bi-share me-1"></i>Share
+                            </button>
+                        </div>
                     </div>
                     <p class="lh-lg">{{ $topic->content }}</p>
                     @if($topic->tags)
