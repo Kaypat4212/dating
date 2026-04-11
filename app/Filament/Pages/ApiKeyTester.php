@@ -497,19 +497,20 @@ class ApiKeyTester extends Page
 
     private function runFirebase(): void
     {
-        $serverKey = env('FIREBASE_SERVER_KEY', '') ?: env('FCM_SERVER_KEY', '');
-        $projectId = env('FIREBASE_PROJECT_ID', '');
+        $apiKey = config('services.firebase.api_key', '') ?: env('FIREBASE_API_KEY', '');
+        $projectId = config('services.firebase.project_id', '') ?: env('FIREBASE_PROJECT_ID', '');
+        $credentialsPath = config('services.firebase.credentials', '');
 
-        if (empty($serverKey)) {
+        if (empty($apiKey)) {
             $this->warn('firebase', 'Not configured',
-                'FIREBASE_SERVER_KEY (or FCM_SERVER_KEY) is empty â€” push notifications via Firebase/FCM are disabled.');
+                'FIREBASE_API_KEY is empty – push notifications via Firebase Cloud Messaging are disabled.');
             return;
         }
 
         // Dry-run send (no actual notification delivered)
         [$response, $ms] = $this->timed(fn() =>
             Http::timeout(8)
-                ->withHeaders(['Authorization' => "key={$serverKey}"])
+                ->withHeaders(['Authorization' => "key={$apiKey}"])
                 ->post('https://fcm.googleapis.com/fcm/send', [
                     'dry_run'      => true,
                     'to'           => 'faketoken_akt_validation',
@@ -518,11 +519,11 @@ class ApiKeyTester extends Page
         );
 
         if ($response->status() === 401) {
-            $this->fail('firebase', 'Invalid server key (401)', 'Check FIREBASE_SERVER_KEY in .env', $ms);
+            $this->fail('firebase', 'Invalid API key (401)', 'Check FIREBASE_API_KEY in .env', $ms);
         } elseif ($response->successful()) {
-            $detail = 'Server key accepted by FCM';
+            $detail = 'API key accepted by FCM';
             if (!empty($projectId)) $detail .= " | Project: {$projectId}";
-            $this->pass('firebase', 'Firebase server key valid', $detail, $ms);
+            $this->pass('firebase', 'Firebase Cloud Messaging API key valid', $detail, $ms);
         } else {
             $this->warn('firebase', "HTTP {$response->status()} â€” key may still be valid",
                 substr($response->body(), 0, 200), $ms);

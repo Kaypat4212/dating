@@ -143,6 +143,7 @@ class EnvEditor extends Page
             'agora_app_certificate' => env('AGORA_APP_CERTIFICATE', ''),
 
             // Firebase (push notifications)
+            'firebase_api_key'      => env('FIREBASE_API_KEY', ''),
             'firebase_project_id'   => env('FIREBASE_PROJECT_ID', ''),
             'firebase_server_key'   => env('FIREBASE_SERVER_KEY', ''),
             'firebase_credentials'  => env('FIREBASE_CREDENTIALS', ''),
@@ -441,13 +442,18 @@ class EnvEditor extends Page
 
                 Section::make('🔔 Firebase (Push Notifications)')
                     ->icon('heroicon-o-bell-alert')
-                    ->description('console.firebase.google.com → Project Settings → Service Accounts')
+                    ->description('console.firebase.google.com → Project Settings → Cloud Messaging')
                     ->collapsible()->collapsed()
                     ->schema([
+                        Forms\Components\TextInput::make('firebase_api_key')
+                            ->label('API Key (Cloud Messaging)')
+                            ->password()->revealable()
+                            ->helperText('From Firebase Console → Project Settings → General → Web API Key')
+                            ->columnSpanFull(),
                         Forms\Components\TextInput::make('firebase_project_id')
                             ->label('Project ID'),
                         Forms\Components\TextInput::make('firebase_server_key')
-                            ->label('Server Key (FCM Legacy)')
+                            ->label('Server Key (FCM Legacy - Optional)')
                             ->password()->revealable(),
                         Forms\Components\TextInput::make('firebase_credentials')
                             ->label('Service Account JSON path (or base64)')
@@ -667,6 +673,7 @@ class EnvEditor extends Page
                 'AGORA_APP_CERTIFICATE' => $data['agora_app_certificate'] ?? '',
 
                 // Firebase
+                'FIREBASE_API_KEY'     => $data['firebase_api_key'] ?? '',
                 'FIREBASE_PROJECT_ID'  => $data['firebase_project_id'] ?? '',
                 'FIREBASE_SERVER_KEY'  => $data['firebase_server_key'] ?? '',
                 'FIREBASE_CREDENTIALS' => $data['firebase_credentials'] ?? '',

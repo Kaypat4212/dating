@@ -159,10 +159,10 @@ $services = [
         'group'       => 'Push',
         'icon'        => 'heroicon-o-bell',
         'method'      => 'testFirebase',
-        'env_keys'    => ['FIREBASE_SERVER_KEY', 'FIREBASE_PROJECT_ID'],
-        'description' => 'Sends mobile push notifications for new matches, messages, likes, and app alerts. Works on Android (native), iOS (APNs bridge), and web browsers. Free up to 1M notifications/month — essentially unlimited.',
-        'howto'       => "1. Go to console.firebase.google.com → Create Project\n2. Project Settings → Cloud Messaging tab\n3. Copy Server Key → FIREBASE_SERVER_KEY=...\n4. Copy Project ID → FIREBASE_PROJECT_ID=...\n5. For modern FCM v1 API: download google-services.json\n6. Install SDK: composer require kreait/laravel-firebase\n7. Set FIREBASE_CREDENTIALS=path/to/google-services.json",
-        'docs_url'    => 'https://console.firebase.google.com',
+        'env_keys'    => ['FIREBASE_API_KEY', 'FIREBASE_PROJECT_ID', 'FIREBASE_MESSAGING_SENDER_ID', 'FIREBASE_APP_ID'],
+        'description' => 'Sends browser and mobile push notifications for new matches, messages, likes, and app alerts. Users receive real-time notifications even when not on your site. Free unlimited notifications. Service account already configured in storage/app/fire-base-dojo-9-38865f485255.json',
+        'howto'       => "✅ API Key already set: AIzaSyAFBjyUOQ1DIhcTMyqo46fP27eWfsU38_I\n✅ Project ID: fire-base-dojo-9\n\nNext steps:\n1. Go to console.firebase.google.com/project/fire-base-dojo-9/settings/general\n2. Cloud Messaging tab → Copy Sender ID → FIREBASE_MESSAGING_SENDER_ID=...\n3. General tab → Your apps → Copy App ID → FIREBASE_APP_ID=...\n4. Cloud Messaging → Web Push certificates → Generate key pair → FIREBASE_VAPID_KEY=...\n5. Run migration: php artisan migrate\n6. Add routes in routes/web.php (see FIREBASE-QUICK-START.md)\n7. Update firebase-init.js and firebase-messaging-sw.js with sender ID & app ID\n\nSee FIREBASE-QUICK-START.md for complete setup guide.",
+        'docs_url'    => 'https://console.firebase.google.com/project/fire-base-dojo-9/settings/general',
     ],
 
     // ── Security / VPN ────────────────────────────────────────────────────
