@@ -88,11 +88,37 @@
     };
 
     // ── Fetch & render unread announcements ─────────────────────────────────
-    async function load() {
-        try {
-            const res  = await fetch('{{ route("announcements.unread") }}', { headers: { 'Accept': 'application/json' } });
-            const data = await res.json();
+    let _loading = false;
 
+    function showError(msg) {
+        $loading.classList.remove('d-none');
+        $loading.innerHTML = `<p class="text-muted small p-3 mb-0"><i class="bi bi-exclamation-circle me-1"></i>${msg}</p>`;
+    }
+
+    async function load() {
+        if (_loading) return;
+        _loading = true;
+        $loading.classList.remove('d-none');
+        $list.classList.add('d-none');
+        $empty.classList.add('d-none');
+        $loading.innerHTML = `<div class="spinner-border text-primary" style="width:1.5rem;height:1.5rem" role="status"><span class="visually-hidden">Loading…</span></div>`;
+
+        try {
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), 15000); // 15s timeout
+            const res  = await fetch('{{ route("announcements.unread") }}', {
+                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                credentials: 'same-origin',
+                signal: controller.signal,
+            });
+            clearTimeout(timer);
+
+            if (!res.ok) {
+                showError('Could not load announcements. Please try again.');
+                return;
+            }
+
+            const data = await res.json();
             $loading.classList.add('d-none');
 
             if (!data.items || data.items.length === 0) {
@@ -104,13 +130,17 @@
             $badge.style.display = '';
             $markAll.classList.remove('d-none');
 
+            $list.innerHTML = '';
             data.items.forEach(item => {
                 $list.appendChild(renderItem(item));
             });
 
             $list.classList.remove('d-none');
         } catch (e) {
-            $loading.innerHTML = '<p class="text-muted small p-3 mb-0">Could not load announcements.</p>';
+            const msg = e.name === 'AbortError' ? 'Request timed out. Please try again.' : 'Could not load announcements.';
+            showError(msg);
+        } finally {
+            _loading = false;
         }
     }
 
@@ -169,24 +199,19 @@
         } catch (e) {}
     });
 
-    // ── On modal open, load if list is empty ─────────────────────────────────
+    // ── On modal open, load if not already loaded ────────────────────────────
     modal.addEventListener('show.bs.modal', () => {
-        if ($list.childElementCount === 0 && $empty.classList.contains('d-none')) {
-            $loading.classList.remove('d-none');
+        if ($list.childElementCount === 0 && $empty.classList.contains('d-none') && !_loading) {
             load();
         }
     });
 
     // ── Auto-open if there are unread announcements ──────────────────────────
-    // Check nav badge count set server-side
     const navBadge = document.getElementById('wnNavBadge');
     const wnCount  = parseInt(navBadge?.dataset.count ?? '0', 10);
     if (wnCount > 0) {
-        // Delay slightly so page feels settled
-        setTimeout(() => {
-            bsModal.show();
-            load();
-        }, 1800);
+        // bsModal.show() fires show.bs.modal which triggers load() above — no explicit load() needed
+        setTimeout(() => { bsModal.show(); }, 1800);
     }
 
     function esc(s) {

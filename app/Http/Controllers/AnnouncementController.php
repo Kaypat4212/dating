@@ -36,22 +36,27 @@ class AnnouncementController extends Controller
      */
     public function unread(Request $request): JsonResponse
     {
-        $user = $request->user();
+        try {
+            $user = $request->user();
 
-        $readIds = AnnouncementRead::where('user_id', $user->id)
-            ->pluck('announcement_id');
+            $readIds = AnnouncementRead::where('user_id', $user->id)
+                ->pluck('announcement_id');
 
-        $unread = Announcement::published()
-            ->forUser($user->id)
-            ->whereNotIn('id', $readIds)
-            ->latest('published_at')
-            ->get()
-            ->map(fn ($a) => $this->formatAnnouncement($a, $user->id));
+            $unread = Announcement::published()
+                ->forUser($user->id)
+                ->whereNotIn('id', $readIds)
+                ->with(['reads' => fn ($q) => $q->where('user_id', $user->id)])
+                ->latest('published_at')
+                ->get()
+                ->map(fn ($a) => $this->formatAnnouncement($a, $user->id));
 
-        return response()->json([
-            'unread_count' => $unread->count(),
-            'items'        => $unread,
-        ]);
+            return response()->json([
+                'unread_count' => $unread->count(),
+                'items'        => $unread,
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json(['unread_count' => 0, 'items' => [], 'error' => true], 200);
+        }
     }
 
     /**
