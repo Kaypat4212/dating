@@ -30,6 +30,7 @@
         ['label' => 'Help Center',       'url' => SS::get('footer_help_center_url')       ?: route('pages.help-center')],
         ['label' => 'Safety Tips',       'url' => SS::get('footer_safety_tips_url')       ?: route('pages.safety-tips')],
         ['label' => 'Report Abuse',      'url' => SS::get('footer_report_abuse_url')      ?: route('pages.report-abuse')],
+        ['label' => 'User Reviews',      'url' => route('reviews.index')],
         ['label' => 'Feature Requests',  'url' => route('pages.feature-request')],
         ['label' => 'Cookie Settings',   'url' => SS::get('footer_cookie_settings_url')   ?: route('pages.cookie-settings')],
     ];
