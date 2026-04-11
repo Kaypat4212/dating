@@ -72,7 +72,13 @@
     const modal    = document.getElementById('whatsNewModal');
     if (!modal) return;
 
-    const bsModal  = new bootstrap.Modal(modal, { backdrop: true, keyboard: true });
+    // NOTE: Do NOT call new bootstrap.Modal() here — app.js is a Vite ES module
+    // (deferred) so window.bootstrap may not be set when this inline script runs.
+    // We get the instance lazily only when we actually need to programmatically show.
+    function getBsModal() {
+        return window.bootstrap?.Modal?.getOrCreateInstance(modal) ?? null;
+    }
+
     const $loading = document.getElementById('wnLoading');
     const $list    = document.getElementById('wnList');
     const $empty   = document.getElementById('wnEmpty');
@@ -210,8 +216,8 @@
     const navBadge = document.getElementById('wnNavBadge');
     const wnCount  = parseInt(navBadge?.dataset.count ?? '0', 10);
     if (wnCount > 0) {
-        // bsModal.show() fires show.bs.modal which triggers load() above — no explicit load() needed
-        setTimeout(() => { bsModal.show(); }, 1800);
+        // By 1800ms Bootstrap module has definitely executed, getBsModal() is safe
+        setTimeout(() => { getBsModal()?.show(); }, 1800);
     }
 
     function esc(s) {
