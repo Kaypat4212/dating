@@ -74,11 +74,11 @@ class BlogPostResource extends Resource
                             ->maxLength(500)
                             ->helperText('Short summary shown on listing pages (max 500 chars).')
                             ->hintActions([
-                                Forms\Components\Actions\Action::make('generateExcerpt')
+                                \Filament\Actions\Action::make('generateExcerpt')
                                     ->icon('heroicon-o-sparkles')
                                     ->label('Generate from content')
                                     ->tooltip('Auto-generate excerpt from blog content using AI')
-                                    ->action(function (Forms\Set $set, Forms\Get $get) {
+                                    ->action(function ($set, $get) {
                                         $content = strip_tags($get('content') ?? '');
                                         $title = $get('title') ?? '';
                                         if (empty($content)) {
@@ -119,7 +119,7 @@ class BlogPostResource extends Resource
                                 'undo',
                             ])
                             ->hintActions([
-                                Forms\Components\Actions\Action::make('generateContent')
+                                \Filament\Actions\Action::make('generateContent')
                                     ->icon('heroicon-o-sparkles')
                                     ->label('Generate with AI')
                                     ->tooltip('Create blog post content using AI')
@@ -142,7 +142,7 @@ class BlogPostResource extends Resource
                                             ->required()
                                             ->rows(3),
                                     ])
-                                    ->action(function (array $data, Forms\Set $set, Forms\Get $get) {
+                                    ->action(function (array $data, $set, $get) {
                                         $title = $get('title') ?? 'untitled post';
                                         $content = self::generateAiContent('blog', $title, $data['topic'] ?? '', $data['style'] ?? 'friendly');
                                         if ($content) {
@@ -153,11 +153,11 @@ class BlogPostResource extends Resource
                                                 ->send();
                                         }
                                     }),
-                                Forms\Components\Actions\Action::make('improveContent')
+                                \Filament\Actions\Action::make('improveContent')
                                     ->icon('heroicon-o-arrow-path')
                                     ->label('Improve')
                                     ->tooltip('Enhance existing content with AI')
-                                    ->action(function (Forms\Set $set, Forms\Get $get) {
+                                    ->action(function ($set, $get) {
                                         $existing = strip_tags($get('content') ?? '');
                                         if (empty($existing)) {
                                             \Filament\Notifications\Notification::make()
@@ -487,3 +487,4 @@ class BlogPostResource extends Resource
         ];
     }
 }
+

@@ -52,11 +52,11 @@ class AnnouncementResource extends Resource
                             ->maxLength(140)
                             ->placeholder('e.g. "Speed Dating is here!"')
                             ->suffixAction(
-                                Forms\Components\Actions\Action::make('generateTitle')
+                                \Filament\Actions\Action::make('generateTitle')
                                     ->icon('heroicon-o-sparkles')
                                     ->label('AI Generate')
                                     ->tooltip('Generate announcement title with AI')
-                                    ->action(function (Forms\Set $set, Forms\Get $get) {
+                                    ->action(function ($set, $get) {
                                         $type = $get('type') ?? 'feature';
                                         $body = $get('body');
                                         $title = self::generateAiContent('title', $type, $body);
@@ -82,7 +82,7 @@ class AnnouncementResource extends Resource
                             ->columnSpanFull()
                             ->helperText('Supports rich text formatting. Keep it concise for the best user experience.')
                             ->hintActions([
-                                Forms\Components\Actions\Action::make('generateBody')
+                                \Filament\Actions\Action::make('generateBody')
                                     ->icon('heroicon-o-sparkles')
                                     ->label('Generate with AI')
                                     ->tooltip('Create announcement content using AI')
@@ -93,7 +93,7 @@ class AnnouncementResource extends Resource
                                             ->required()
                                             ->rows(3),
                                     ])
-                                    ->action(function (array $data, Forms\Set $set, Forms\Get $get) {
+                                    ->action(function (array $data, $set, $get) {
                                         $type = $get('type') ?? 'feature';
                                         $content = self::generateAiContent('body', $type, $data['prompt'] ?? '');
                                         if ($content) {
@@ -104,11 +104,11 @@ class AnnouncementResource extends Resource
                                                 ->send();
                                         }
                                     }),
-                                Forms\Components\Actions\Action::make('improveBody')
+                                \Filament\Actions\Action::make('improveBody')
                                     ->icon('heroicon-o-arrow-path')
                                     ->label('Improve')
                                     ->tooltip('Enhance existing content with AI')
-                                    ->action(function (Forms\Set $set, Forms\Get $get) {
+                                    ->action(function ($set, $get) {
                                         $existing = strip_tags($get('body') ?? '');
                                         if (empty($existing)) {
                                             \Filament\Notifications\Notification::make()
@@ -407,3 +407,4 @@ class AnnouncementResource extends Resource
         ];
     }
 }
+
