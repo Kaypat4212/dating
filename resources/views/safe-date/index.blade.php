@@ -116,7 +116,12 @@
                                 <label class="form-label fw-semibold">⏱️ Alert After (minutes)</label>
                                 <select name="checkin_minutes" class="form-select">
                                     @foreach([30, 60, 90, 120, 180, 240] as $m)
-                                    <option value="{{ $m }}" {{ old('checkin_minutes', 120) == $m ? 'selected' : '' }}>{{ $m }} minutes ({{ $m/60 >= 1 ? floor($m/60).'h'.($m%60 > 0 ? ' '.$m%60.'m':'') : $m.'m' }})</option>
+                                    @php
+                                        $hours = floor($m / 60);
+                                        $mins = $m % 60;
+                                        $display = $hours >= 1 ? $hours . 'h' . ($mins > 0 ? ' ' . $mins . 'm' : '') : $m . 'm';
+                                    @endphp
+                                    <option value="{{ $m }}" {{ old('checkin_minutes', 120) == $m ? 'selected' : '' }}>{{ $m }} minutes ({{ $display }})</option>
                                     @endforeach
                                 </select>
                                 <div class="form-text">Alert fires if you don't check in after this long.</div>
