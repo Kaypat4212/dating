@@ -69,8 +69,9 @@
   </div>
 </div>
 
-@push('scripts')
 <script>
+// Bug report modal — script is inline (component renders after @stack('scripts'))
+document.addEventListener('DOMContentLoaded', function () {
 (function () {
     const form       = document.getElementById('bugReportForm');
     const submitBtn  = document.getElementById('bugReportSubmit');
@@ -153,6 +154,6 @@
         }
     });
 })();
+});
 </script>
-@endpush
 @endauth
