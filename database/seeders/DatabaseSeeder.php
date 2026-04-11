@@ -31,6 +31,9 @@ class DatabaseSeeder extends Seeder
         // Seed country-based forum categories & starter topics
         $this->call(CountryForumSeeder::class);
 
+        // Seed announcements (What's New)
+        $this->call(AnnouncementSeeder::class);
+
         // 3. Create admin user
         $admin = User::firstOrCreate(
             ['email' => 'admin@heartsconnect.com'],

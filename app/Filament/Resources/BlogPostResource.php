@@ -20,6 +20,7 @@ use Filament\Actions\BulkAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Http;
 
 class BlogPostResource extends Resource
 {
@@ -72,6 +73,31 @@ class BlogPostResource extends Resource
                             ->rows(3)
                             ->maxLength(500)
                             ->helperText('Short summary shown on listing pages (max 500 chars).')
+                            ->hintActions([
+                                Forms\Components\Actions\Action::make('generateExcerpt')
+                                    ->icon('heroicon-o-sparkles')
+                                    ->label('Generate from content')
+                                    ->tooltip('Auto-generate excerpt from blog content using AI')
+                                    ->action(function (Forms\Set $set, Forms\Get $get) {
+                                        $content = strip_tags($get('content') ?? '');
+                                        $title = $get('title') ?? '';
+                                        if (empty($content)) {
+                                            \Filament\Notifications\Notification::make()
+                                                ->title('No content to summarize')
+                                                ->warning()
+                                                ->send();
+                                            return;
+                                        }
+                                        $excerpt = self::generateAiContent('excerpt', $title, $content);
+                                        if ($excerpt) {
+                                            $set('excerpt', $excerpt);
+                                            \Filament\Notifications\Notification::make()
+                                                ->title('Excerpt generated!')
+                                                ->success()
+                                                ->send();
+                                        }
+                                    }),
+                            ])
                             ->columnSpanFull(),
 
                         Forms\Components\RichEditor::make('content')
@@ -92,6 +118,65 @@ class BlogPostResource extends Resource
                                 'underline',
                                 'undo',
                             ])
+                            ->hintActions([
+                                Forms\Components\Actions\Action::make('generateContent')
+                                    ->icon('heroicon-o-sparkles')
+                                    ->label('Generate with AI')
+                                    ->tooltip('Create blog post content using AI')
+                                    ->modalHeading('Generate Blog Content')
+                                    ->form([
+                                        Forms\Components\Select::make('style')
+                                            ->label('Writing style')
+                                            ->options([
+                                                'friendly' => 'Friendly & Conversational',
+                                                'professional' => 'Professional',
+                                                'romantic' => 'Romantic & Inspiring',
+                                                'advice' => 'Advice & Tips',
+                                                'story' => 'Personal Story',
+                                            ])
+                                            ->default('friendly')
+                                            ->required(),
+                                        Forms\Components\Textarea::make('topic')
+                                            ->label('What is this blog post about?')
+                                            ->placeholder('e.g. "5 tips for a successful first date"')
+                                            ->required()
+                                            ->rows(3),
+                                    ])
+                                    ->action(function (array $data, Forms\Set $set, Forms\Get $get) {
+                                        $title = $get('title') ?? 'untitled post';
+                                        $content = self::generateAiContent('blog', $title, $data['topic'] ?? '', $data['style'] ?? 'friendly');
+                                        if ($content) {
+                                            $set('content', $content);
+                                            \Filament\Notifications\Notification::make()
+                                                ->title('Blog content generated!')
+                                                ->success()
+                                                ->send();
+                                        }
+                                    }),
+                                Forms\Components\Actions\Action::make('improveContent')
+                                    ->icon('heroicon-o-arrow-path')
+                                    ->label('Improve')
+                                    ->tooltip('Enhance existing content with AI')
+                                    ->action(function (Forms\Set $set, Forms\Get $get) {
+                                        $existing = strip_tags($get('content') ?? '');
+                                        if (empty($existing)) {
+                                            \Filament\Notifications\Notification::make()
+                                                ->title('No content to improve')
+                                                ->warning()
+                                                ->send();
+                                            return;
+                                        }
+                                        $improved = self::generateAiContent('improve_blog', '', $existing);
+                                        if ($improved) {
+                                            $set('content', $improved);
+                                            \Filament\Notifications\Notification::make()
+                                                ->title('Content improved!')
+                                                ->success()
+                                                ->send();
+                                        }
+                                    }),
+                            
+])
                             ->columnSpanFull(),
                     ]),
 
@@ -326,6 +411,71 @@ class BlogPostResource extends Resource
                     DeleteBulkAction::make(),
                 ]),
             ]);
+    }
+
+    /**
+     * Generate AI content for blog posts
+     */
+    protected static function generateAiContent(string $mode, string $title, string $context, string $style = 'friendly'): ?string
+    {
+        $apiKey = \App\Models\SiteSetting::get('ai_groq_api_key', '');
+        
+        if (empty($apiKey)) {
+            \Filament\Notifications\Notification::make()
+                ->title('AI not configured')
+                ->body('Please configure Groq API key in Site Settings → AI Assistant')
+                ->warning()
+                ->send();
+            return null;
+        }
+
+        $styleMap = [
+            'friendly' => 'friendly, warm, and conversational',
+            'professional' => 'professional and informative',
+            'romantic' => 'romantic, inspiring, and heartfelt',
+            'advice' => 'advisorial with practical tips',
+            'story' => 'personal storytelling style',
+        ];
+
+        $prompts = [
+            'excerpt' => "Write a compelling 2-sentence summary (max 150 chars) of this blog post titled '$title': $context",
+            'blog' => "Write a complete, engaging blog post for a dating app blog. Title: '$title'. Topic: $context. Style: {$styleMap[$style]}. Include an introduction, 3-4 main points with examples, and a conclusion. Use HTML formatting (<h2>, <p>, <strong>, <ul>, <li>). Add emojis where appropriate. Make it 600-800 words.",
+            'improve_blog' => "Improve this dating blog post content. Make it more engaging, add more detail, fix grammar, improve flow, and add emojis where appropriate. Keep HTML formatting: $context",
+            'expand' => "Expand this blog content with more details, examples, and insights. Add 2-3 more paragraphs. Keep the same tone and HTML formatting: $context",
+        ];
+
+        try {
+            $response = Http::timeout(30)
+                ->withToken($apiKey)
+                ->post('https://api.groq.com/openai/v1/chat/completions', [
+                    'model' => \App\Models\SiteSetting::get('ai_groq_model', 'llama-3.1-8b-instant'),
+                    'messages' => [
+                        ['role' => 'system', 'content' => 'You are an expert dating and relationship writer who creates engaging, helpful blog content for a dating app audience.'],
+                        ['role' => 'user', 'content' => $prompts[$mode] ?? $prompts['blog']],
+                    ],
+                    'max_tokens' => $mode === 'excerpt' ? 100 : 1500,
+                    'temperature' => 0.7,
+                ]);
+
+            if (!$response->successful()) {
+                throw new \Exception($response->body());
+            }
+
+            $content = data_get($response->json(), 'choices.0.message.content', '');
+            
+            // Clean up the response
+            $content = trim($content, "\" \n\r\t");
+            
+            return $content ?: null;
+            
+        } catch (\Throwable $e) {
+            \Filament\Notifications\Notification::make()
+                ->title('AI generation failed')
+                ->body($e->getMessage())
+                ->danger()
+                ->send();
+            return null;
+        }
     }
 
     public static function getPages(): array

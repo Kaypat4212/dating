@@ -16,6 +16,7 @@ use Filament\Actions\BulkAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Notifications\Notification;
+use Illuminate\Support\Facades\Http;
 
 class AnnouncementResource extends Resource
 {
@@ -50,6 +51,24 @@ class AnnouncementResource extends Resource
                             ->required()
                             ->maxLength(140)
                             ->placeholder('e.g. "Speed Dating is here!"')
+                            ->suffixAction(
+                                Forms\Components\Actions\Action::make('generateTitle')
+                                    ->icon('heroicon-o-sparkles')
+                                    ->label('AI Generate')
+                                    ->tooltip('Generate announcement title with AI')
+                                    ->action(function (Forms\Set $set, Forms\Get $get) {
+                                        $type = $get('type') ?? 'feature';
+                                        $body = $get('body');
+                                        $title = self::generateAiContent('title', $type, $body);
+                                        if ($title) {
+                                            $set('title', $title);
+                                            \Filament\Notifications\Notification::make()
+                                                ->title('Title generated!')
+                                                ->success()
+                                                ->send();
+                                        }
+                                    })
+                            )
                             ->columnSpanFull(),
 
                         Forms\Components\RichEditor::make('body')
@@ -61,7 +80,53 @@ class AnnouncementResource extends Resource
                                 'link', 'redo', 'undo',
                             ])
                             ->columnSpanFull()
-                            ->helperText('Supports rich text formatting. Keep it concise for the best user experience.'),
+                            ->helperText('Supports rich text formatting. Keep it concise for the best user experience.')
+                            ->hintActions([
+                                Forms\Components\Actions\Action::make('generateBody')
+                                    ->icon('heroicon-o-sparkles')
+                                    ->label('Generate with AI')
+                                    ->tooltip('Create announcement content using AI')
+                                    ->form([
+                                        Forms\Components\Textarea::make('prompt')
+                                            ->label('What is this announcement about?')
+                                            ->placeholder('e.g. "New video calling feature launched"')
+                                            ->required()
+                                            ->rows(3),
+                                    ])
+                                    ->action(function (array $data, Forms\Set $set, Forms\Get $get) {
+                                        $type = $get('type') ?? 'feature';
+                                        $content = self::generateAiContent('body', $type, $data['prompt'] ?? '');
+                                        if ($content) {
+                                            $set('body', $content);
+                                            \Filament\Notifications\Notification::make()
+                                                ->title('Content generated!')
+                                                ->success()
+                                                ->send();
+                                        }
+                                    }),
+                                Forms\Components\Actions\Action::make('improveBody')
+                                    ->icon('heroicon-o-arrow-path')
+                                    ->label('Improve')
+                                    ->tooltip('Enhance existing content with AI')
+                                    ->action(function (Forms\Set $set, Forms\Get $get) {
+                                        $existing = strip_tags($get('body') ?? '');
+                                        if (empty($existing)) {
+                                            \Filament\Notifications\Notification::make()
+                                                ->title('No content to improve')
+                                                ->warning()
+                                                ->send();
+                                            return;
+                                        }
+                                        $improved = self::generateAiContent('improve', $get('type'), $existing);
+                                        if ($improved) {
+                                            $set('body', $improved);
+                                            \Filament\Notifications\Notification::make()
+                                                ->title('Content improved!')
+                                                ->success()
+                                                ->send();
+                                        }
+                                    }),
+                            ]),
                     ]),
             ])->columnSpan(2),
 
@@ -275,6 +340,62 @@ class AnnouncementResource extends Resource
                     DeleteBulkAction::make(),
                 ]),
             ]);
+    }
+
+    /**
+     * Generate AI content for announcements
+     */
+    protected static function generateAiContent(string $mode, string $type, string $context = ''): ?string
+    {
+        $apiKey = \App\Models\SiteSetting::get('ai_groq_api_key', '');
+        
+        if (empty($apiKey)) {
+            Notification::make()
+                ->title('AI not configured')
+                ->body('Please configure Groq API key in Site Settings → AI Assistant')
+                ->warning()
+                ->send();
+            return null;
+        }
+
+        $prompts = [
+            'title' => "Generate a catchy, short announcement title (max 60 chars) for a dating app $type announcement about: $context. Return ONLY the title, no quotes.",
+            'body' => "Write a friendly, engaging announcement for a dating app about: $context. Type: $type. Use HTML formatting (<p>, <strong>, <ul>, <li>). Keep it under 200 words and exciting. Include emojis where appropriate.",
+            'improve' => "Improve this dating app announcement. Make it more engaging, friendly, and exciting. Add emojis and better formatting. Use HTML tags: $context",
+        ];
+
+        try {
+            $response = Http::timeout(15)
+                ->withToken($apiKey)
+                ->post('https://api.groq.com/openai/v1/chat/completions', [
+                    'model' => \App\Models\SiteSetting::get('ai_groq_model', 'llama-3.1-8b-instant'),
+                    'messages' => [
+                        ['role' => 'system', 'content' => 'You are a friendly dating app community manager who writes engaging, warm announcements.'],
+                        ['role' => 'user', 'content' => $prompts[$mode] ?? $prompts['body']],
+                    ],
+                    'max_tokens' => $mode === 'title' ? 100 : 500,
+                    'temperature' => 0.7,
+                ]);
+
+            if (!$response->successful()) {
+                throw new \Exception($response->body());
+            }
+
+            $content = data_get($response->json(), 'choices.0.message.content', '');
+            
+            // Clean up the response
+            $content = trim($content, "\" \n\r\t");
+            
+            return $content ?: null;
+            
+        } catch (\Throwable $e) {
+            Notification::make()
+                ->title('AI generation failed')
+                ->body($e->getMessage())
+                ->danger()
+                ->send();
+            return null;
+        }
     }
 
     public static function getPages(): array
