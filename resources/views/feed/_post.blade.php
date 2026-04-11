@@ -12,7 +12,7 @@
     <div class="card-body pb-2">
         <div class="d-flex align-items-center gap-3">
             {{-- Avatar --}}
-            <a href="{{ route('profile.show', $poster->username) }}" class="flex-shrink-0">
+            <a href="{{ route('profile.show', $poster->username ?? $poster->id) }}" class="flex-shrink-0">
                 @if($poster->primaryPhoto)
                     <img src="{{ $poster->primaryPhoto->thumbnail_url }}"
                          class="rounded-circle object-fit-cover"
@@ -28,7 +28,7 @@
             {{-- Name / meta --}}
             <div class="flex-grow-1 overflow-hidden">
                 <div class="fw-semibold text-truncate" style="font-size:.93rem">
-                    <a href="{{ route('profile.show', $poster->username) }}"
+                    <a href="{{ route('profile.show', $poster->username ?? $poster->id) }}"
                        class="text-body text-decoration-none">{{ $poster->name }}</a>
                 </div>
                 <div class="d-flex align-items-center gap-2">
@@ -79,7 +79,7 @@
             @else
                 <div class="rounded-circle bg-secondary flex-shrink-0" style="width:28px;height:28px"></div>
             @endif
-            <a href="{{ route('profile.show', $orig->user->username) }}"
+            <a href="{{ route('profile.show', $orig->user->username ?? $orig->user->id) }}"
                class="fw-semibold text-body text-decoration-none" style="font-size:.82rem">
                 {{ $orig->user->name }}
             </a>
@@ -229,7 +229,7 @@
                 @endif
                 <div class="flex-grow-1">
                     <div class="rounded-3 px-3 py-2" style="background:var(--bs-secondary-bg)">
-                        <a href="{{ route('profile.show', $comment->author->username) }}"
+                        <a href="{{ route('profile.show', $comment->author->username ?? $comment->author->id) }}"
                            class="fw-semibold text-body text-decoration-none" style="font-size:.82rem">
                             {{ $comment->author->name }}
                         </a>
@@ -263,7 +263,7 @@
                             @endif
                             <div>
                                 <div class="rounded-3 px-3 py-1" style="background:var(--bs-secondary-bg)">
-                                    <a href="{{ route('profile.show', $reply->author->username) }}"
+                                    <a href="{{ route('profile.show', $reply->author->username ?? $reply->author->id) }}"
                                        class="fw-semibold text-body text-decoration-none" style="font-size:.78rem">
                                         {{ $reply->author->name }}
                                     </a>
