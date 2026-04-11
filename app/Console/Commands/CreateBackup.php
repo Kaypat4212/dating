@@ -2,8 +2,10 @@
 
 namespace App\Console\Commands;
 
+use App\Models\BackupRecord;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use ZipArchive;
 
 class CreateBackup extends Command
@@ -52,6 +54,21 @@ class CreateBackup extends Command
 
         $zip->close();
         @unlink($sqlFile);
+
+        if (Schema::hasTable('backup_records')) {
+            BackupRecord::updateOrCreate(
+                ['filename' => basename($zipPath)],
+                [
+                    'disk' => 'local',
+                    'path' => 'backups/' . basename($zipPath),
+                    'source' => 'artisan',
+                    'status' => 'available',
+                    'size_bytes' => filesize($zipPath) ?: null,
+                    'file_created_at' => now(),
+                    'notes' => 'Backup archive created successfully.',
+                ]
+            );
+        }
 
         $sizeMb = number_format(filesize($zipPath) / 1_048_576, 2);
         $this->info("Backup created: backup_{$ts}.zip ({$sizeMb} MB)");

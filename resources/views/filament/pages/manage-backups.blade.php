@@ -4,12 +4,9 @@
     $backupCount  = count($backups);
     $totalBytes   = 0;
     foreach ($backups as $b) {
-        preg_match('/[\d.]+/', $b['size'], $m);
-        $val = floatval($m[0] ?? 0);
-        if (str_contains($b['size'], 'GB')) $val *= 1024;
-        $totalBytes += $val;
+        $totalBytes += $b['size_bytes'] ?? 0;
     }
-    $totalSize    = $totalBytes > 0 ? round($totalBytes, 1) . ' MB' : '—';
+    $totalSize    = $totalBytes > 0 ? $this->formatBytes($totalBytes) : '—';
     $latestBackup = $backupCount > 0 ? $backups[0]['created_at'] : null;
 @endphp
 
@@ -158,10 +155,20 @@
 .bk-dl:hover { background:rgba(79,70,229,.14); border-color:var(--indigo); }
 .dark .bk-dl { color:#818cf8; background:rgba(129,140,248,.07); border-color:rgba(129,140,248,.25); }
 .dark .bk-dl:hover { background:rgba(129,140,248,.14); }
+.bk-rs { color:var(--amber); background:rgba(217,119,6,.08); border-color:rgba(217,119,6,.22); }
+.bk-rs:hover { background:rgba(217,119,6,.16); border-color:var(--amber); }
 .bk-del { color:var(--red); background:rgba(220,38,38,.06); border-color:rgba(220,38,38,.2); }
 .bk-del:hover { background:rgba(220,38,38,.12); border-color:var(--red); }
 .bk-del:disabled { opacity:.4; cursor:not-allowed; }
 .bk-tfoot { padding:.5rem 1rem; border-top:1px solid var(--border); font-size:.67rem; color:var(--txt3); background:var(--bg1); }
+.bk-status { display:inline-flex; align-items:center; gap:.3rem; padding:2px 8px; border-radius:999px; border:1px solid; font-size:.67rem; font-weight:700; }
+.bk-status.ok { color:var(--green); background:var(--gbg); border-color:var(--gbrd); }
+.bk-status.warn { color:var(--amber); background:var(--abg); border-color:var(--abrd); }
+.bk-status.info { color:var(--blue); background:var(--bbg); border-color:var(--bbrd); }
+.bk-status.danger { color:var(--red); background:var(--rbg); border-color:var(--rbrd); }
+.bk-status.muted { color:var(--txt2); background:var(--bg2); border-color:var(--border2); }
+.bk-meta { display:flex; flex-wrap:wrap; gap:.35rem; margin-top:.25rem; }
+.bk-meta-chip { display:inline-flex; align-items:center; gap:.25rem; padding:2px 6px; border-radius:6px; border:1px solid var(--border2); background:var(--bg2); font-size:.64rem; color:var(--txt2); }
 
 /* Restore */
 .bk-rest { border:1.5px solid var(--border); border-radius:12px; overflow:hidden; background:var(--bg0); }
@@ -260,7 +267,7 @@ details[open].bk-rest summary .chev { transform:rotate(180deg); }
     <div class="bk-card-head">
         <div class="bk-card-title">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M2 3a1 1 0 0 0-1 1v1a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1H2Z"/><path fill-rule="evenodd" d="M2 7.5h16l-.811 7.71a2 2 0 0 1-1.99 1.79H4.802a2 2 0 0 1-1.99-1.79L2 7.5ZM7 11a1 1 0 0 1 1-1h4a1 1 0 1 1 0 2H8a1 1 0 0 1-1-1Z" clip-rule="evenodd"/></svg>
-            Backup Files
+            Backup Files & History
             @if($backupCount > 0)
                 <span class="bk-cbadge">{{ $backupCount }}</span>
             @endif
@@ -288,6 +295,7 @@ details[open].bk-rest summary .chev { transform:rotate(180deg); }
                 <tr>
                     <th>Filename</th>
                     <th class="bk-hism">Size</th>
+                    <th class="bk-hism">Status</th>
                     <th class="bk-himd">Created</th>
                     <th>Actions</th>
                 </tr>
@@ -301,10 +309,19 @@ details[open].bk-rest summary .chev { transform:rotate(180deg); }
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M10.75 2.75a.75.75 0 0 0-1.5 0v8.614L6.295 8.235a.75.75 0 1 0-1.09 1.03l4.25 4.5a.75.75 0 0 0 1.09 0l4.25-4.5a.75.75 0 0 0-1.09-1.03l-2.955 3.129V2.75Z"/><path d="M3.5 12.75a.75.75 0 0 0-1.5 0v2.5A2.75 2.75 0 0 0 4.75 18h10.5A2.75 2.75 0 0 0 18 15.25v-2.5a.75.75 0 0 0-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5Z"/></svg>
                             </div>
                             <span class="bk-fname">{{ $backup['filename'] }}</span>
+                            <div class="bk-meta">
+                                <span class="bk-meta-chip">{{ $backup['source'] }}</span>
+                                @if(!empty($backup['last_restored_at']))
+                                    <span class="bk-meta-chip">Restored {{ $backup['last_restored_at'] }}</span>
+                                @endif
+                            </div>
                         </div>
                     </td>
                     <td class="bk-hism">
                         <span class="bk-szchip">{{ $backup['size'] }}</span>
+                    </td>
+                    <td class="bk-hism">
+                        <span class="bk-status {{ $backup['status_tone'] }}">{{ $backup['status_label'] }}</span>
                     </td>
                     <td class="bk-himd">
                         <div class="bk-drow">
@@ -314,11 +331,22 @@ details[open].bk-rest summary .chev { transform:rotate(180deg); }
                     </td>
                     <td>
                         <div class="bk-acts">
+                            @if($backup['can_download'])
                             <a href="{{ route('admin.backup.download', ['filename' => $backup['filename']]) }}"
                                class="bk-btn bk-dl" title="Download">
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M10.75 2.75a.75.75 0 0 0-1.5 0v8.614L6.295 8.235a.75.75 0 1 0-1.09 1.03l4.25 4.5a.75.75 0 0 0 1.09 0l4.25-4.5a.75.75 0 0 0-1.09-1.03l-2.955 3.129V2.75Z"/><path d="M3.5 12.75a.75.75 0 0 0-1.5 0v2.5A2.75 2.75 0 0 0 4.75 18h10.5A2.75 2.75 0 0 0 18 15.25v-2.5a.75.75 0 0 0-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5Z"/></svg>
                                 Download
                             </a>
+                            @endif
+                            @if($backup['can_restore'])
+                            <button wire:click="restoreBackup('{{ $backup['filename'] }}')"
+                                    wire:confirm="Restore {{ $backup['filename'] }}? This will overwrite the current database and application files."
+                                    wire:loading.attr="disabled"
+                                    class="bk-btn bk-rs" title="Restore">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M15.312 11.424a.75.75 0 0 1 1.06.064A8.966 8.966 0 0 1 18.5 17a.75.75 0 0 1-1.5 0 7.466 7.466 0 0 0-1.752-4.516.75.75 0 0 1 .064-1.06Z" clip-rule="evenodd"/><path fill-rule="evenodd" d="M8.386 3.658a.75.75 0 0 1 .868-.61A8.965 8.965 0 0 1 17 11.25a.75.75 0 0 1-1.5 0A7.465 7.465 0 0 0 9.606 4.52a.75.75 0 0 1-.61-.862Z" clip-rule="evenodd"/><path fill-rule="evenodd" d="M8 5.75A6.25 6.25 0 1 0 14.25 12 .75.75 0 0 1 15.75 12 7.75 7.75 0 1 1 8 4.25h2a.75.75 0 0 1 0 1.5H8Z" clip-rule="evenodd"/><path fill-rule="evenodd" d="M10 1.75A.75.75 0 0 1 10.75 1h5.5a.75.75 0 0 1 .75.75v5.5a.75.75 0 0 1-1.5 0V3.56l-4.97 4.97a.75.75 0 1 1-1.06-1.06l4.97-4.97H10.75A.75.75 0 0 1 10 1.75Z" clip-rule="evenodd"/></svg>
+                                Restore
+                            </button>
+                            @endif
                             <button wire:click="deleteBackup('{{ $backup['filename'] }}')"
                                     wire:confirm="Delete {{ $backup['filename'] }}? This cannot be undone."
                                     wire:loading.attr="disabled"
@@ -348,7 +376,7 @@ details[open].bk-rest summary .chev { transform:rotate(180deg); }
         <div class="bk-steps">
             <div class="bk-step">
                 <span class="bk-num">1</span>
-                <span>Download the backup ZIP file using the <strong>Download</strong> button above.</span>
+                <span>Use the <strong>Restore</strong> button on any available backup to restore it directly from this page, or download it first if you prefer a manual restore.</span>
             </div>
             <div class="bk-step">
                 <span class="bk-num">2</span>

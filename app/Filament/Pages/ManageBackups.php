@@ -2,12 +2,15 @@
 
 namespace App\Filament\Pages;
 
+use App\Models\BackupRecord;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Illuminate\Contracts\Support\Htmlable;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 
 class ManageBackups extends Page
@@ -47,6 +50,20 @@ class ManageBackups extends Page
                 )
                 ->modalSubmitActionLabel('Start Backup')
                 ->action('createBackup'),
+
+            Action::make('syncBackupRecords')
+                ->label('Sync Records')
+                ->icon('heroicon-o-arrow-path')
+                ->color('gray')
+                ->action(function (): void {
+                    $count = $this->syncBackupRecords();
+
+                    Notification::make()
+                        ->title('Backup records synced')
+                        ->body("{$count} backup record(s) refreshed from storage.")
+                        ->success()
+                        ->send();
+                }),
         ];
     }
 
@@ -57,6 +74,8 @@ class ManageBackups extends Page
         try {
             $exitCode = Artisan::call('backup:create');
             $output   = trim(Artisan::output());
+
+            $this->syncBackupRecords();
 
             if ($exitCode === 0) {
                 Notification::make()
@@ -82,6 +101,46 @@ class ManageBackups extends Page
         }
     }
 
+    public function restoreBackup(string $filename): void
+    {
+        $filename = basename($filename);
+        if (! str_ends_with($filename, '.zip') || str_contains($filename, '/') || str_contains($filename, '\\')) {
+            return;
+        }
+
+        try {
+            $exitCode = Artisan::call('backup:restore', [
+                'filename' => $filename,
+                '--force' => true,
+            ]);
+
+            $output = trim(Artisan::output());
+
+            if (Schema::hasTable('backup_records')) {
+                BackupRecord::where('filename', $filename)->update([
+                    'restored_at' => now(),
+                    'restored_by' => Auth::id(),
+                    'status' => $exitCode === 0 ? 'restored' : 'restore_failed',
+                    'notes' => $output ?: null,
+                ]);
+            }
+
+            Notification::make()
+                ->title($exitCode === 0 ? 'Backup restored' : 'Restore failed')
+                ->body($output ?: 'No restore output available.')
+                ->color($exitCode === 0 ? 'success' : 'danger')
+                ->persistent()
+                ->send();
+        } catch (\Throwable $e) {
+            Notification::make()
+                ->title('Restore error')
+                ->body($e->getMessage())
+                ->danger()
+                ->persistent()
+                ->send();
+        }
+    }
+
     public function deleteBackup(string $filename): void
     {
         // Sanitize — reject anything that isn't a plain .zip filename
@@ -94,6 +153,19 @@ class ManageBackups extends Page
 
         if (Storage::disk('local')->exists($path)) {
             Storage::disk('local')->delete($path);
+
+            if (Schema::hasTable('backup_records')) {
+                BackupRecord::updateOrCreate(
+                    ['filename' => $filename],
+                    [
+                        'disk' => 'local',
+                        'path' => $path,
+                        'status' => 'deleted',
+                        'notes' => 'Backup deleted from the admin page.',
+                    ]
+                );
+            }
+
             Notification::make()
                 ->title('Backup deleted')
                 ->success()
@@ -110,31 +182,89 @@ class ManageBackups extends Page
      */
     public function getBackups(): array
     {
-        $disk  = Storage::disk('local');
-        $files = $disk->files('backups');
+        $this->syncBackupRecords();
 
-        $backups = [];
-        foreach ($files as $file) {
-            if (! str_ends_with($file, '.zip')) {
-                continue;
-            }
-
-            $backups[] = [
-                'filename'   => basename($file),
-                'size'       => $this->formatBytes($disk->size($file)),
-                'created_at' => \Illuminate\Support\Carbon::createFromTimestamp(
-                    $disk->lastModified($file)
-                )->format('M j, Y — H:i'),
-            ];
+        if (! Schema::hasTable('backup_records')) {
+            return [];
         }
 
-        // Newest first (filename contains the timestamp)
-        usort($backups, fn($a, $b) => strcmp($b['filename'], $a['filename']));
+        return BackupRecord::query()
+            ->orderByRaw("CASE WHEN status IN ('available', 'restored') THEN 0 ELSE 1 END")
+            ->orderByDesc('file_created_at')
+            ->orderByDesc('created_at')
+            ->get()
+            ->map(function (BackupRecord $backup): array {
+                $statusTone = match ($backup->status) {
+                    'available' => 'ok',
+                    'restored' => 'ok',
+                    'restore_failed' => 'danger',
+                    'missing' => 'warn',
+                    'deleted' => 'muted',
+                    default => 'info',
+                };
 
-        return $backups;
+                $createdAt = $backup->file_created_at ?? $backup->created_at;
+
+                return [
+                    'filename' => $backup->filename,
+                    'size' => $backup->size_bytes ? $this->formatBytes($backup->size_bytes) : '—',
+                    'size_bytes' => $backup->size_bytes ?? 0,
+                    'created_at' => $createdAt ? $createdAt->format('M j, Y — H:i') : 'Unknown',
+                    'status' => $backup->status,
+                    'status_label' => str($backup->status)->replace('_', ' ')->title()->toString(),
+                    'status_tone' => $statusTone,
+                    'source' => str($backup->source)->title()->toString(),
+                    'last_restored_at' => $backup->restored_at?->format('M j, Y — H:i'),
+                    'notes' => $backup->notes,
+                    'can_download' => in_array($backup->status, ['available', 'restored'], true),
+                    'can_restore' => in_array($backup->status, ['available', 'restored'], true),
+                ];
+            })
+            ->all();
     }
 
-    private function formatBytes(int $bytes): string
+    public function syncBackupRecords(): int
+    {
+        if (! Schema::hasTable('backup_records')) {
+            return 0;
+        }
+
+        $disk = Storage::disk('local');
+        $files = collect($disk->files('backups'))
+            ->filter(fn (string $file): bool => str_ends_with($file, '.zip'));
+
+        $synced = 0;
+
+        foreach ($files as $file) {
+            $filename = basename($file);
+
+            BackupRecord::updateOrCreate(
+                ['filename' => $filename],
+                [
+                    'disk' => 'local',
+                    'path' => $file,
+                    'source' => BackupRecord::query()->where('filename', $filename)->value('source') ?? 'scan',
+                    'status' => 'available',
+                    'size_bytes' => $disk->size($file),
+                    'file_created_at' => Carbon::createFromTimestamp($disk->lastModified($file)),
+                ]
+            );
+
+            $synced++;
+        }
+
+        BackupRecord::query()
+            ->whereNotIn('filename', $files->map(fn (string $file): string => basename($file))->all())
+            ->whereNotIn('status', ['deleted', 'restore_failed'])
+            ->update([
+                'status' => 'missing',
+                'notes' => 'Backup file is no longer present on disk.',
+            ]);
+
+        return $synced;
+    }
+
+    public function formatBytes(int $bytes): string
     {
         if ($bytes >= 1_073_741_824) {
             return number_format($bytes / 1_073_741_824, 2) . ' GB';
