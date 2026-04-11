@@ -127,6 +127,12 @@ class MessageController extends Controller
         $partner = $match->getOtherUser($user->id);
         try { $partner->notify(new \App\Notifications\NewMessageNotification($message, $user)); } catch (\Throwable) {}
 
+        // Update streak counter
+        \App\Models\Streak::recordInteraction($user->id, $partner->id);
+
+        // Broadcast MessageSent event for real-time updates
+        broadcast(new \App\Events\MessageSent($message))->toOthers();
+
         // NOTE: No self-notification for sender — only recipient gets emailed.
 
         return response()->json([

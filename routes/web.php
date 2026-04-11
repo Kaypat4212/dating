@@ -213,6 +213,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/messages/{conversation}', [MessageController::class, 'store'])->name('messages.store');
         Route::post('/messages/{conversation}/typing', [MessageController::class, 'typing'])->name('messages.typing');
 
+        // Disappearing Content & Streaks (Snapchat-style)
+        Route::post('/snaps/{conversation}',      [\App\Http\Controllers\DisappearingContentController::class, 'store'])->name('snaps.store');
+        Route::get('/snaps',                      [\App\Http\Controllers\DisappearingContentController::class, 'index'])->name('snaps.index');
+        Route::get('/snaps/{content}/view',       [\App\Http\Controllers\DisappearingContentController::class, 'view'])->name('snaps.view');
+        Route::get('/streaks/{userId}',           [\App\Http\Controllers\DisappearingContentController::class, 'streak'])->name('streaks.show');
+
         // Voice Calls
         Route::post('/calls/{conversation}/initiate', [VoiceCallController::class, 'initiate'])->name('calls.initiate');
         Route::post('/calls/{call}/answer',           [VoiceCallController::class, 'answer'])->name('calls.answer');

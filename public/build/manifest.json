@@ -1,4 +1,9 @@
 {
+  "_pusher-BH6T8AaG.js": {
+    "file": "assets/pusher-BH6T8AaG.js",
+    "name": "pusher",
+    "isDynamicEntry": true
+  },
   "node_modules/canvas-confetti/dist/confetti.module.mjs": {
     "file": "assets/confetti.module-5PKC4vm3.js",
     "name": "confetti.module",
@@ -6,11 +11,12 @@
     "isDynamicEntry": true
   },
   "resources/js/app.js": {
-    "file": "assets/app-BgQTXsmS.js",
+    "file": "assets/app-D3jQqImU.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true,
     "dynamicImports": [
+      "_pusher-BH6T8AaG.js",
       "node_modules/canvas-confetti/dist/confetti.module.mjs"
     ]
   },

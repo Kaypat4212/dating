@@ -27,6 +27,11 @@ Schedule::job(new PairSpeedDatingUsers)->everyTwoMinutes();
 // Hourly: delete messages whose disappear timer has expired
 Schedule::job(new PurgeExpiredMessages)->hourly();
 
+// Every 5 minutes: delete viewed disappearing content (Snapchat-style)
+Schedule::call(function () {
+    \App\Models\DisappearingContent::deleteExpired();
+})->everyFiveMinutes()->name('cleanup-disappearing-content');
+
 // Every 5 minutes: check for overdue safe date check-ins and send alerts
 Schedule::command('safe-date:alert')->everyFiveMinutes();
 
