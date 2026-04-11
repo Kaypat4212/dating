@@ -317,6 +317,103 @@ main { padding-bottom: 0 !important; }
 .date-spot-link.park .dsl-ico { background: #d1fae5; }
 .date-spot-link.bar .dsl-ico { background: #ede9fe; }
 .date-spot-footer { font-size: .67rem; color: var(--bs-secondary-color); margin-top: 6px; text-align: center; }
+/* ── Streak Counter ──────────────────────────────────────── */
+.streak-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: linear-gradient(135deg, #ff6b35, #f7931e);
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: .75rem;
+    font-weight: 700;
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(255,107,53,.3);
+    margin-left: 6px;
+}
+.streak-badge .fire-emoji { font-size: 1rem; }
+/* ── Snap Button ─────────────────────────────────────────── */
+.snap-btn { color: #ec4899 !important; }
+.snap-btn:hover { background: rgba(236,72,153,.1) !important; color: #db2777 !important; }
+/* ── Snap Viewer Modal ───────────────────────────────────── */
+.snap-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,.95);
+    z-index: 10000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn .2s;
+}
+.snap-modal.show { display: flex; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.snap-content-wrapper {
+    max-width: 90%;
+    max-height: 90%;
+    position: relative;
+}
+.snap-media {
+    max-width: 100%;
+    max-height: 90vh;
+    border-radius: 8px;
+}
+.snap-header {
+    position: absolute;
+    top: -50px;
+    left: 0;
+    right: 0;
+    color: #fff;
+    font-size: .9rem;
+    font-weight: 600;
+    text-align: center;
+}
+.snap-close {
+    position: absolute;
+    top: -45px;
+    right: 0;
+    background: rgba(255,255,255,.2);
+    border: none;
+    color: #fff;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 1.2rem;
+}
+.snap-timer {
+    position: absolute;
+    bottom: -40px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    color: #fff;
+    font-size: .85rem;
+    opacity: .8;
+}
+/* ── Snap Badge Notification ─────────────────────────────── */
+.snap-badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    background: #ec4899;
+    color: #fff;
+    border-radius: 10px;
+    min-width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: .65rem;
+    font-weight: 700;
+    border: 2px solid var(--bs-body-bg);
+}
 </style>
 @endpush
 
@@ -343,6 +440,14 @@ main { padding-bottom: 0 !important; }
     /** @var \App\Models\User $other */
     $visibleLastSeen = $other->visibleLastSeenTo($me);
     $isOnline        = $visibleLastSeen && $visibleLastSeen->gt(now()->subMinutes(10));
+    
+    // Streak counter
+    $streakCount = \App\Models\Streak::getStreakCount($me->id, $other->id);
+    
+    // Unviewed snaps count
+    $unviewedSnapsCount = \App\Models\DisappearingContent::where('recipient_id', $me->id)
+        ->where('viewed', false)
+        ->count();
 @endphp
 
 <div class="chat-page">
@@ -368,6 +473,12 @@ main { padding-bottom: 0 !important; }
                     {{ $other->name }}
                     @if($other->is_verified ?? false)
                         <i class="bi bi-patch-check-fill text-info ms-1" style="font-size:.8rem" title="Verified"></i>
+                    @endif
+                    @if($streakCount > 0)
+                        <span class="streak-badge" id="streakBadge">
+                            <span class="fire-emoji">🔥</span>
+                            <span id="streakCount">{{ $streakCount }}</span>
+                        </span>
                     @endif
                 </div>
                 <div id="chatStatusLine" class="chat-status-line {{ $isOnline ? 'chat-status-online' : '' }}">
@@ -721,6 +832,17 @@ main { padding-bottom: 0 !important; }
 
         {{-- ── Row 1: action icon strip ─────────────────────────────── --}}
         <div class="chat-actions-bar">
+
+            {{-- Snap / Disappearing Content --}}
+            <div class="position-relative">
+                <button type="button" class="chat-act-btn snap-btn" id="snapBtn" title="Send a snap (view once)">
+                    <i class="bi bi-camera-fill"></i>
+                </button>
+                @if($unviewedSnapsCount > 0)
+                    <span class="snap-badge" id="snapBadge">{{ $unviewedSnapsCount }}</span>
+                @endif
+            </div>
+            <input type="file" id="snapInput" accept="image/*,video/*" capture="environment" class="d-none">
 
             {{-- Attachment --}}
             <button type="button" class="chat-act-btn" id="attachBtn" title="Send image or audio">
@@ -1460,6 +1582,216 @@ function readAloud(btn) {
         if (btn) btn.style.color = 'rgba(255,255,255,.2)';
     };
     window.speechSynthesis.speak(utt);
+}
+
+// ── Snap / Disappearing Content Feature ──────────────────────────────────
+const snapBtn = document.getElementById('snapBtn');
+const snapInput = document.getElementById('snapInput');
+const snapBadge = document.getElementById('snapBadge');
+const streakBadgeEl = document.getElementById('streakBadge');
+const streakCountEl = document.getElementById('streakCount');
+
+// Send snap
+if (snapBtn) {
+    snapBtn.addEventListener('click', () => {
+        snapInput.click();
+    });
+}
+
+if (snapInput) {
+    snapInput.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        // Validate file
+        if (!file.type.match(/^(image|video)\//)) {
+            alert('Please select an image or video file');
+            return;
+        }
+
+        if (file.size > 20 * 1024 * 1024) {
+            alert('File too large. Maximum 20 MB.');
+            return;
+        }
+
+        // Show loading
+        snapBtn.disabled = true;
+        snapBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+
+        try {
+            const formData = new FormData();
+            formData.append('media', file);
+
+            const res = await fetch(`{{ route('snaps.store', $conversation->id) }}`, {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': csrf },
+                body: formData
+            });
+
+            const data = await res.json();
+
+            if (res.ok && data.success) {
+                // Show success message
+                const toast = document.createElement('div');
+                toast.className = 'position-fixed top-0 start-50 translate-middle-x mt-3 alert alert-success';
+                toast.style.zIndex = '10001';
+                toast.textContent = '📸 Snap sent!';
+                document.body.appendChild(toast);
+                setTimeout(() => toast.remove(), 3000);
+
+                // Update streak counter (increment by 1 if needed)
+                if (streakCountEl) {
+                    const currentCount = parseInt(streakCountEl.textContent) || 0;
+                    if (currentCount === 0 && streakBadgeEl) {
+                        // Show streak badge for first time
+                        streakBadgeEl.classList.remove('d-none');
+                    }
+                    streakCountEl.textContent = currentCount + 1;
+                }
+            } else {
+                alert(data.error || 'Failed to send snap');
+            }
+        } catch (err) {
+            console.error('Snap upload error:', err);
+            alert('Failed to send snap. Please try again.');
+        } finally {
+            snapBtn.disabled = false;
+            snapBtn.innerHTML = '<i class="bi bi-camera-fill"></i>';
+            snapInput.value = '';
+        }
+    });
+}
+
+// Listen for incoming snaps
+if (window.Echo) {
+    window.Echo.private('user.{{ auth()->id() }}')
+        .listen('.disappearing.content.sent', (e) => {
+            console.log('Snap received:', e);
+            
+            // Update badge count
+            if (snapBadge) {
+                const count = parseInt(snapBadge.textContent) || 0;
+                snapBadge.textContent = count + 1;
+                snapBadge.classList.remove('d-none');
+            } else {
+                // Create badge if it doesn't exist
+                const badge = document.createElement('span');
+                badge.className = 'snap-badge';
+                badge.id = 'snapBadge';
+                badge.textContent = '1';
+                snapBtn.parentElement.appendChild(badge);
+            }
+
+            // Show notification toast
+            const toast = document.createElement('div');
+            toast.className = 'position-fixed top-0 start-50 translate-middle-x mt-3 alert alert-info';
+            toast.style.zIndex = '10001';
+            toast.innerHTML = `📸 <strong>${e.sender}</strong> sent you a snap! Tap the camera icon to view.`;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 5000);
+
+            // Play notification sound
+            try {
+                const audio = new Audio('/notification.mp3');
+                audio.volume = 0.5;
+                audio.play().catch(() => {});
+            } catch {}
+        });
+}
+
+// View snaps when clicking snap button (if badge exists)
+snapBtn.addEventListener('click', async (e) => {
+    if (!snapBadge || snapBadge.classList.contains('d-none')) {
+        // No unviewed snaps, open camera
+        return;
+    }
+
+    // Fetch unviewed snaps
+    try {
+        const res = await fetch('{{ route("snaps.index") }}');
+        const data = await res.json();
+        
+        if (data.content && data.content.length > 0) {
+            // Show first snap from this user
+            const snap = data.content.find(s => s.sender_id === {{ $other->id }}) || data.content[0];
+            if (snap) {
+                viewSnap(snap.id);
+            }
+        }
+    } catch (err) {
+        console.error('Failed to fetch snaps:', err);
+    }
+});
+
+// View a snap
+async function viewSnap(contentId) {
+    try {
+        const res = await fetch(`/snaps/${contentId}/view`);
+        const data = await res.json();
+
+        if (!res.ok) {
+            if (res.status === 410) {
+                alert('This snap has already been viewed and deleted.');
+            } else {
+                alert(data.error || 'Failed to view snap');
+            }
+            return;
+        }
+
+        // Show snap modal
+        showSnapModal(data.media_url, data.media_type, data.sender);
+
+        // Decrement badge
+        if (snapBadge) {
+            const count = parseInt(snapBadge.textContent) || 0;
+            if (count <= 1) {
+                snapBadge.remove();
+            } else {
+                snapBadge.textContent = count - 1;
+            }
+        }
+    } catch (err) {
+        console.error('View snap error:', err);
+        alert('Failed to view snap');
+    }
+}
+
+// Show snap modal
+function showSnapModal(mediaUrl, mediaType, senderName) {
+    // Create modal
+    const modal = document.createElement('div');
+    modal.className = 'snap-modal show';
+    modal.innerHTML = `
+        <div class="snap-content-wrapper">
+            <div class="snap-header">From ${senderName || 'Unknown'}</div>
+            ${mediaType === 'video' 
+                ? `<video src="${mediaUrl}" class="snap-media" autoplay loop muted></video>`
+                : `<img src="${mediaUrl}" class="snap-media" alt="Snap">`
+            }
+            <button class="snap-close" onclick="this.closest('.snap-modal').remove()">&times;</button>
+            <div class="snap-timer">Tap anywhere to close • Auto-closes in <span id="snapTimer">10</span>s</div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+
+    // Click to close
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal || e.target.classList.contains('snap-close')) {
+            modal.remove();
+        }
+    });
+
+    // Auto-close timer
+    let timeLeft = 10;
+    const timerEl = document.getElementById('snapTimer');
+    const countdown = setInterval(() => {
+        timeLeft--;
+        if (timerEl) timerEl.textContent = timeLeft;
+        if (timeLeft <= 0) {
+            clearInterval(countdown);
+            modal.remove();
+        }
+    }, 1000);
 }
 </script>
 @endpush
