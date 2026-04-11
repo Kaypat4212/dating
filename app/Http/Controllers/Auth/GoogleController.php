@@ -77,7 +77,7 @@ class GoogleController extends Controller
 
         // Redirect to onboarding if profile is incomplete
         if (! $user->profile_complete) {
-            return redirect()->route('onboarding.step', ['step' => 1]);
+            return redirect()->route('setup.step', ['step' => 1]);
         }
 
         return redirect()->intended(route('dashboard'));

@@ -28,12 +28,14 @@ The following notifications now broadcast in real-time:
 1. **BroadcastsNotification Trait** - Reusable trait that adds broadcast support to any notification
 2. **Updated Notifications** - Key notifications now include `'broadcast'` in their `via()` method
 3. **Laravel Echo Channel** - Uses private channel `App.Models.User.{userId}`
+4. **Pusher Broadcasting** - Uses Pusher WebSockets for real-time delivery (works on cPanel)
 
 ### Frontend (JavaScript)
 1. **realtime-notifications.js** - Main notification handler module
 2. **Auto-initialization** - Automatically starts listening when user is logged in
 3. **Toast Display** - Creates beautiful Bootstrap toasts with icons and colors
 4. **Badge Updates** - Updates all notification badge counters in real-time
+5. **Pusher Connection** - Connects to Pusher using your API credentials
 
 ## 📝 Usage
 
@@ -108,30 +110,42 @@ localStorage.setItem('notification_sound', 'true');  // Enable
 
 ## 🔧 Configuration
 
-### Broadcasting Setup
+### Broadcasting Setup (Pusher)
 
-Make sure your `.env` has Reverb configured:
+Your `.env` is configured to use Pusher (works on cPanel without needing a WebSocket server):
+
 ```env
-BROADCAST_CONNECTION=reverb
-REVERB_APP_ID=your-app-id
-REVERB_APP_KEY=your-app-key
-REVERB_APP_SECRET=your-secret
-REVERB_HOST=your-domain.com
-REVERB_PORT=8080
-REVERB_SCHEME=https
+BROADCAST_CONNECTION=pusher
+
+PUSHER_APP_ID=2139938
+PUSHER_APP_KEY=1e1d2a23e398b4c746d2
+PUSHER_APP_SECRET=b1347f1e61589efbf320
+PUSHER_APP_CLUSTER=us3
+
+VITE_PUSHER_APP_KEY="${PUSHER_APP_KEY}"
+VITE_PUSHER_APP_CLUSTER="${PUSHER_APP_CLUSTER}"
 ```
 
-### Starting Reverb Server
+### No Server Required!
 
-**Production (cPanel/Server):**
+Unlike Reverb, Pusher is a cloud service:
+- ✅ **No WebSocket server to manage** on your cPanel
+- ✅ **No ports to open** or configure
+- ✅ **No background processes** to keep running
+- ✅ **Automatic scaling** - handles thousands of concurrent connections
+- ✅ **Built-in reliability** - automatic reconnection and failover
+
+### Queue Workers
+
+Make sure your queue workers are running to process broadcast jobs:
+
 ```bash
-php artisan reverb:start --host=0.0.0.0 --port=8080
+php artisan queue:work --tries=3
 ```
 
-**Development (Local):**
+**For cPanel:** Set up a cron job to keep queue workers running:
 ```bash
-npm run dev
-php artisan reverb:start
+* * * * * cd /home/username/public_html && php artisan queue:work --stop-when-empty
 ```
 
 ## 📊 Files Modified/Created
@@ -183,16 +197,42 @@ Or change the path in `playNotificationSound()` method.
 1. **Check Console** - Open DevTools and look for errors
 2. **Verify Echo** - Ensure `window.Echo` is defined
 3. **Check Meta Tag** - Verify `<meta name="user-id">` exists for authenticated users
-4. **Reverb Running** - Ensure Reverb server is running
+4. **Pusher Connection** - Check console for "Laravel Echo initialized with Pusher" message
 5. **Queue Workers** - Make sure queue workers are processing jobs
+6. **Pusher Dashboard** - Check your Pusher dashboard for connection events
 
 ```bash
 # Check if queue is running
 php artisan queue:work
 
-# Check Reverb logs
-php artisan reverb:start --debug
+# View queue jobs
+php artisan queue:failed
 ```
+
+### Testing Pusher Connection
+
+You can test if Pusher is working from the browser console:
+
+```javascript
+// Should show Pusher connection info
+console.log(window.Echo);
+
+// Should show "pusher"
+console.log(window.Echo.connector.pusher);
+```
+
+### Common Issues
+
+**Issue:** "Pusher key not found"
+- **Solution:** Make sure you ran `npm run build` after updating .env
+
+**Issue:** Connection fails in console
+- **Solution:** Verify your Pusher credentials in .env are correct
+- **Solution:** Check that VITE_PUSHER_APP_KEY is set correctly
+
+**Issue:** Notifications work locally but not on server
+- **Solution:** Ensure queue workers are running on cPanel
+- **Solution:** Check that .env on server has correct Pusher credentials
 
 ### Badge Not Updating
 
@@ -234,7 +274,7 @@ Check that badge elements have the correct selectors in `findUnreadBadges()` met
 
 Built with:
 - **Laravel 11** - Backend framework
-- **Laravel Reverb** - WebSocket server
+- **Pusher** - Real-time WebSocket service (cloud-hosted)
 - **Laravel Echo** - JavaScript broadcasting client
 - **Bootstrap 5** - Toast components
 - **Bootstrap Icons** - Notification icons
