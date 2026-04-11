@@ -48,9 +48,89 @@
     {{-- AOS (Animate On Scroll) --}}
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css">
 
+
     @vite(['resources/scss/app.scss', 'resources/js/app.js'])
     @stack('head')
     @stack('styles')
+
+    {{-- Google Analytics 4 --}}
+    @php
+        $gaEnabled = filter_var(\App\Models\SiteSetting::get('google_analytics_enabled'), FILTER_VALIDATE_BOOLEAN);
+        $gaId = \App\Models\SiteSetting::get('google_analytics_id');
+    @endphp
+    @if($gaEnabled && $gaId)
+    <!-- Google Analytics 4 -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id={{ $gaId }}"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', '{{ $gaId }}', {
+            'send_page_view': true,
+            @auth
+            'user_id': '{{ auth()->id() }}',
+            @endauth
+        });
+    </script>
+    @endif
+
+    {{-- Firebase Integration --}}
+    @php
+        $firebaseEnabled = filter_var(\App\Models\SiteSetting::get('firebase_enabled'), FILTER_VALIDATE_BOOLEAN);
+        $firebaseConfig = [
+            'apiKey' => \App\Models\SiteSetting::get('firebase_api_key'),
+            'authDomain' => \App\Models\SiteSetting::get('firebase_auth_domain'),
+            'projectId' => \App\Models\SiteSetting::get('firebase_project_id'),
+            'storageBucket' => \App\Models\SiteSetting::get('firebase_storage_bucket'),
+            'messagingSenderId' => \App\Models\SiteSetting::get('firebase_messaging_sender_id'),
+            'appId' => \App\Models\SiteSetting::get('firebase_app_id'),
+            'measurementId' => \App\Models\SiteSetting::get('firebase_measurement_id'),
+        ];
+        $firebaseConfigured = $firebaseEnabled && !empty($firebaseConfig['apiKey']) && !empty($firebaseConfig['projectId']);
+    @endphp
+    @if($firebaseConfigured)
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
+        import { getAnalytics, logEvent } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js';
+
+        const firebaseConfig = {
+            apiKey: "{{ $firebaseConfig['apiKey'] }}",
+            authDomain: "{{ $firebaseConfig['authDomain'] }}",
+            projectId: "{{ $firebaseConfig['projectId'] }}",
+            storageBucket: "{{ $firebaseConfig['storageBucket'] }}",
+            messagingSenderId: "{{ $firebaseConfig['messagingSenderId'] }}",
+            appId: "{{ $firebaseConfig['appId'] }}",
+            @if(!empty($firebaseConfig['measurementId']))
+            measurementId: "{{ $firebaseConfig['measurementId'] }}"
+            @endif
+        };
+
+        try {
+            const app = initializeApp(firebaseConfig);
+            const analytics = getAnalytics(app);
+            
+            // Make analytics available globally
+            window.firebaseAnalytics = analytics;
+            window.logAnalyticsEvent = logEvent;
+
+            console.log('✅ Firebase initialized successfully');
+
+            // Track page view
+            logEvent(analytics, 'page_view', {
+                page_title: document.title,
+                page_location: window.location.href,
+                page_path: window.location.pathname,
+                @auth
+                user_id: '{{ auth()->id() }}',
+                @endauth
+            });
+        } catch (error) {
+            console.error('Firebase initialization error:', error);
+        }
+    </script>
+    @endif
+
     <style>
         /* Mobile: dropdown flows in-place below the button, full width */
         @media (max-width: 991.98px) {
