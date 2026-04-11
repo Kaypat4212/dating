@@ -26,6 +26,10 @@ class DisappearingContentController extends Controller
         $user  = $request->user();
         $match = $conversation->match;
 
+        if (!$match) {
+            return response()->json(['error' => 'Conversation not found.'], 404);
+        }
+
         abort_unless(
             $match->user1_id === $user->id || $match->user2_id === $user->id,
             403,
@@ -47,6 +51,16 @@ class DisappearingContentController extends Controller
         $mime = $file->getMimeType() ?? '';
         $ext  = strtolower($file->getClientOriginalExtension());
 
+        // Fallback mime detection by extension when PHP fileinfo is unavailable
+        if (empty($mime) || $mime === 'application/octet-stream') {
+            $mimeMap = [
+                'jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'png' => 'image/png',
+                'gif' => 'image/gif',  'webp' => 'image/webp',
+                'mp4' => 'video/mp4',  'mov'  => 'video/quicktime', 'webm' => 'video/webm',
+            ];
+            $mime = $mimeMap[$ext] ?? $mime;
+        }
+
         $isImage = in_array($mime, self::IMAGE_MIMES) || in_array($ext, self::IMAGE_EXT);
         $isVideo = in_array($mime, self::VIDEO_MIMES) || in_array($ext, self::VIDEO_EXT);
 
@@ -56,23 +70,44 @@ class DisappearingContentController extends Controller
 
         $type     = $isImage ? 'image' : 'video';
         $dir      = "disappearing-content/{$user->id}";
-        $filename = Str::uuid() . '.' . $ext;
-        $path     = $file->storeAs($dir, $filename, 'public');
+        $filename = Str::uuid() . '.' . ($ext ?: ($isImage ? 'jpg' : 'mp4'));
+
+        try {
+            $path = $file->storeAs($dir, $filename, 'public');
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Snap upload failed', ['error' => $e->getMessage(), 'user' => $user->id]);
+            return response()->json(['error' => 'Upload failed. Please check storage permissions.'], 500);
+        }
+
+        if (!$path) {
+            \Illuminate\Support\Facades\Log::error('Snap storeAs returned false', ['user' => $user->id, 'dir' => $dir]);
+            return response()->json(['error' => 'Could not save file. Please contact support.'], 500);
+        }
 
         $recipient = $match->getOtherUser($user->id);
 
-        $content = DisappearingContent::create([
-            'sender_id'    => $user->id,
-            'recipient_id' => $recipient->id,
-            'media_path'   => $path,
-            'media_type'   => $type,
-        ]);
+        try {
+            $content = DisappearingContent::create([
+                'sender_id'    => $user->id,
+                'recipient_id' => $recipient->id,
+                'media_path'   => $path,
+                'media_type'   => $type,
+            ]);
+        } catch (\Throwable $e) {
+            Storage::disk('public')->delete($path);
+            \Illuminate\Support\Facades\Log::error('Snap DB create failed', ['error' => $e->getMessage()]);
+            return response()->json(['error' => 'Failed to save snap. Please try again.'], 500);
+        }
 
         // Update streak
-        Streak::recordInteraction($user->id, $recipient->id);
+        try {
+            Streak::recordInteraction($user->id, $recipient->id);
+        } catch (\Throwable) {}
 
         // Broadcast event
-        broadcast(new \App\Events\DisappearingContentSent($content))->toOthers();
+        try {
+            broadcast(new \App\Events\DisappearingContentSent($content))->toOthers();
+        } catch (\Throwable) {}
 
         // Notify recipient
         try {

@@ -449,6 +449,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/whats-new/unread',                   [AnnouncementController::class, 'unread'])->name('announcements.unread');
         Route::post('/whats-new/{announcement}/read',     [AnnouncementController::class, 'markRead'])->name('announcements.read');
         Route::post('/whats-new/read-all',                [AnnouncementController::class, 'readAll'])->name('announcements.read-all');
+
+        // ── Bug Reports ───────────────────────────────────────────────────────
+        Route::post('/bug-report', [\App\Http\Controllers\BugReportController::class, 'store'])->name('bug-report.store');
     });
 });
 

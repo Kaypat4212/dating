@@ -769,6 +769,12 @@
                         @endif
                         <li><hr class="dropdown-divider my-1"></li>
                         <li>
+                            <button type="button" class="dropdown-item text-muted"
+                                    data-bs-toggle="modal" data-bs-target="#bugReportModal">
+                                <i class="bi bi-bug me-2"></i>Report a Bug
+                            </button>
+                        </li>
+                        <li>
                             <form method="POST" action="{{ route('logout') }}">
                                 @csrf
                                 <button class="dropdown-item text-danger"><i class="bi bi-box-arrow-right me-2"></i>Sign Out</button>
@@ -1105,6 +1111,9 @@
 
 {{-- ── What's New Modal ───────────────────────────────────────────────────── --}}
 <x-whats-new-modal />
+
+{{-- ── Bug Report Modal ────────────────────────────────────────────────────── --}}
+<x-bug-report-modal />
 
 {{-- ── Daily Streak auto-checkin ─────────────────────────────────────────── --}}
 @auth
