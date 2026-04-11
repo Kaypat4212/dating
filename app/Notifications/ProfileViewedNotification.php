@@ -3,13 +3,14 @@
 namespace App\Notifications;
 
 use App\Models\User;
+use App\Notifications\Concerns\BroadcastsNotification;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
 
 class ProfileViewedNotification extends Notification implements ShouldQueue
 {
-    use Queueable;
+    use Queueable, BroadcastsNotification;
 
     public function __construct(public readonly User $viewer)
     {
@@ -17,7 +18,7 @@ class ProfileViewedNotification extends Notification implements ShouldQueue
 
     public function via(object $notifiable): array
     {
-        return ['database'];
+        return ['database', 'broadcast'];
     }
 
     public function toArray(object $notifiable): array

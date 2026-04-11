@@ -5,6 +5,7 @@ namespace App\Notifications;
 use App\Models\EmailTemplate;
 use App\Models\User;
 use App\Models\UserMatch;
+use App\Notifications\Concerns\BroadcastsNotification;
 use App\Services\MailSettingsService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -13,7 +14,7 @@ use Illuminate\Notifications\Notification;
 
 class NewMatchNotification extends Notification implements ShouldQueue
 {
-    use Queueable;
+    use Queueable, BroadcastsNotification;
 
     public function __construct(
         public readonly UserMatch $match,
@@ -23,7 +24,7 @@ class NewMatchNotification extends Notification implements ShouldQueue
 
     public function via(object $notifiable): array
     {
-        $channels = ['database'];
+        $channels = ['database', 'broadcast'];
 
         if (MailSettingsService::emailEnabled('email_feature_usage_enabled')
             && ($notifiable->preferences?->wantsEmail('email_new_match') ?? true)) {
