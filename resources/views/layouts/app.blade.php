@@ -174,7 +174,7 @@
         .nav-icon-btn {
             border: none !important;
             background: transparent !important;
-            color: inherit !important;
+            color: rgba(255, 255, 255, 0.85) !important;
             padding: .3rem .45rem !important;
             border-radius: 50% !important;
             line-height: 1;
@@ -182,9 +182,21 @@
         }
         .nav-icon-btn:hover {
             background: rgba(var(--bs-secondary-rgb), .12) !important;
-            color: #e91e63 !important;
+            color: #fff !important;
         }
         .nav-icon-btn .bi { font-size: 1rem; }
+        
+        /* Mobile navbar buttons - ensure visibility on dark navbar */
+        #mainNav .btn-outline-secondary {
+            color: rgba(255, 255, 255, 0.85);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+        #mainNav .btn-outline-secondary:hover {
+            color: #fff;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+        
         /* ── Luxury Preloader ─────────────────────────────────────────────── */
         #hc-preloader {
             position: fixed;
