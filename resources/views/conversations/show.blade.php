@@ -1294,8 +1294,81 @@ const voiceCall = (() => {
         return r.json();
     }
 
+    // ── Jitsi Meet fallback ────────────────────────────────────────────────
+    let jitsiApi = null;
+
+    async function joinJitsi(roomUrl, callType) {
+        stopRing();
+        document.getElementById('activeCallStatus').textContent = 'Connected';
+        startTimer();
+
+        // Build iframe container inside the active overlay
+        let container = document.getElementById('jitsiFrameContainer');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'jitsiFrameContainer';
+            container.style.cssText = 'position:absolute;inset:0;z-index:5;background:#000;';
+            $active.appendChild(container);
+        }
+
+        // Load Jitsi External API script once
+        if (!window.JitsiMeetExternalAPI) {
+            await new Promise((resolve, reject) => {
+                const s = document.createElement('script');
+                s.src = 'https://meet.jit.si/external_api.js';
+                s.onload = resolve;
+                s.onerror = () => {
+                    // CDN failed — open in new tab as last resort
+                    window.open(roomUrl, '_blank');
+                    hideAll();
+                    reject(new Error('Jitsi CDN failed'));
+                };
+                document.head.appendChild(s);
+            });
+        }
+
+        // Parse room name from URL
+        const roomName = roomUrl.split('/').pop();
+        jitsiApi = new window.JitsiMeetExternalAPI('meet.jit.si', {
+            roomName,
+            parentNode: container,
+            width: '100%',
+            height: '100%',
+            configOverwrite: {
+                startWithAudioMuted: false,
+                startWithVideoMuted: callType !== 'video',
+                disableDeepLinking: true,
+            },
+            interfaceConfigOverwrite: {
+                SHOW_JITSI_WATERMARK: false,
+                SHOW_WATERMARK_FOR_GUESTS: false,
+                TOOLBAR_BUTTONS: ['microphone', 'camera', 'hangup'],
+            },
+        });
+
+        jitsiApi.on('videoConferenceLeft', () => {
+            hangUp(true);
+        });
+        jitsiApi.on('readyToClose', () => {
+            hangUp(true);
+        });
+    }
+
+    function leaveJitsi() {
+        if (jitsiApi) {
+            try { jitsiApi.dispose(); } catch (e) {}
+            jitsiApi = null;
+        }
+        const container = document.getElementById('jitsiFrameContainer');
+        if (container) container.remove();
+    }
+
     // ── Daily.co join room ────────────────────────────────────────────────
     async function joinRoom(roomUrl, token, callType) {
+        // Jitsi Meet fallback (no Daily.co API key configured)
+        if (roomUrl && roomUrl.includes('meet.jit.si')) {
+            return joinJitsi(roomUrl, callType);
+        }
         if (!window.Daily) { console.error('Daily.co SDK not loaded'); return; }
         dailyCallObject = window.Daily.createCallObject();
 
@@ -1374,8 +1447,9 @@ const voiceCall = (() => {
         }
     }
 
-    // ── Leave / destroy Daily.co call ─────────────────────────────────────
+    // ── Leave / destroy call (Daily.co or Jitsi) ─────────────────────────
     async function leaveChannel() {
+        leaveJitsi();
         if (dailyCallObject) {
             try { await dailyCallObject.leave(); }   catch (e) {}
             try { await dailyCallObject.destroy(); } catch (e) {}
@@ -1591,10 +1665,25 @@ const snapBadge = document.getElementById('snapBadge');
 const streakBadgeEl = document.getElementById('streakBadge');
 const streakCountEl = document.getElementById('streakCount');
 
-// Send snap
+// Snap button: view incoming snaps (if badge) or open file picker (to send)
 if (snapBtn) {
-    snapBtn.addEventListener('click', () => {
-        snapInput.click();
+    snapBtn.addEventListener('click', async () => {
+        if (snapBadge && !snapBadge.classList.contains('d-none')) {
+            // View mode — fetch and show unviewed snaps
+            try {
+                const res  = await fetch('{{ route("snaps.index") }}');
+                const data = await res.json();
+                if (data.content && data.content.length > 0) {
+                    const snap = data.content.find(s => s.sender_id === {{ $other->id }}) || data.content[0];
+                    if (snap) viewSnap(snap.id);
+                }
+            } catch (err) {
+                console.error('Failed to fetch snaps:', err);
+            }
+        } else {
+            // Send mode — open file picker
+            snapInput.click();
+        }
     });
 }
 
@@ -1698,30 +1787,6 @@ if (window.Echo) {
             } catch {}
         });
 }
-
-// View snaps when clicking snap button (if badge exists)
-snapBtn.addEventListener('click', async (e) => {
-    if (!snapBadge || snapBadge.classList.contains('d-none')) {
-        // No unviewed snaps, open camera
-        return;
-    }
-
-    // Fetch unviewed snaps
-    try {
-        const res = await fetch('{{ route("snaps.index") }}');
-        const data = await res.json();
-        
-        if (data.content && data.content.length > 0) {
-            // Show first snap from this user
-            const snap = data.content.find(s => s.sender_id === {{ $other->id }}) || data.content[0];
-            if (snap) {
-                viewSnap(snap.id);
-            }
-        }
-    } catch (err) {
-        console.error('Failed to fetch snaps:', err);
-    }
-});
 
 // View a snap
 async function viewSnap(contentId) {

@@ -121,10 +121,10 @@
 
     <div class="row g-4">
 
-        {{-- LEFT: stats + write review ──────────────────────────────────────}}
+        {{-- LEFT: stats + write review ────────────────────────────────────── --}}
         <div class="col-lg-4">
 
-            {{-- Rating Summary }}
+            {{-- Rating Summary --}}
             <div class="rating-summary mb-3">
                 <div class="text-center mb-3">
                     <div class="rating-avg-num">{{ number_format($stats['avg'], 1) }}</div>
@@ -147,14 +147,14 @@
                 @endforeach
             </div>
 
-            {{-- Write Review form }}
+            {{-- Write Review form --}}
             <div class="write-review-card">
                 <h6 class="fw-bold mb-3"><i class="bi bi-pencil-square me-1 text-danger"></i> Leave a Review</h6>
 
                 <form action="{{ route('reviews.store') }}" method="POST" id="reviewForm">
                     @csrf
 
-                    {{-- Star picker }}
+                    {{-- Star picker --}}
                     <div class="mb-3">
                         <label class="form-label fw-semibold" style="font-size:.85rem">Your Rating *</label>
                         <div class="star-rating-input">
@@ -169,7 +169,7 @@
                         @enderror
                     </div>
 
-                    {{-- Guest fields (hidden if logged in) }}
+                    {{-- Guest fields (hidden if logged in) --}}
                     @guest
                     <div class="guest-fields" id="guestFields" style="display:block">
                         <div class="mb-2">
@@ -220,7 +220,7 @@
             </div>
         </div>
 
-        {{-- RIGHT: review list ───────────────────────────────────────────────}}
+        {{-- RIGHT: review list ─────────────────────────────────────────────── --}}
         <div class="col-lg-8">
 
             @if($reviews->isEmpty())
@@ -238,7 +238,7 @@
                 $topComments = $review->comments->where('parent_id', null);
             @endphp
             <div class="review-card" id="review-{{ $review->id }}">
-                {{-- Header }}
+                {{-- Header --}}
                 <div class="d-flex align-items-start gap-3 mb-2">
                     <div class="rv-avatar">{{ $initials }}</div>
                     <div class="flex-grow-1">
@@ -252,13 +252,13 @@
                     </div>
                 </div>
 
-                {{-- Title + body }}
+                {{-- Title + body --}}
                 @if($review->title)
                 <div class="fw-semibold mb-1" style="font-size:.92rem">{{ $review->title }}</div>
                 @endif
                 <p class="mb-2" style="font-size:.88rem; color:var(--bs-body-color)">{{ $review->body }}</p>
 
-                {{-- Helpful }}
+                {{-- Helpful --}}
                 <div class="d-flex align-items-center gap-2">
                     @auth
                     <button type="button"
@@ -280,11 +280,11 @@
                     </button>
                 </div>
 
-                {{-- Comments section }}
+                {{-- Comments section --}}
                 @if($topComments->isNotEmpty() || $authUser)
                 <div class="rv-comments">
 
-                    {{-- Existing comments }}
+                    {{-- Existing comments --}}
                     @foreach($topComments as $comment)
                     @php $comInitials = strtoupper(substr($comment->author->name ?? 'U', 0, 1)); @endphp
                     <div class="rv-comment">
@@ -306,7 +306,7 @@
                             </button>
                             @endauth
 
-                            {{-- Replies to this comment }}
+                            {{-- Replies to this comment --}}
                             @foreach($comment->replies as $reply)
                             @php $rInitials = strtoupper(substr($reply->author->name ?? 'U', 0, 1)); @endphp
                             <div class="rv-comment rv-reply-thread mt-1">
@@ -325,7 +325,7 @@
                             </div>
                             @endforeach
 
-                            {{-- Reply form for this comment }}
+                            {{-- Reply form for this comment --}}
                             @auth
                             <div class="reply-form-wrap mt-1" id="reply-{{ $comment->id }}">
                                 <form action="{{ route('reviews.comment.store', $review->id) }}" method="POST">
@@ -346,7 +346,7 @@
                     </div>
                     @endforeach
 
-                    {{-- New top-level comment form }}
+                    {{-- New top-level comment form --}}
                     @auth
                     <div class="reply-form-wrap mt-2" id="new-comment-{{ $review->id }}">
                         <form action="{{ route('reviews.comment.store', $review->id) }}" method="POST">
@@ -374,7 +374,7 @@
             </div>
             @endforeach
 
-            {{-- Pagination }}
+            {{-- Pagination --}}
             <div class="d-flex justify-content-center mt-3">
                 {{ $reviews->links() }}
             </div>
