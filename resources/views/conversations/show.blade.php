@@ -1737,6 +1737,9 @@ if (snapInput) {
         snapBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
 
         try {
+            // Get CSRF token
+            const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+            
             const formData = new FormData();
             formData.append('media', file);
 
@@ -1748,7 +1751,7 @@ if (snapInput) {
 
             const res = await fetch(`{{ route('snaps.store', $conversation->id) }}`, {
                 method: 'POST',
-                headers: { 'X-CSRF-TOKEN': CSRF },
+                headers: { 'X-CSRF-TOKEN': csrfToken },
                 body: formData
             });
 
