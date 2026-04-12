@@ -118,9 +118,9 @@ class VoiceCallController extends Controller
 
         $tokenExpire = (int) SiteSetting::get('voice_call_token_expire', 3600);
         $token       = $this->daily->createToken($call->channel_name, $user->id, false, $tokenExpire);
-        $roomUrl     = \Illuminate\Support\Facades\Schema::hasColumn('voice_calls', 'room_url')
-            ? ($call->room_url ?? 'https://meet.jit.si/' . $call->channel_name)
-            : 'https://meet.jit.si/' . $call->channel_name;
+        
+        // Get room URL from voice_calls table (set during initiate)
+        $roomUrl = $call->room_url ?? throw new \Exception('Room URL not found for call #' . $call->id);
 
         // Tell the caller their call was answered (non-fatal)
         try {

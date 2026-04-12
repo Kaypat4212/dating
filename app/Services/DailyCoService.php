@@ -12,9 +12,6 @@ use Illuminate\Support\Facades\Log;
  * Set in .env:
  *   DAILY_CO_API_KEY=your_key
  *   DAILY_CO_DOMAIN=your-subdomain   (the part before .daily.co)
- *
- * Falls back to Jitsi Meet (https://meet.jit.si) when no API key is configured
- * so calls still work out-of-the-box without any account.
  */
 class DailyCoService
 {
@@ -23,20 +20,20 @@ class DailyCoService
 
     public function __construct()
     {
-        $this->apiKey = config('services.dailyco.api_key', '');
-        $this->domain = config('services.dailyco.domain', '');
+        // Use env() directly to avoid config cache issues
+        $this->apiKey = env('DAILY_CO_API_KEY', '');
+        $this->domain = env('DAILY_CO_DOMAIN', '');
     }
 
     /**
      * Create a Daily.co room and return ['url' => ..., 'name' => ...].
      *
-     * If no API key is configured, falls back to a Jitsi Meet room URL
-     * (completely free, no account needed).
+     * @throws \Exception if Daily.co API key is not configured
      */
     public function createRoom(string $roomName, int $expireSeconds = 3600): array
     {
         if (empty($this->apiKey)) {
-            return $this->jitsiFallback($roomName);
+            throw new \Exception('Daily.co API key not configured. Please set DAILY_CO_API_KEY in .env file.');
         }
 
         try {
@@ -47,7 +44,7 @@ class DailyCoService
                     'properties' => [
                         'exp'                => time() + $expireSeconds,
                         'max_participants'   => 2,
-                        'enable_chat'        => false,
+ 'enable_chat'        => false,
                         'enable_screenshare' => false,
                         'start_audio_off'    => false,
                         'start_video_off'    => true,
@@ -58,24 +55,25 @@ class DailyCoService
 
             if (! $response->successful() || empty($data['url'])) {
                 Log::warning('DailyCoService: createRoom failed', ['body' => $data]);
-                return $this->jitsiFallback($roomName);
+                throw new \Exception('Failed to create Daily.co room: ' . ($data['error'] ?? 'Unknown error'));
             }
 
             return ['url' => $data['url'], 'name' => $roomName];
         } catch (\Throwable $e) {
             Log::error('DailyCoService: createRoom exception', ['error' => $e->getMessage()]);
-            return $this->jitsiFallback($roomName);
+            throw $e;
         }
     }
 
     /**
      * Create a short-lived meeting token for a participant.
-     * Returns empty string when using Jitsi fallback (no token needed).
+     *
+     * @throws \Exception if Daily.co API key is not configured
      */
     public function createToken(string $roomName, int $userId, bool $isOwner = false, int $expireSeconds = 3600): string
     {
         if (empty($this->apiKey)) {
-            return '';
+            throw new \Exception('Daily.co API key not configured. Please set DAILY_CO_API_KEY in .env file.');
         }
 
         try {
@@ -92,10 +90,15 @@ class DailyCoService
                     ],
                 ]);
 
-            return $response->json('token', '');
+            $token = $response->json('token', '');
+            if (empty($token)) {
+                throw new \Exception('Failed to create Daily.co token');
+            }
+
+            return $token;
         } catch (\Throwable $e) {
             Log::error('DailyCoService: createToken exception', ['error' => $e->getMessage()]);
-            return '';
+            throw $e;
         }
     }
 
@@ -119,15 +122,5 @@ class DailyCoService
     public function isConfigured(): bool
     {
         return ! empty($this->apiKey);
-    }
-
-    // ── Fallback ───────────────────────────────────────────────────────────
-
-    private function jitsiFallback(string $roomName): array
-    {
-        return [
-            'url'  => 'https://meet.jit.si/' . $roomName,
-            'name' => $roomName,
-        ];
     }
 }
