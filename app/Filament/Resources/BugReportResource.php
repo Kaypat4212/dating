@@ -10,8 +10,11 @@ use Filament\Schemas\Schema;
 use Filament\Schemas\Components\Section;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Filament\Tables\Actions\Action;
+use Filament\Actions\Action;
 use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\BulkAction;
 use Filament\Notifications\Notification;
 
 class BugReportResource extends Resource
@@ -120,8 +123,8 @@ class BugReportResource extends Resource
                 Tables\Filters\SelectFilter::make('category')
                     ->options(BugReport::CATEGORIES),
             ])
-            ->actions([
-                Tables\Actions\Action::make('markResolved')
+            ->recordActions([
+                Action::make('markResolved')
                     ->label('Resolve')
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
@@ -130,12 +133,12 @@ class BugReportResource extends Resource
                         $record->update(['status' => 'resolved', 'resolved_at' => now()]);
                         Notification::make()->title('Marked as resolved')->success()->send();
                     }),
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                EditAction::make(),
+                DeleteAction::make(),
             ])
             ->bulkActions([
                 DeleteBulkAction::make(),
-                Tables\Actions\BulkAction::make('markResolved')
+                BulkAction::make('markResolved')
                     ->label('Mark Resolved')
                     ->icon('heroicon-o-check-circle')
                     ->action(fn($records) => $records->each->update(['status' => 'resolved', 'resolved_at' => now()])),
