@@ -4,27 +4,47 @@
     $footerBlurb = SS::get('footer_blurb', 'A safe, inclusive space to find meaningful connections and lasting love. Every heart deserves to be found.');
     $supportEmail = SS::get('footer_support_email') ?: ('support@' . (parse_url(config('app.url'), PHP_URL_HOST) ?? 'heartsconnect.com'));
     $copyrightText = SS::get('footer_copyright_text', 'All rights reserved. Made with love for love seekers worldwide.');
-    $appBadgeText = SS::get('footer_app_badge_text', 'Coming Soon');
+    $appLinks = [
+        [
+            'title'  => 'App Store',
+            'icon'   => 'bi bi-apple',
+            'url'    => SS::get('footer_app_store_url'),
+            'prefix' => 'Download on the',
+        ],
+        [
+            'title'  => 'Google Play',
+            'icon'   => 'bi bi-google-play',
+            'url'    => SS::get('footer_google_play_url'),
+            'prefix' => 'Get it on',
+        ],
+        [
+            'title'  => 'Android APK',
+            'icon'   => 'bi bi-android2',
+            'url'    => SS::get('footer_apk_url'),
+            'prefix' => 'Download',
+        ],
+        [
+            'title'  => 'Windows App',
+            'icon'   => 'bi bi-windows',
+            'url'    => SS::get('footer_exe_url'),
+            'prefix' => 'Download for',
+        ],
+        [
+            'title'  => 'Web App',
+            'icon'   => 'bi bi-globe2',
+            'url'    => SS::get('footer_webapp_url'),
+            'prefix' => 'Open as',
+        ],
+    ];
+    // Only show links that have been configured
+    $activeAppLinks = array_filter($appLinks, fn($l) => !empty($l['url']));
     $socialLinks = [
         ['title' => 'Facebook', 'icon' => 'bi bi-facebook', 'url' => SS::get('footer_facebook_url')],
         ['title' => 'Instagram', 'icon' => 'bi bi-instagram', 'url' => SS::get('footer_instagram_url')],
         ['title' => 'Twitter / X', 'icon' => 'bi bi-twitter-x', 'url' => SS::get('footer_twitter_url')],
         ['title' => 'TikTok', 'icon' => 'bi bi-tiktok', 'url' => SS::get('footer_tiktok_url')],
     ];
-    $appLinks = [
-        [
-            'title' => 'App Store',
-            'icon' => 'bi bi-apple',
-            'url' => SS::get('footer_app_store_url'),
-            'prefix' => 'Download on the',
-        ],
-        [
-            'title' => 'Google Play',
-            'icon' => 'bi bi-google-play',
-            'url' => SS::get('footer_google_play_url'),
-            'prefix' => 'Get it on',
-        ],
-    ];
+
     $supportLinks = [
         ['label' => 'Contact Us',        'url' => SS::get('footer_contact_url')          ?: route('pages.contact')],
         ['label' => 'Help Center',       'url' => SS::get('footer_help_center_url')       ?: route('pages.help-center')],
@@ -99,17 +119,16 @@
             {{-- App / CTA --}}
             <div class="col-6 col-md-2">
                 <h6 class="footer-heading mb-3">Get the App</h6>
-                @foreach($appLinks as $index => $appLink)
-                <div class="position-relative d-inline-block {{ $index === 0 ? 'mb-2' : '' }}" style="cursor:{{ $appLink['url'] ? 'pointer' : 'not-allowed' }};" title="{{ $appLink['url'] ? $appLink['title'] : 'Not available yet' }}">
-                    <a href="{{ $appLink['url'] ?: '#' }}" class="d-flex align-items-center gap-2 footer-app-btn {{ $appLink['url'] ? '' : 'pe-none' }}" style="opacity:{{ $appLink['url'] ? '1' : '.45' }};" @if(! $appLink['url']) tabindex="-1" aria-disabled="true" @else target="_blank" rel="noopener noreferrer" @endif>
+                @if(count($activeAppLinks) > 0)
+                    @foreach($activeAppLinks as $appLink)
+                    <a href="{{ $appLink['url'] }}" class="d-flex align-items-center gap-2 footer-app-btn mb-2" target="_blank" rel="noopener noreferrer" title="{{ $appLink['title'] }}">
                         <i class="{{ $appLink['icon'] }}" style="font-size:1.3rem"></i>
                         <div class="lh-sm"><span style="font-size:.65rem;opacity:.7">{{ $appLink['prefix'] }}</span><br><strong style="font-size:.85rem">{{ $appLink['title'] }}</strong></div>
                     </a>
-                    @if(! $appLink['url'] && $appBadgeText)
-                    <span style="position:absolute;top:-6px;right:-6px;background:#f48fb1;color:#fff;font-size:.55rem;font-weight:700;letter-spacing:.04em;padding:2px 5px;border-radius:30px;white-space:nowrap;line-height:1.4;pointer-events:none;">{{ $appBadgeText }}</span>
-                    @endif
-                </div>
-                @endforeach
+                    @endforeach
+                @else
+                <p style="color:rgba(255,255,255,.3);font-size:.78rem;line-height:1.6">Apps & desktop clients<br>coming soon!</p>
+                @endif
             </div>
         </div>
 

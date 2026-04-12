@@ -79,6 +79,9 @@ class ManageHomePage extends Page
             'footer_cookie_settings_url' => null,
             'footer_app_store_url'    => null,
             'footer_google_play_url'  => null,
+            'footer_apk_url'          => null,
+            'footer_exe_url'          => null,
+            'footer_webapp_url'       => null,
             'footer_app_badge_text'   => 'Coming Soon',
             'footer_copyright_text'   => 'All rights reserved. Made with love for love seekers worldwide.',
             'legal_support_email'     => 'support@heartsconnect.com',
@@ -319,15 +322,30 @@ class ManageHomePage extends Page
 
                                 Section::make('App Links')->schema([
                                     TextInput::make('footer_app_store_url')
-                                        ->label('App Store URL')
-                                        ->url(),
+                                        ->label('iOS App Store URL')
+                                        ->url()
+                                        ->placeholder('https://apps.apple.com/app/...')
+                                        ->helperText('Leave blank to hide the App Store button.'),
                                     TextInput::make('footer_google_play_url')
                                         ->label('Google Play URL')
-                                        ->url(),
-                                    TextInput::make('footer_app_badge_text')
-                                        ->label('Unavailable Badge Text')
-                                        ->helperText('Shown when an app link is not set.')
-                                        ->columnSpanFull(),
+                                        ->url()
+                                        ->placeholder('https://play.google.com/store/apps/...')
+                                        ->helperText('Leave blank to hide the Google Play button.'),
+                                    TextInput::make('footer_apk_url')
+                                        ->label('Android APK Direct Download URL')
+                                        ->url()
+                                        ->placeholder('https://yoursite.com/app.apk')
+                                        ->helperText('Direct download link for the APK file. Shown when Google Play is not used.'),
+                                    TextInput::make('footer_exe_url')
+                                        ->label('Windows EXE Download URL')
+                                        ->url()
+                                        ->placeholder('https://yoursite.com/setup.exe')
+                                        ->helperText('Download link for the Windows desktop app installer.'),
+                                    TextInput::make('footer_webapp_url')
+                                        ->label('Web App / PWA URL')
+                                        ->url()
+                                        ->placeholder('https://app.yoursite.com')
+                                        ->helperText('Link to open the progressive web app in a browser.'),
                                 ])->columns(2),
 
                                 Section::make('Legal Contact Emails')->schema([
