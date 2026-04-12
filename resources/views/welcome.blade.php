@@ -4,7 +4,20 @@
 
 @php
     use App\Models\SiteSetting as SS;
-    $voiceCallsEnabled = filter_var(SS::get('voice_calls_enabled', true), FILTER_VALIDATE_BOOLEAN);
+    $voiceCallsEnabled   = filter_var(SS::get('voice_calls_enabled',          true), FILTER_VALIDATE_BOOLEAN);
+    $aiEnabled           = filter_var(SS::get('ai_enabled',                   true), FILTER_VALIDATE_BOOLEAN);
+    $snapsEnabled        = filter_var(SS::get('feature_snaps_enabled',        true), FILTER_VALIDATE_BOOLEAN);
+    $streaksEnabled      = filter_var(SS::get('feature_streaks_enabled',      true), FILTER_VALIDATE_BOOLEAN);
+    $storiesEnabled      = filter_var(SS::get('feature_stories_enabled',      true), FILTER_VALIDATE_BOOLEAN);
+    $speedDatingEnabled  = filter_var(SS::get('feature_speed_dating_enabled', true), FILTER_VALIDATE_BOOLEAN);
+    $forumsEnabled       = filter_var(SS::get('feature_forums_enabled',       true), FILTER_VALIDATE_BOOLEAN);
+    $safeDateEnabled     = filter_var(SS::get('feature_safe_date_enabled',    true), FILTER_VALIDATE_BOOLEAN);
+    $badgesEnabled       = filter_var(SS::get('feature_badges_enabled',       true), FILTER_VALIDATE_BOOLEAN);
+    $boostsEnabled       = filter_var(SS::get('feature_boosts_enabled',       true), FILTER_VALIDATE_BOOLEAN);
+    $wavesEnabled        = filter_var(SS::get('feature_waves_enabled',        true), FILTER_VALIDATE_BOOLEAN);
+    $icebreakersEnabled  = filter_var(SS::get('feature_icebreakers_enabled',  true), FILTER_VALIDATE_BOOLEAN);
+    $giftsEnabled        = filter_var(SS::get('feature_gifts_enabled',        true), FILTER_VALIDATE_BOOLEAN);
+    $travelEnabled       = filter_var(SS::get('feature_travel_enabled',       true), FILTER_VALIDATE_BOOLEAN);
 @endphp
 
 @push('head')
@@ -462,7 +475,10 @@
             @foreach([
                 ['1','bi-person-plus-fill','Create Your Profile','Add your photos, answer a few personality questions, and let our algorithm do the hard work.','#c2185b'],
                 ['2','bi-hearts-fill','Browse & Match','Swipe, explore the grid, or let AI surface your top picks. Like someone? If they like you back — it\'s a match!','#7b1fa2'],
-                ['3','bi-chat-heart-fill','Chat & Connect','Start chatting instantly. Plan a date, share snaps, and build a real connection — all in one safe place.'.($voiceCallsEnabled ? ' Make voice calls too!' : ''),'#f97316'],
+                ['3','bi-chat-heart-fill','Chat & Connect','Start chatting instantly. Plan a date'
+                    .($snapsEnabled ? ', share snaps' : '')
+                    .($voiceCallsEnabled ? ', make voice calls' : '')
+                    .' — all in one safe place.','#f97316'],
             ] as [$num, $icon, $title, $desc, $color])
             <div class="col-md-4 p-3" data-aos="fade-up" data-aos-delay="{{ ($loop->index) * 120 }}">
                 <div class="h-100 rounded-4 p-4 text-center" style="border:1.5px solid {{ $color }}22;background:linear-gradient(160deg,{{ $color }}0d 0%,transparent 100%);">
@@ -497,9 +513,9 @@
                 <div class="d-flex flex-column gap-3">
                     @foreach(array_values(array_filter([
                         ['bi-layout-wtf','Smart Dashboard','See matches, messages, and activity in one place'],
-                        ['bi-fire','Daily Streak','Keep the conversation alive with Snapchat‑style streaks'],
-                        $voiceCallsEnabled ? ['bi-camera-video-fill','Voice & Video Calls','Free voice and video calls once you match'] : null,
-                        ['bi-camera-fill','Snaps','Send disappearing photos and videos to your matches'],
+                        $streaksEnabled      ? ['bi-fire','Daily Streak','Keep the conversation alive with Snapchat‑style streaks'] : null,
+                        $voiceCallsEnabled   ? ['bi-camera-video-fill','Voice & Video Calls','Free voice and video calls once you match'] : null,
+                        $snapsEnabled        ? ['bi-camera-fill','Snaps','Send disappearing photos and videos to your matches'] : null,
                     ])) as [$icon, $label, $sub])
                     <div class="d-flex align-items-start gap-3">
                         <div class="flex-shrink-0 d-flex align-items-center justify-content-center rounded-3"
@@ -664,14 +680,14 @@
             <div class="col-lg-7" data-aos="fade-left">
                 <div class="row g-3">
                     @foreach(array_values(array_filter([
-                        ['bi-cpu-fill','AI Matching','Smart compatibility algorithm learns your preferences over time','#7c3aed'],
-                        ['bi-camera-fill','Snaps','Snapchat-style disappearing photos — fun, flirty, safe','#c2185b'],
-                        $voiceCallsEnabled ? ['bi-telephone-fill','Voice & Video','Free calls once matched — no need to share your number','#059669'] : null,
-                        ['bi-fire','Streaks','Daily interaction streaks keep you connected and engaged','#f97316'],
-                        ['bi-shield-check-fill','Safe Dating','Safe-date check-in, block, report, photo verification','#2563eb'],
-                        ['bi-trophy-fill','Badges & XP','Earn badges and level up your profile as you connect','#d97706'],
+                        $aiEnabled           ? ['bi-cpu-fill','AI Matching','Smart compatibility algorithm learns your preferences over time','#7c3aed'] : null,
+                        $snapsEnabled        ? ['bi-camera-fill','Snaps','Snapchat-style disappearing photos — fun, flirty, safe','#c2185b'] : null,
+                        $voiceCallsEnabled   ? ['bi-telephone-fill','Voice & Video','Free calls once matched — no need to share your number','#059669'] : null,
+                        $streaksEnabled      ? ['bi-fire','Streaks','Daily interaction streaks keep you connected and engaged','#f97316'] : null,
+                        $safeDateEnabled     ? ['bi-shield-check-fill','Safe Dating','Safe-date check-in, block, report, photo verification','#2563eb'] : null,
+                        $badgesEnabled       ? ['bi-trophy-fill','Badges & XP','Earn badges and level up your profile as you connect','#d97706'] : null,
                         ['bi-megaphone-fill','Announcements','Stay up to date with new features and promotions','#0891b2'],
-                        ['bi-globe','Country Forums','Local community forums to meet people in your area','#9333ea'],
+                        $forumsEnabled       ? ['bi-globe','Country Forums','Local community forums to meet people in your area','#9333ea'] : null,
                     ])) as [$icon, $title, $desc, $color])
                     <div class="col-sm-6" data-aos="zoom-in" data-aos-delay="{{ $loop->index * 50 }}">
                         <div class="rounded-3 p-3 d-flex gap-3 align-items-start h-100" style="border:1px solid var(--bs-border-color);transition:all .2s;cursor:default" onmouseenter="this.style.borderColor='{{ $color }}55';this.style.background='{{ $color }}0a'" onmouseleave="this.style.borderColor='';this.style.background=''">
@@ -718,7 +734,13 @@
                         @foreach(['Browse & swipe profiles','5 likes per day','Basic chat','Community forums','Safe-date check-in'] as $f)
                         <li class="d-flex align-items-center gap-2 mb-2"><i class="bi bi-check-circle-fill text-success" style="flex-shrink:0"></i> {{ $f }}</li>
                         @endforeach
-                        @foreach(array_values(array_filter(['See who liked you','Unlimited likes','Profile boost','Unlimited location changes', $voiceCallsEnabled ? 'Voice & video calls (unlimited)' : null])) as $f)
+                        @foreach(array_values(array_filter([
+                            'See who liked you',
+                            'Unlimited likes',
+                            $boostsEnabled      ? 'Profile boost' : null,
+                            'Unlimited location changes',
+                            $voiceCallsEnabled  ? 'Voice & video calls (unlimited)' : null,
+                        ])) as $f)
                         <li class="d-flex align-items-center gap-2 mb-2 text-muted"><i class="bi bi-x-circle" style="flex-shrink:0;opacity:.4"></i> {{ $f }}</li>
                         @endforeach
                     </ul>
@@ -742,7 +764,16 @@
                     </div>
                     <p style="font-size:.75rem;color:rgba(255,255,255,.35);margin-bottom:1rem">Cancel anytime · Pay with card or crypto</p>
                     <ul class="list-unstyled mb-4" style="font-size:.9rem">
-                        @foreach(array_values(array_filter(['Everything in Free','✨ See who liked you','💫 Unlimited likes','🚀 Profile boost (3×/month)','📍 Unlimited location changes', $voiceCallsEnabled ? '📞 Unlimited voice & video calls' : null,'👑 Premium badge on profile','🔍 Advanced filters'])) as $f)
+                        @foreach(array_values(array_filter([
+                            'Everything in Free',
+                            '✨ See who liked you',
+                            '💫 Unlimited likes',
+                            $boostsEnabled     ? '🚀 Profile boost (3×/month)' : null,
+                            '📍 Unlimited location changes',
+                            $voiceCallsEnabled ? '📞 Unlimited voice & video calls' : null,
+                            '👑 Premium badge on profile',
+                            '🔍 Advanced filters',
+                        ])) as $f)
                         <li class="d-flex align-items-center gap-2 mb-2" style="color:rgba(255,255,255,.85)"><i class="bi bi-check-circle-fill" style="color:#4ade80;flex-shrink:0"></i> {{ $f }}</li>
                         @endforeach
                     </ul>
