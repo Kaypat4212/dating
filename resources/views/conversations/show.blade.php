@@ -842,7 +842,8 @@ main { padding-bottom: 0 !important; }
                     <span class="snap-badge" id="snapBadge">{{ $unviewedSnapsCount }}</span>
                 @endif
             </div>
-            <input type="file" id="snapInput" accept="image/*,video/*" capture="environment" class="d-none">
+            {{-- Remove capture attribute for better mobile compatibility --}}
+            <input type="file" id="snapInput" accept="image/*,video/*" class="d-none">
 
             {{-- Attachment --}}
             <button type="button" class="chat-act-btn" id="attachBtn" title="Send image or audio">
@@ -1711,16 +1712,23 @@ if (snapBtn) {
 if (snapInput) {
     snapInput.addEventListener('change', async (e) => {
         const file = e.target.files[0];
-        if (!file) return;
-
-        // Validate file
-        if (!file.type.match(/^(image|video)\//)) {
-            alert('Please select an image or video file');
+        if (!file) {
+            console.log('No file selected');
             return;
         }
 
-        if (file.size > 20 * 1024 * 1024) {
-            alert('File too large. Maximum 20 MB.');
+        console.log('Snap file selected:', {
+            name: file.name,
+            type: file.type,
+            size: file.size,
+            lastModified: file.lastModified
+        });
+
+        // Validate file type only (no size limit)
+        if (!file.type.match(/^(image|video)\//)) {
+            console.error('Invalid file type:', file.type);
+            alert('Please select an image or video file');
+            snapInput.value = '';
             return;
         }
 
@@ -1732,15 +1740,29 @@ if (snapInput) {
             const formData = new FormData();
             formData.append('media', file);
 
+            console.log('Uploading snap...', {
+                url: `{{ route('snaps.store', $conversation->id) }}`,
+                fileSize: file.size,
+                fileName: file.name
+            });
+
             const res = await fetch(`{{ route('snaps.store', $conversation->id) }}`, {
                 method: 'POST',
                 headers: { 'X-CSRF-TOKEN': CSRF },
                 body: formData
             });
 
+            console.log('Snap upload response:', {
+                status: res.status,
+                ok: res.ok,
+                statusText: res.statusText
+            });
+
             const data = await res.json();
+            console.log('Snap response data:', data);
 
             if (res.ok && data.success) {
+                console.log('✅ Snap sent successfully!');
                 // Show success message
                 const toast = document.createElement('div');
                 toast.className = 'position-fixed top-0 start-50 translate-middle-x mt-3 alert alert-success';
@@ -1759,11 +1781,12 @@ if (snapInput) {
                     streakCountEl.textContent = currentCount + 1;
                 }
             } else {
-                alert(data.error || 'Failed to send snap');
+                console.error('❌ Snap failed:', data);
+                alert(data.error || data.message || 'Failed to send snap. Check console for details.');
             }
         } catch (err) {
-            console.error('Snap upload error:', err);
-            alert('Failed to send snap. Please try again.');
+            console.error('❌ Snap upload exception:', err);
+            alert('Failed to send snap. Error: ' + err.message);
         } finally {
             snapBtn.disabled = false;
             snapBtn.innerHTML = '<i class="bi bi-camera-fill"></i>';

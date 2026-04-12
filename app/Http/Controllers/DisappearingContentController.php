@@ -39,17 +39,45 @@ class DisappearingContentController extends Controller
         // Rate limit: 10 snaps per minute
         $key = "snaps:{$user->id}";
         if (RateLimiter::tooManyAttempts($key, 10)) {
+            \Illuminate\Support\Facades\Log::warning('Snap rate limit hit', ['user' => $user->id]);
             return response()->json(['error' => 'Slow down! Too many snaps.'], 429);
         }
         RateLimiter::hit($key, 60);
 
+        // Validate file - no size limit, PHP ini controls max upload
         $request->validate([
-            'media' => 'required|file|max:20480', // 20 MB max
+            'media' => 'required|file|mimes:jpg,jpeg,png,gif,webp,mp4,mov,webm',
+        ]);
+
+        \Illuminate\Support\Facades\Log::info('Snap upload attempt', [
+            'user' => $user->id,
+            'conversation' => $conversation->id,
+            'file_exists' => $request->hasFile('media'),
+            'file_valid' => $request->file('media') ? $request->file('media')->isValid() : false,
         ]);
 
         $file = $request->file('media');
+        
+        if (!$file || !$file->isValid()) {
+            \Illuminate\Support\Facades\Log::error('Invalid file upload', [
+                'user' => $user->id,
+                'has_file' => $request->hasFile('media'),
+                'error' => $file ? $file->getErrorMessage() : 'No file',
+            ]);
+            return response()->json(['error' => 'Invalid file upload. Please try again.'], 400);
+        }
+        
         $mime = $file->getMimeType() ?? '';
         $ext  = strtolower($file->getClientOriginalExtension());
+        $originalName = $file->getClientOriginalName();
+        $fileSize = $file->getSize();
+
+        \Illuminate\Support\Facades\Log::info('Snap file details', [
+            'mime' => $mime,
+            'ext' => $ext,
+            'name' => $originalName,
+            'size' => $fileSize,
+        ]);
 
         // Fallback mime detection by extension when PHP fileinfo is unavailable
         if (empty($mime) || $mime === 'application/octet-stream') {
