@@ -58,7 +58,9 @@ class VoiceCallController extends Controller
                 ->where('status', 'ringing')
                 ->update(['status' => 'missed', 'ended_at' => now()]);
 
-            $roomName    = 'hc-' . $conversation->id . '-' . time();
+            // Daily.co room names: max 23 chars, lowercase alphanumeric + hyphens
+            // Use first 8 chars of md5(convId+timestamp) to stay well within limit
+            $roomName = 'hc-' . substr(md5($conversation->id . time()), 0, 19); // 3+19 = 22 chars
             $tokenExpire = (int) SiteSetting::get('voice_call_token_expire', 3600);
 
             // Create Daily.co room (falls back to Jitsi Meet if no API key)

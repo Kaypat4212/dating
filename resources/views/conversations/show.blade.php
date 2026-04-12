@@ -1173,8 +1173,8 @@ main { padding-bottom: 0 !important; }
 </style>
 
 @push('scripts')
-{{-- Daily.co WebRTC SDK --}}
-<script src="https://unpkg.com/@daily-co/daily-js"></script>
+{{-- Daily.co WebRTC SDK (official CDN) --}}
+<script src="https://cdn.daily.co/daily-js"></script>
 <script>
 const voiceCall = (() => {
     // ── Config injected from Laravel ─────────────────────────────────────
@@ -1403,6 +1403,14 @@ const voiceCall = (() => {
 
         dailyCallObject.on('error', (e) => {
             console.error('Daily.co error', e);
+            const msg = (e && e.errorMsg) ? e.errorMsg : 'WebRTC connection failed. Check mic/camera permissions.';
+            const errToast = document.createElement('div');
+            errToast.className = 'position-fixed top-0 start-50 translate-middle-x mt-3 alert alert-danger';
+            errToast.style.zIndex = '10002';
+            errToast.innerHTML = `<strong>Call error:</strong> ${msg}`;
+            document.body.appendChild(errToast);
+            setTimeout(() => errToast.remove(), 8000);
+            hangUp(true);
         });
 
         await dailyCallObject.join({
@@ -1476,21 +1484,34 @@ const voiceCall = (() => {
     async function initiate(callType = 'voice') {
         document.getElementById('callBtn').disabled = true;
         showActive(OTHER_NAME, OTHER_AVATAR);
-        playRing(true); // outgoing ring while waiting for answer
-        // Update incoming call overlay text in case it's already visible
-        const typeEl = document.getElementById('incomingCallTypeText');
-        if (typeEl) typeEl.textContent = callType === 'video' ? 'Incoming video call…' : 'Incoming voice call…';
+        playRing(true);
+        const statusEl = document.getElementById('activeCallStatus');
         try {
-            const data = await post(INITIATE_URL + '?call_type=' + callType);
+            if (statusEl) statusEl.textContent = 'Connecting…';
+            const res = await fetch(INITIATE_URL + '?call_type=' + callType, {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': CSRF, 'Accept': 'application/json' }
+            });
+            const data = await res.json();
+            if (!res.ok) {
+                throw new Error(data.error || 'Server error ' + res.status);
+            }
             callId = data.call_id;
+            if (statusEl) statusEl.textContent = 'Joining room…';
             await joinRoom(data.room_url, data.token, data.call_type || callType);
         } catch (e) {
-            let msg = 'Call failed';
-            try { msg = JSON.parse(e.message).error ?? msg; } catch (_) {}
+            const msg = e.message || 'Call failed. Please try again.';
             console.error('Call initiate failed:', msg, e);
+            stopRing();
             hideAll();
             document.getElementById('callBtn').disabled = false;
-            alert('Call failed: ' + msg);
+            // Show friendly error
+            const errToast = document.createElement('div');
+            errToast.className = 'position-fixed top-0 start-50 translate-middle-x mt-3 alert alert-danger';
+            errToast.style.zIndex = '10002';
+            errToast.innerHTML = `<strong>Call failed:</strong> ${msg}`;
+            document.body.appendChild(errToast);
+            setTimeout(() => errToast.remove(), 6000);
         }
     }
 
