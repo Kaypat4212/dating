@@ -36,20 +36,20 @@
             'prefix' => 'Open as',
         ],
     ];
-    // Tag each link: 'live' = real URL, 'soon' = admin typed "coming soon", hidden = empty
-    foreach ($appLinks as &$l) {
-        $raw = trim((string) $l['url']);
+    // Classify each link: 'active' (real URL), 'soon' (admin typed "coming soon"), 'hidden' (blank)
+    $appLinks = array_map(function ($l) {
+        $raw = trim($l['url'] ?? '');
         if ($raw === '') {
             $l['state'] = 'hidden';
         } elseif (strtolower($raw) === 'coming soon') {
             $l['state'] = 'soon';
             $l['url']   = null;
         } else {
-            $l['state'] = 'live';
+            $l['state'] = 'active';
         }
-    }
-    unset($l);
-    $activeAppLinks = array_filter($appLinks, fn($l) => $l['state'] !== 'hidden');
+        return $l;
+    }, $appLinks);
+    $visibleAppLinks = array_filter($appLinks, fn($l) => $l['state'] !== 'hidden');
     $socialLinks = [
         ['title' => 'Facebook', 'icon' => 'bi bi-facebook', 'url' => SS::get('footer_facebook_url')],
         ['title' => 'Instagram', 'icon' => 'bi bi-instagram', 'url' => SS::get('footer_instagram_url')],
@@ -131,22 +131,22 @@
             {{-- App / CTA --}}
             <div class="col-6 col-md-2">
                 <h6 class="footer-heading mb-3">Get the App</h6>
-                @if(count($activeAppLinks) > 0)
-                    @foreach($activeAppLinks as $appLink)
-                    <div class="position-relative d-inline-block mb-2">
-                        @if($appLink['state'] === 'live')
-                        <a href="{{ $appLink['url'] }}" class="d-flex align-items-center gap-2 footer-app-btn" target="_blank" rel="noopener noreferrer" title="{{ $appLink['title'] }}">
+                @if(count($visibleAppLinks) > 0)
+                    @foreach($visibleAppLinks as $appLink)
+                        @if($appLink['state'] === 'active')
+                        <a href="{{ $appLink['url'] }}" class="d-flex align-items-center gap-2 footer-app-btn mb-2" target="_blank" rel="noopener noreferrer" title="{{ $appLink['title'] }}">
                             <i class="{{ $appLink['icon'] }}" style="font-size:1.3rem"></i>
                             <div class="lh-sm"><span style="font-size:.65rem;opacity:.7">{{ $appLink['prefix'] }}</span><br><strong style="font-size:.85rem">{{ $appLink['title'] }}</strong></div>
                         </a>
                         @else
-                        <span class="d-flex align-items-center gap-2 footer-app-btn pe-none" style="opacity:.45;cursor:not-allowed" title="Coming soon">
-                            <i class="{{ $appLink['icon'] }}" style="font-size:1.3rem"></i>
-                            <div class="lh-sm"><span style="font-size:.65rem;opacity:.7">{{ $appLink['prefix'] }}</span><br><strong style="font-size:.85rem">{{ $appLink['title'] }}</strong></div>
-                        </span>
-                        <span style="position:absolute;top:-6px;right:-6px;background:#f48fb1;color:#fff;font-size:.55rem;font-weight:700;letter-spacing:.04em;padding:2px 5px;border-radius:30px;white-space:nowrap;line-height:1.4;pointer-events:none;">Coming Soon</span>
+                        <div class="position-relative d-inline-block mb-2" title="Not available yet">
+                            <span class="d-flex align-items-center gap-2 footer-app-btn pe-none" style="opacity:.4;cursor:not-allowed">
+                                <i class="{{ $appLink['icon'] }}" style="font-size:1.3rem"></i>
+                                <div class="lh-sm"><span style="font-size:.65rem;opacity:.7">{{ $appLink['prefix'] }}</span><br><strong style="font-size:.85rem">{{ $appLink['title'] }}</strong></div>
+                            </span>
+                            <span style="position:absolute;top:-6px;right:-6px;background:#f48fb1;color:#fff;font-size:.55rem;font-weight:700;letter-spacing:.04em;padding:2px 5px;border-radius:30px;white-space:nowrap;line-height:1.4;pointer-events:none;">Coming Soon</span>
+                        </div>
                         @endif
-                    </div>
                     @endforeach
                 @else
                 <p style="color:rgba(255,255,255,.3);font-size:.78rem;line-height:1.6">Apps & desktop clients<br>coming soon!</p>
