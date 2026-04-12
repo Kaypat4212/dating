@@ -1734,7 +1734,7 @@ if (snapInput) {
 
             const res = await fetch(`{{ route('snaps.store', $conversation->id) }}`, {
                 method: 'POST',
-                headers: { 'X-CSRF-TOKEN': csrf },
+                headers: { 'X-CSRF-TOKEN': CSRF },
                 body: formData
             });
 

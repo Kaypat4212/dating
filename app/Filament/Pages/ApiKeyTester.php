@@ -125,8 +125,9 @@ class ApiKeyTester extends Page
 
     private function runDailyCo(): void
     {
-        $apiKey = config('services.dailyco.api_key', '');
-        $domain = config('services.dailyco.domain', '');
+        // Use env() directly to avoid config caching issues - ensures we always test current .env values
+        $apiKey = env('DAILY_CO_API_KEY', '');
+        $domain = env('DAILY_CO_DOMAIN', '');
 
         if (empty($apiKey)) {
             $this->warn('dailyco', 'Not configured â€” using Jitsi fallback',
