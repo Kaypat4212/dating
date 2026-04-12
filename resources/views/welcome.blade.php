@@ -855,14 +855,18 @@
             <h2 class="fw-bold mb-2" style="font-family:'Playfair Display',serif;font-size:clamp(1.8rem,4vw,2.4rem)">Common Questions</h2>
         </div>
         <div class="accordion accordion-flush rounded-4 overflow-hidden" id="faqAccordion" style="border:1px solid var(--bs-border-color)">
-            @foreach([
-                ['Is {{ config(\'app.name\') }} free to use?','Yes! Creating an account, browsing profiles, and basic chatting are completely free. Premium upgrades unlock extra features like unlimited likes, seeing who liked you, and profile boosts.'],
-                ['How does matching work?','When two people like each other it becomes a match and the chat unlocks. You can also let our AI suggest your most compatible matches based on shared interests, values, and location.'],
-                ['Is my data private?','Absolutely. We never sell personal data. Your location is only used to suggest nearby matches and is never shared with other users precisely. See our Privacy Policy for full details.'],
-                ['Can I use {{config(\'app.name\')}} outside my country?','Yes — we support 150+ countries. You can update your location at any time (unlimited on Premium) to find people wherever you are.'],
-                ['How do I report someone?','Tap the three-dot menu on any profile or message and select "Report". Our moderation team reviews every report within 24 hours.'],
-                ['What payment methods do you accept?','We accept credit/debit cards, PayPal, and major cryptocurrencies (Bitcoin, Ethereum) for full privacy.'],
-            ] as [$q, $a])
+            @php
+                $appName = config('app.name');
+                $faqItems = [
+                    ["Is {$appName} free to use?", 'Yes! Creating an account, browsing profiles, and basic chatting are completely free. Premium upgrades unlock extra features like unlimited likes, seeing who liked you, and profile boosts.'],
+                    ['How does matching work?', 'When two people like each other it becomes a match and the chat unlocks. You can also let our AI suggest your most compatible matches based on shared interests, values, and location.'],
+                    ['Is my data private?', 'Absolutely. We never sell personal data. Your location is only used to suggest nearby matches and is never shared with other users precisely. See our Privacy Policy for full details.'],
+                    ["Can I use {$appName} outside my country?", 'Yes — we support 150+ countries. You can update your location at any time (unlimited on Premium) to find people wherever you are.'],
+                    ['How do I report someone?', 'Tap the three-dot menu on any profile or message and select "Report". Our moderation team reviews every report within 24 hours.'],
+                    ['What payment methods do you accept?', 'We accept credit/debit cards, PayPal, and major cryptocurrencies (Bitcoin, Ethereum) for full privacy.'],
+                ];
+            @endphp
+            @foreach($faqItems as [$q, $a])
             @php $id = 'faq' . $loop->index; @endphp
             <div class="accordion-item" style="border-color:var(--bs-border-color)" data-aos="fade-up" data-aos-delay="{{ $loop->index * 60 }}">
                 <h2 class="accordion-header">
