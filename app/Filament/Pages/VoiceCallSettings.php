@@ -34,6 +34,8 @@ class VoiceCallSettings extends Page
     // ── Form state ────────────────────────────────────────────────────────
 
     public array $data = [];
+    public string $agoraTestResult = '';
+    public string $agoraTestStatus = ''; // 'success', 'error', 'testing'
 
     public function mount(): void
     {
@@ -44,10 +46,16 @@ class VoiceCallSettings extends Page
             'voice_call_daily_limit'    => 0,
             'voice_call_require_match'  => true,
             'voice_call_token_expire'   => 3600,
+            'agora_app_id'              => '',
+            'agora_app_certificate'     => '',
         ];
 
         $saved  = SiteSetting::allAsArray();
         $merged = array_merge($defaults, array_intersect_key($saved, $defaults));
+        
+        // Get Agora credentials from config (env)
+        $merged['agora_app_id'] = config('services.agora.app_id', '');
+        $merged['agora_app_certificate'] = config('services.agora.app_certificate', '');
 
         // Cast booleans
         $merged['voice_calls_enabled']      = filter_var($merged['voice_calls_enabled'],      FILTER_VALIDATE_BOOLEAN);
@@ -67,6 +75,25 @@ class VoiceCallSettings extends Page
         return $schema
             ->statePath('data')
             ->components([
+
+                // ── Agora API Credentials ──────────────────────────────
+                Section::make('Agora API Credentials')
+                    ->description('Configure your Agora.io project credentials for voice calls. Sign up at console.agora.io to get your App ID and Certificate.')
+                    ->schema([
+                        TextInput::make('agora_app_id')
+                            ->label('Agora App ID')
+                            ->placeholder('Enter your Agora App ID')
+                            ->helperText('Found in Agora Console → Project Management → Your Project')
+                            ->required(),
+                        
+                        TextInput::make('agora_app_certificate')
+                            ->label('Agora App Certificate')
+                            ->placeholder('Enter your Agora App Certificate')
+                            ->helperText('Enable App Certificate in your project settings to get this key')
+                            ->password()
+                            ->revealable()
+                            ->required(),
+                    ]),
 
                 // ── Master switch ──────────────────────────────────────
                 Section::make('Master Switch')
@@ -133,6 +160,10 @@ class VoiceCallSettings extends Page
     {
         $data = $this->form->getState();
 
+        // Save Agora credentials to .env file
+        $this->updateEnvFile('AGORA_APP_ID', $data['agora_app_id'] ?? '');
+        $this->updateEnvFile('AGORA_APP_CERTIFICATE', $data['agora_app_certificate'] ?? '');
+
         SiteSetting::set('voice_calls_enabled',      $data['voice_calls_enabled']      ? '1' : '0');
         SiteSetting::set('voice_call_timeout',        (string) (int) ($data['voice_call_timeout']      ?? 30));
         SiteSetting::set('voice_call_max_duration',   (string) (int) ($data['voice_call_max_duration']  ?? 0));
@@ -142,13 +173,91 @@ class VoiceCallSettings extends Page
 
         Notification::make()
             ->title('Voice call settings saved!')
+            ->body('Agora credentials and call settings have been updated.')
             ->success()
             ->send();
+    }
+
+    private function updateEnvFile(string $key, string $value): void
+    {
+        $envPath = base_path('.env');
+        if (!file_exists($envPath)) {
+            return;
+        }
+
+        $envContent = file_get_contents($envPath);
+        $pattern = "/^{$key}=.*$/m";
+        $replacement = "{$key}={$value}";
+
+        if (preg_match($pattern, $envContent)) {
+            $envContent = preg_replace($pattern, $replacement, $envContent);
+        } else {
+            $envContent .= "\n{$replacement}";
+        }
+
+        file_put_contents($envPath, $envContent);
+    }
+
+    public function testAgoraConnection(): void
+    {
+        $data = $this->form->getState();
+        $appId = $data['agora_app_id'] ?? '';
+        $appCert = $data['agora_app_certificate'] ?? '';
+
+        $this->agoraTestStatus = 'testing';
+        $this->agoraTestResult = '';
+
+        if (empty($appId) || empty($appCert)) {
+            $this->agoraTestStatus = 'error';
+            $this->agoraTestResult = 'Please enter both App ID and App Certificate before testing.';
+            return;
+        }
+
+        try {
+            // Temporarily set config for testing
+            config(['services.agora.app_id' => $appId]);
+            config(['services.agora.app_certificate' => $appCert]);
+            
+            // Test token generation
+            $service = new \App\Services\AgoraTokenService();
+            $testChannel = 'test_channel_' . time();
+            $testUid = 12345;
+            
+            $token = $service->generateRtcToken($testChannel, $testUid);
+            
+            if (!empty($token)) {
+                $this->agoraTestStatus = 'success';
+                $this->agoraTestResult = '✓ Connected successfully! Agora credentials are valid and token generation works.';
+                
+                Notification::make()
+                    ->title('Agora Connection Successful')
+                    ->body('Your Agora credentials are valid and working properly.')
+                    ->success()
+                    ->send();
+            } else {
+                $this->agoraTestStatus = 'error';
+                $this->agoraTestResult = 'Token generation failed. Please check your credentials.';
+            }
+        } catch (\Exception $e) {
+            $this->agoraTestStatus = 'error';
+            $this->agoraTestResult = 'Connection failed: ' . $e->getMessage();
+            
+            Notification::make()
+                ->title('Agora Connection Failed')
+                ->body($e->getMessage())
+                ->danger()
+                ->send();
+        }
     }
 
     protected function getHeaderActions(): array
     {
         return [
+            Action::make('testConnection')
+                ->label('Test Agora Connection')
+                ->icon('heroicon-o-signal')
+                ->color('info')
+                ->action('testAgoraConnection'),
             Action::make('save')
                 ->label('Save Settings')
                 ->icon('heroicon-o-check')
