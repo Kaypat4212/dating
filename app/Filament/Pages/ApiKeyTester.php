@@ -130,8 +130,8 @@ class ApiKeyTester extends Page
         $domain = env('DAILY_CO_DOMAIN', '');
 
         if (empty($apiKey)) {
-            $this->warn('dailyco', 'Not configured â€” using Jitsi fallback',
-                'DAILY_CO_API_KEY is empty. Voice/video calls fall back to free Jitsi Meet (meet.jit.si) automatically. No calls will break.');
+            $this->fail('dailyco', '❌ REQUIRED: Daily.co API key not set',
+                'DAILY_CO_API_KEY is empty. Voice/video calls will NOT work. Sign up free at https://dashboard.daily.co and add key to .env file.');
             return;
         }
 
