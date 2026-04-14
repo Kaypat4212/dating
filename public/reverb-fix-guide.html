@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Quick Fix - Reverb Configuration</title>
+    <meta charset="utf-8">
+    <style>
+        body { font-family: monospace; background: #1a1a1a; color: #00ff00; padding: 40px; }
+        .container { max-width: 800px; margin: 0 auto; background: #2a2a2a; padding: 30px; border-radius: 10px; }
+        h1 { color: #fff; }
+        .step { background: #333; padding: 15px; margin: 15px 0; border-radius: 5px; border-left: 4px solid #00ff00; }
+        .error { color: #ff4444; }
+        .warning { color: #ffaa00; }
+        .success { color: #00ff88; }
+        code { background: #1a1a1a; padding: 3px 8px; border-radius: 3px; color: #00ff88; }
+        pre { background: #1a1a1a; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        button { background: #00ff00; color: #000; border: none; padding: 12px 24px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        button:hover { background: #00cc00; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Fix Laravel Echo & Reverb</h1>
+        
+        <div class="error">
+            <strong>❌ Current Problem:</strong><br>
+            Your console shows: <code>🔴 Laravel Echo initialized with Pusher</code><br>
+            This means your frontend assets are still using the old Pusher configuration.
+        </div>
+
+        <hr style="border-color: #444; margin: 30px 0;">
+
+        <h2>✅ Solution (Choose One):</h2>
+
+        <div class="step">
+            <h3>Option 1: Run Fix Script (Automated)</h3>
+            <p>SSH to your server and run:</p>
+            <pre>cd /home/heartsco/public_html
+bash fix-reverb-echo.sh</pre>
+            <p class="warning">⚠️ This will take 30-90 seconds (rebuilding assets)</p>
+        </div>
+
+        <div class="step">
+            <h3>Option 2: Manual Fix (If Script Fails)</h3>
+            <p><strong>Step 1:</strong> Edit .env file, make sure these lines exist:</p>
+            <pre>BROADCAST_CONNECTION=reverb
+VITE_BROADCAST_DRIVER=reverb
+VITE_REVERB_SCHEME=https
+VITE_REVERB_HOST=heartsconnect.cc
+VITE_REVERB_PORT=443
+REVERB_SCHEME=https
+REVERB_HOST=heartsconnect.cc
+REVERB_PORT=443</pre>
+
+            <p><strong>Step 2:</strong> Clear caches:</p>
+            <pre>php artisan config:clear
+php artisan cache:clear
+php artisan view:clear
+php artisan route:clear</pre>
+
+            <p><strong>Step 3:</strong> CRITICAL - Rebuild frontend assets:</p>
+            <pre>npm run build</pre>
+            <p class="warning">⚠️ This step is MANDATORY. Without it, Echo will still use Pusher!</p>
+
+            <p><strong>Step 4:</strong> Restart Reverb:</p>
+            <pre>bash stop-reverb.sh
+bash start-reverb.sh</pre>
+        </div>
+
+        <div class="step">
+            <h3>Option 3: Use Public Cache Clearing Tool</h3>
+            <p>If you don't have SSH access:</p>
+            <ol>
+                <li>Visit: <code>https://heartsconnect.cc/clear-all-cache.php</code></li>
+                <li>This clears Laravel caches</li>
+                <li>But you still need to run <code>npm run build</code> somehow</li>
+            </ol>
+        </div>
+
+        <hr style="border-color: #444; margin: 30px 0;">
+
+        <h2>🧪 Verify It Worked:</h2>
+
+        <div class="step">
+            <p>After running the fix, refresh your browser (Ctrl+Shift+R) and check console:</p>
+            
+            <p class="success">✅ Should See:</p>
+            <pre class="success">🟢 Laravel Echo initialized with Reverb</pre>
+
+            <p class="error">❌ Should NOT See:</p>
+            <pre class="error">🔴 Laravel Echo initialized with Pusher
+WebSocket connection to 'wss://ws-us3.pusher.com/...</pre>
+        </div>
+
+        <hr style="border-color: #444; margin: 30px 0;">
+
+        <h2>📱 What Will Work After Fix:</h2>
+
+        <div class="step">
+            <ul>
+                <li class="success">✅ Real-time notifications (instant)</li>
+                <li class="success">✅ Live message updates (no refresh needed)</li>
+                <li class="success">✅ Snap notifications on chat page</li>
+                <li class="success">✅ Online status updates (real-time)</li>
+                <li class="success">✅ Typing indicators</li>
+                <li class="success">✅ Voice/Video calls signaling</li>
+                <li class="success">✅ PWA badge updates</li>
+            </ul>
+        </div>
+
+        <hr style="border-color: #444; margin: 30px 0;">
+
+        <h2 class="warning">⚠️ Important Notes:</h2>
+
+        <div class="step">
+            <ul>
+                <li><strong>npm run build is CRITICAL</strong> - Without rebuilding frontend assets, Echo will keep using Pusher config</li>
+                <li><strong>Takes time</strong> - Asset rebuild takes 30-90 seconds, be patient</li>
+                <li><strong>Hard refresh needed</strong> - After fix, do Ctrl+Shift+R to clear browser cache</li>
+                <li><strong>Reverb must be running</strong> - Check with: <code>ps aux | grep reverb</code></li>
+            </ul>
+        </div>
+
+        <hr style="border-color: #444; margin: 30px 0;">
+
+        <h2>🆘 Still Not Working?</h2>
+
+        <div class="step">
+            <p>Check these diagnostics:</p>
+            <ol>
+                <li>Is Reverb running? <code>ps aux | grep reverb</code></li>
+                <li>Check Reverb logs: <code>tail -50 storage/logs/reverb.log</code></li>
+                <li>Verify .env: <code>grep BROADCAST .env && grep REVERB .env</code></li>
+                <li>Check if assets were rebuilt: <code>ls -lh public/build/manifest.json</code></li>
+                <li>Test WebSocket: <a href="/dailyco-diagnostic.html" style="color: #00ff88;">Run Diagnostic Tool</a></li>
+            </ol>
+        </div>
+
+        <hr style="border-color: #444; margin: 30px 0;">
+
+        <p style="text-align: center; color: #888;">
+            <strong>Delete this file after use:</strong> <code>rm public/reverb-fix-guide.html</code>
+        </p>
+    </div>
+</body>
+</html>

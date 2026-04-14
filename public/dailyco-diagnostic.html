@@ -199,8 +199,21 @@
             result.style.display = 'block';
             result.innerHTML = '<div class="warning-text">⏳ Creating test room...</div>';
             
-            fetch('/api/dailyco/test-room', { method: 'POST' })
-                .then(r => r.json())
+            fetch('/api/dailyco/test-room', { 
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                }
+            })
+                .then(async r => {
+                    const contentType = r.headers.get('content-type');
+                    if (!contentType || !contentType.includes('application/json')) {
+                        const text = await r.text();
+                        throw new Error(`Server returned HTML instead of JSON. Route may not exist or CSRF protection blocking it. Status: ${r.status}`);
+                    }
+                    return r.json();
+                })
                 .then(data => {
                     const section = document.getElementById('test-room');
                     if (data.success) {
@@ -225,6 +238,11 @@
                     result.innerHTML = `
                         <div class="error-text">❌ Room creation failed</div>
                         <div class="info">Error: ${err.message}</div>
+                        <div class="info">Possible causes:</div>
+                        <div class="info">• Route not found (need to upload routes/web.php)</div>
+                        <div class="info">• CSRF protection (need to upload VerifyCsrfToken.php)</div>
+                        <div class="info">• Route cache (run: php artisan route:clear)</div>
+                        <div class="info">• Daily.co API not configured</div>
                     `;
                 });
         }
