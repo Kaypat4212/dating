@@ -570,7 +570,7 @@ Route::get('/api/dailyco/check', function () {
     ]);
 });
 
-Route::post('/api/dailyco/test-room', function () {
+Route::get('/api/dailyco/test-room', function () {
     try {
         $dailyService = app(\App\Services\DailyCoService::class);
         $roomName = 'test-' . substr(md5(time()), 0, 12);
@@ -588,5 +588,6 @@ Route::post('/api/dailyco/test-room', function () {
         ], 500);
     }
 });
+
 
 

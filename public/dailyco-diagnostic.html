@@ -200,7 +200,7 @@
             result.innerHTML = '<div class="warning-text">⏳ Creating test room...</div>';
             
             fetch('/api/dailyco/test-room', { 
-                method: 'POST',
+                method: 'GET',
                 headers: {
                     'Accept': 'application/json',
                     'Content-Type': 'application/json'
