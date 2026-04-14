@@ -1113,7 +1113,7 @@
 <x-whats-new-modal />
 
 {{-- ── Bug Report Modal ────────────────────────────────────────────────────── --}}
-<x-bug-report-modal />
+{{-- <x-bug-report-modal /> --}}
 
 {{-- ── Daily Streak auto-checkin ─────────────────────────────────────────── --}}
 @auth
