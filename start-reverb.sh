@@ -53,7 +53,7 @@ fi
 
 # Load environment variables
 if [ -f ".env" ]; then
-    export $(grep -v '^#' .env | xargs)
+    export $(cat .env | grep -v '^#' | grep -v '^$' | xargs)
     echo -e "${GREEN}✅ Environment loaded from .env${NC}"
 else
     echo -e "${YELLOW}⚠️  .env file not found. Using defaults.${NC}"

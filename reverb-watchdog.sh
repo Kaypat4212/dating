@@ -10,7 +10,7 @@ cd "$SCRIPT_DIR"
 
 # Load environment variables
 if [ -f ".env" ]; then
-    export $(grep -v '^#' .env | xargs)
+    export $(cat .env | grep -v '^#' | grep -v '^$' | xargs)
 fi
 
 REVERB_HOST="${REVERB_HOST:-localhost}"
