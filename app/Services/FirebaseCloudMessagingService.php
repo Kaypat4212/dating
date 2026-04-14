@@ -2,18 +2,20 @@
 
 namespace App\Services;
 
+use App\Models\SiteSetting;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 class FirebaseCloudMessagingService
 {
-    protected string $apiKey;
-    protected string $projectId;
+    protected ?string $apiKey;
+    protected ?string $projectId;
 
     public function __construct()
     {
-        $this->apiKey = config('services.firebase.api_key');
-        $this->projectId = config('services.firebase.project_id');
+        // Read from database settings (admin panel) first, fallback to .env
+        $this->apiKey = SiteSetting::get('firebase_api_key') ?: config('services.firebase.api_key');
+        $this->projectId = SiteSetting::get('firebase_project_id') ?: config('services.firebase.project_id');
     }
 
     /**
