@@ -1,12 +1,17 @@
 // Firebase Cloud Messaging Setup for Push Notifications
-// Add your Firebase config from Firebase Console > Project Settings > Web App
+// ⚠️ IMPORTANT: Update these values from Firebase Console
+// Visit: https://console.firebase.google.com/project/fire-base-dojo-9/settings/general
 
 const firebaseConfig = {
     apiKey: "AIzaSyAFBjyUOQ1DIhcTMyqo46fP27eWfsU38_I",
     projectId: "fire-base-dojo-9",
-    messagingSenderId: "YOUR_SENDER_ID", // Get this from Firebase Console
-    appId: "YOUR_APP_ID" // Get this from Firebase Console
+    messagingSenderId: "767070636530",  // ⚠️ UPDATE: From Firebase Console → Cloud Messaging tab
+    appId: "1:767070636530:web:e4f42e5..."  // ⚠️ UPDATE: COMPLETE App ID from Firebase Console → General tab
 };
+
+// ⚠️ NOTE: This file is a reference/template
+// The actual Firebase config is loaded from Admin Panel settings via app.blade.php
+// Update your Firebase credentials in: Admin Panel → Firebase & Analytics
 
 // Initialize Firebase
 if ('serviceWorker' in navigator) {

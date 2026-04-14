@@ -5,11 +5,15 @@ importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js'
 importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js');
 
 // Initialize Firebase in the service worker
+// ⚠️ UPDATE THESE VALUES:
+// 1. Go to Firebase Console: https://console.firebase.google.com/project/fire-base-dojo-9/settings/general
+// 2. Copy messagingSenderId and appId from "Your apps" section
+// 3. Replace the values below
 firebase.initializeApp({
     apiKey: "AIzaSyAFBjyUOQ1DIhcTMyqo46fP27eWfsU38_I",
     projectId: "fire-base-dojo-9",
-    messagingSenderId: "YOUR_SENDER_ID",
-    appId: "YOUR_APP_ID"
+    messagingSenderId: "767070636530",  // ⚠️ UPDATE: Get from Firebase Console → Cloud Messaging
+    appId: "1:767070636530:web:e4f42e5..."  // ⚠️ UPDATE: Get COMPLETE App ID from Firebase Console → General
 });
 
 const messaging = firebase.messaging();
