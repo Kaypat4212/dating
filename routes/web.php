@@ -557,4 +557,36 @@ if (app()->environment('local')) {
     });
 }
 
+// ── Daily.co Diagnostic API ──────────────────────────────────────────────────
+Route::get('/api/dailyco/check', function () {
+    $apiKey = env('DAILY_CO_API_KEY');
+    $domain = env('DAILY_CO_DOMAIN');
+    
+    return response()->json([
+        'configured'  => !empty($apiKey) && $apiKey !== 'your-daily-api-key',
+        'api_key_set' => !empty($apiKey),
+        'domain'      => $domain ?: 'Not set',
+        'error'       => empty($apiKey) ? 'DAILY_CO_API_KEY not found in .env' : null,
+    ]);
+});
+
+Route::post('/api/dailyco/test-room', function () {
+    try {
+        $dailyService = app(\App\Services\DailyCoService::class);
+        $roomName = 'test-' . substr(md5(time()), 0, 12);
+        $room = $dailyService->createRoom($roomName, 3600);
+        
+        return response()->json([
+            'success'  => true,
+            'room_url' => $room['url'] ?? 'Unknown',
+            'room_name' => $roomName,
+        ]);
+    } catch (\Throwable $e) {
+        return response()->json([
+            'success' => false,
+            'error'   => $e->getMessage(),
+        ], 500);
+    }
+});
+
 

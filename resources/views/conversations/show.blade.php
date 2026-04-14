@@ -1174,8 +1174,8 @@ main { padding-bottom: 0 !important; }
 </style>
 
 @push('scripts')
-{{-- Daily.co WebRTC SDK (official CDN) --}}
-<script src="https://cdn.daily.co/daily-js"></script>
+{{-- Daily.co WebRTC SDK (official NPM CDN) --}}
+<script src="https://unpkg.com/@daily-co/daily-js"></script>
 <script>
 const voiceCall = (() => {
     // ── Config injected from Laravel ─────────────────────────────────────
@@ -1297,13 +1297,13 @@ const voiceCall = (() => {
 
     // ── Daily.co join room ────────────────────────────────────────────────
     async function joinRoom(roomUrl, token, callType) {
-        if (!window.Daily) { 
+        if (!window.DailyIframe) { 
             console.error('Daily.co SDK not loaded'); 
-            alert('Video calling is not available. Please contact support.');
+            alert('Video calling is not available. Please visit: https://heartsconnect.cc/dailyco-diagnostic.html to diagnose the issue.');
             return; 
         }
         
-        dailyCallObject = window.Daily.createCallObject();
+        dailyCallObject = window.DailyIframe.createCallObject();
 
         dailyCallObject.on('participant-joined', (evt) => {
             if (evt.participant.local) return;
