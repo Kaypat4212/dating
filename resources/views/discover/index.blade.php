@@ -11,6 +11,10 @@
     padding: 1.25rem 1.5rem;
     margin-bottom: 1.5rem;
 }
+[data-bs-theme="dark"] .discover-filters {
+    background: #1a1a2e;
+    box-shadow: 0 2px 12px rgba(0,0,0,.3);
+}
 .discover-filters .form-control,
 .discover-filters .form-select {
     border-radius: 10px;
@@ -18,6 +22,12 @@
     border-color: #e5e7eb;
     background: #f9fafb;
     transition: border-color .2s, box-shadow .2s;
+}
+[data-bs-theme="dark"] .discover-filters .form-control,
+[data-bs-theme="dark"] .discover-filters .form-select {
+    border-color: #374151;
+    background: #2d2d44;
+    color: #e5e7eb;
 }
 .discover-filters .form-control:focus,
 .discover-filters .form-select:focus {
@@ -313,7 +323,7 @@
         {{-- Location row --}}
         <div class="row g-2 align-items-end mb-2">
             <div class="col-12 col-md-5">
-                <label class="form-label small fw-semibold mb-1">
+                <label class="form-label small fw-semibold mb-1 text-body">
                     <i class="bi bi-geo-alt-fill text-danger me-1"></i>City / Location
                     @if($filterCity)
                         <span class="badge bg-primary ms-1" style="font-size:.65rem">Active</span>
@@ -349,7 +359,7 @@
                 </div>
             </div>
             <div class="col-12 col-md-4">
-                <label class="form-label small fw-semibold mb-1">Country</label>
+                <label class="form-label small fw-semibold mb-1 text-body">Country</label>
                 <input id="countryInput" type="text" name="country" class="form-control form-control-sm"
                        value="{{ $filterCountry }}"
                        placeholder="e.g. Nigeria — leave blank for any"
@@ -367,7 +377,7 @@
                     </div>
                 </div>
                 @else
-                <p class="text-muted small mb-0" style="font-size:.78rem;line-height:1.3">
+                <p class="text-body-secondary small mb-0" style="font-size:.78rem;line-height:1.3">
                     <i class="bi bi-info-circle me-1"></i>
                     @if($isPremium)
                         Browse any location freely — Premium benefit.
@@ -393,23 +403,23 @@
         {{-- Other filters row --}}
         <div class="row g-2 align-items-end">
             <div class="col-6 col-md-2">
-                <label class="form-label small fw-semibold mb-1">Min Age</label>
+                <label class="form-label small fw-semibold mb-1 text-body">Min Age</label>
                 <input type="number" name="min_age" class="form-control form-control-sm"
                        value="{{ request('min_age', $minAge) }}" min="18" max="80">
             </div>
             <div class="col-6 col-md-2">
-                <label class="form-label small fw-semibold mb-1">Max Age</label>
+                <label class="form-label small fw-semibold mb-1 text-body">Max Age</label>
                 <input type="number" name="max_age" class="form-control form-control-sm"
                        value="{{ request('max_age', $maxAge) }}" min="18" max="99">
             </div>
             <div class="col-6 col-md-2">
-                <label class="form-label small fw-semibold mb-1">Distance (km)</label>
+                <label class="form-label small fw-semibold mb-1 text-body">Distance (km)</label>
                 <input type="number" name="max_distance_km" class="form-control form-control-sm"
                        value="{{ request('max_distance_km', $maxKm && $maxKm < 9999 ? $maxKm : '') }}"
                        min="5" max="20000" placeholder="Any">
             </div>
             <div class="col-6 col-md-2">
-                <label class="form-label small fw-semibold mb-1">Looking for</label>
+                <label class="form-label small fw-semibold mb-1 text-body">Looking for</label>
                 <select name="seeking_gender" class="form-select form-select-sm">
                     <option value="">Any</option>
                     <option value="men"      {{ request('seeking_gender') === 'men'      ? 'selected' : '' }}>Men</option>
@@ -418,7 +428,7 @@
                 </select>
             </div>
             <div class="col-6 col-md-2">
-                <label class="form-label small fw-semibold mb-1">Shared Interest</label>
+                <label class="form-label small fw-semibold mb-1 text-body">Shared Interest</label>
                 <select name="interest_id" class="form-select form-select-sm">
                     <option value="">Any interest</option>
                     @foreach($allInterests as $int)
@@ -429,7 +439,7 @@
                 </select>
             </div>
             <div class="col-6 col-md-2">
-                <label class="form-label small fw-semibold mb-1">Online now</label>
+                <label class="form-label small fw-semibold mb-1 text-body">Online now</label>
                 <select name="online_only" class="form-select form-select-sm">
                     <option value="">Any</option>
                     <option value="1" {{ request('online_only') === '1' ? 'selected' : '' }}>Online only</option>
@@ -437,13 +447,13 @@
             </div>
             <div class="col-12 d-flex gap-2 align-items-center flex-wrap">
                 {{-- Has location toggle --}}
-                <label class="d-flex align-items-center gap-2 mb-0" style="cursor:pointer;font-size:.82rem;font-weight:600">
+                <label class="d-flex align-items-center gap-2 mb-0 text-body" style="cursor:pointer;font-size:.82rem;font-weight:600">
                     <div class="form-check form-switch mb-0">
                         <input class="form-check-input" type="checkbox" name="has_location" value="1"
                                id="hasLocationToggle"
                                {{ request('has_location') ? 'checked' : '' }}
                                onchange="this.closest('form').submit()">
-                        <label class="form-check-label text-muted" for="hasLocationToggle">
+                        <label class="form-check-label text-body-secondary" for="hasLocationToggle">
                             <i class="bi bi-geo-alt-fill text-danger me-1"></i>With Location Set
                         </label>
                     </div>
@@ -474,7 +484,7 @@
                 </span>
             </button>
             <input type="hidden" name="verified_only" id="verifiedOnlyInput" value="{{ request('verified_only', 0) }}">
-            <span class="text-muted small">Show only ID-verified members</span>
+            <span class="text-body-secondary small">Show only ID-verified members</span>
         </div>
         @endif
     </form>
