@@ -16,12 +16,28 @@ class ConversationController extends Controller
 
         $conversations = Conversation::whereHas('match', function ($q) use ($user) {
             $q->where('user1_id', $user->id)->orWhere('user2_id', $user->id);
-        })->with([
+        })
+        ->where(function ($query) use ($user) {
+            // Filter out conversations hidden for this user
+            $query->where(function ($q) use ($user) {
+                $q->whereHas('match', fn($m) => $m->where('user1_id', $user->id))
+                  ->where('hidden_for_user1', false);
+            })->orWhere(function ($q) use ($user) {
+                $q->whereHas('match', fn($m) => $m->where('user2_id', $user->id))
+                  ->where('hidden_for_user2', false);
+            });
+        })
+        ->with([
             'match.user1.primaryPhoto',
             'match.user2.primaryPhoto',
             'messages' => fn($q) => $q->latest('created_at')->limit(1),
         ])->get()
-          ->sortByDesc(fn($c) => $c->messages->first()?->created_at)
+          ->sortByDesc(function ($c) use ($user) {
+              // Pinned conversations at top, then by latest message
+              $isPinned = $c->isPinnedFor($user->id);
+              $latestTime = $c->messages->first()?->created_at?->timestamp ?? 0;
+              return ($isPinned ? 9999999999 : 0) + $latestTime;
+          })
           ->values();
 
         return view('conversations.index', compact('conversations'));
@@ -103,5 +119,61 @@ class ConversationController extends Controller
         $conversation->update(['disappear_after' => $mode]);
 
         return response()->json(['disappear_after' => $mode]);
+    }
+
+    /** Pin or unpin a conversation */
+    public function togglePin(Request $request, Conversation $conversation): \Illuminate\Http\JsonResponse
+    {
+        $user = $request->user();
+        $match = $conversation->match;
+
+        abort_unless(
+            $match && ($match->user1_id === $user->id || $match->user2_id === $user->id),
+            403
+        );
+
+        $conversation->togglePinFor($user->id);
+
+        return response()->json([
+            'pinned' => $conversation->fresh()->isPinnedFor($user->id),
+            'message' => 'Conversation ' . ($conversation->isPinnedFor($user->id) ? 'pinned' : 'unpinned')
+        ]);
+    }
+
+    /** Clear all messages in a conversation */
+    public function clearMessages(Request $request, Conversation $conversation): \Illuminate\Http\JsonResponse
+    {
+        $user = $request->user();
+        $match = $conversation->match;
+
+        abort_unless(
+            $match && ($match->user1_id === $user->id || $match->user2_id === $user->id),
+            403
+        );
+
+        // Delete all messages in this conversation
+        $conversation->messages()->delete();
+
+        return response()->json([
+            'message' => 'All messages cleared successfully'
+        ]);
+    }
+
+    /** Hide conversation from the list */
+    public function hide(Request $request, Conversation $conversation): \Illuminate\Http\JsonResponse
+    {
+        $user = $request->user();
+        $match = $conversation->match;
+
+        abort_unless(
+            $match && ($match->user1_id === $user->id || $match->user2_id === $user->id),
+            403
+        );
+
+        $conversation->hideFor($user->id);
+
+        return response()->json([
+            'message' => 'Conversation hidden successfully'
+        ]);
     }
 }

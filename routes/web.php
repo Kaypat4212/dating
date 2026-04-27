@@ -215,6 +215,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/messages/{conversation}',  [ConversationController::class, 'show'])->name('conversations.show');
         Route::post('/messages/{conversation}', [MessageController::class, 'store'])->name('messages.store');
         Route::post('/messages/{conversation}/typing', [MessageController::class, 'typing'])->name('messages.typing');
+        
+        // Conversation management
+        Route::post('/messages/{conversation}/pin', [ConversationController::class, 'togglePin'])->name('conversations.pin');
+        Route::delete('/messages/{conversation}/clear', [ConversationController::class, 'clearMessages'])->name('conversations.clear');
+        Route::post('/messages/{conversation}/hide', [ConversationController::class, 'hide'])->name('conversations.hide');
 
         // Disappearing Content & Streaks (Snapchat-style)
         Route::post('/snaps/{conversation}',      [\App\Http\Controllers\DisappearingContentController::class, 'store'])->name('snaps.store');

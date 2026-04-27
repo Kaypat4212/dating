@@ -53,55 +53,85 @@
             $lastMsg = $conv->messages->first();
             $unread  = $conv->unreadCountFor(auth()->id());
             $online  = $other?->last_active_at && $other->last_active_at->gt(now()->subMinutes(10));
+            $isPinned = $conv->isPinnedFor(auth()->id());
         @endphp
         @if(!$other) @continue @endif
-        <a href="{{ route('conversations.show', $conv->id) }}"
-           class="conv-item {{ $unread > 0 ? 'unread' : '' }}"
-           data-name="{{ strtolower($other->name) }}">
+        <div class="conv-item-wrapper position-relative" data-conv-id="{{ $conv->id }}">
+            <a href="{{ route('conversations.show', $conv->id) }}"
+               class="conv-item {{ $unread > 0 ? 'unread' : '' }}"
+               data-name="{{ strtolower($other->name) }}">
 
-            {{-- Avatar --}}
-            <div class="conv-avatar">
-                @if($other->primaryPhoto)
-                    <img src="{{ $other->primaryPhoto->thumbnail_url }}" alt="{{ $other->name }}">
-                @else
-                    <div class="conv-avatar-ph">{{ strtoupper(mb_substr($other->name, 0, 1)) }}</div>
-                @endif
-                @if($online)<div class="conv-online" title="Online now"></div>@endif
-            </div>
-
-            {{-- Body --}}
-            <div class="conv-body">
-                <div class="conv-name">
-                    {{ $other->name }}
-                    @if($other->is_verified ?? false)<i class="bi bi-patch-check-fill text-info ms-1" style="font-size:.8rem"></i>@endif
+                {{-- Avatar --}}
+                <div class="conv-avatar">
+                    @if($other->primaryPhoto)
+                        <img src="{{ $other->primaryPhoto->thumbnail_url }}" alt="{{ $other->name }}">
+                    @else
+                        <div class="conv-avatar-ph">{{ strtoupper(mb_substr($other->name, 0, 1)) }}</div>
+                    @endif
+                    @if($online)<div class="conv-online" title="Online now"></div>@endif
                 </div>
-                <div class="conv-preview">
+
+                {{-- Body --}}
+                <div class="conv-body">
+                    <div class="conv-name">
+                        @if($isPinned)
+                            <i class="bi bi-pin-angle-fill text-primary me-1" style="font-size:.8rem" title="Pinned"></i>
+                        @endif
+                        {{ $other->name }}
+                        @if($other->is_verified ?? false)<i class="bi bi-patch-check-fill text-info ms-1" style="font-size:.8rem"></i>@endif
+                    </div>
+                    <div class="conv-preview">
+                        @if($lastMsg)
+                            @if($lastMsg->sender_id === auth()->id())<span class="text-muted">You: </span>@endif{{ Str::limit($lastMsg->body, 55) }}
+                        @else
+                            <em>Start the conversation…</em>
+                        @endif
+                    </div>
+                </div>
+
+                {{-- Meta --}}
+                <div class="conv-meta">
                     @if($lastMsg)
-                        @if($lastMsg->sender_id === auth()->id())<span class="text-muted">You: </span>@endif{{ Str::limit($lastMsg->body, 55) }}
-                    @else
-                        <em>Start the conversation…</em>
+                    <div class="conv-time">
+                        @if($lastMsg->created_at->isToday())
+                            {{ $lastMsg->created_at->format('g:i A') }}
+                        @elseif($lastMsg->created_at->isYesterday())
+                            Yesterday
+                        @else
+                            {{ $lastMsg->created_at->format('M j') }}
+                        @endif
+                    </div>
                     @endif
-                </div>
-            </div>
-
-            {{-- Meta --}}
-            <div class="conv-meta">
-                @if($lastMsg)
-                <div class="conv-time">
-                    @if($lastMsg->created_at->isToday())
-                        {{ $lastMsg->created_at->format('g:i A') }}
-                    @elseif($lastMsg->created_at->isYesterday())
-                        Yesterday
-                    @else
-                        {{ $lastMsg->created_at->format('M j') }}
-                    @endif
-                </div>
-                @endif
-                @if($unread > 0)
+                    @if($unread > 0)
                     <div class="conv-unread-badge">{{ $unread > 9 ? '9+' : $unread }}</div>
                 @endif
             </div>
         </a>
+        
+        {{-- Action Dropdown --}}
+        <div class="dropdown position-absolute" style="top:.75rem;right:.75rem;z-index:10">
+            <button class="btn btn-sm btn-light border-0 p-1 rounded-circle" 
+                    data-bs-toggle="dropdown" 
+                    onclick="event.preventDefault();event.stopPropagation();"
+                    style="width:28px;height:28px;line-height:1">
+                <i class="bi bi-three-dots-vertical"></i>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                <li>
+                    <a class="dropdown-item pin-conv" href="#" data-conv-id="{{ $conv->id }}" data-pinned="{{ $isPinned ? '1' : '0' }}">
+                        <i class="bi bi-pin-angle{{ $isPinned ? '-fill' : '' }} me-2"></i>
+                        {{ $isPinned ? 'Unpin' : 'Pin' }} conversation
+                    </a>
+                </li>
+                <li><hr class="dropdown-divider"></li>
+                <li>
+                    <a class="dropdown-item text-danger hide-conv" href="#" data-conv-id="{{ $conv->id }}">
+                        <i class="bi bi-eye-slash me-2"></i>Hide conversation
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
         @endforeach
     </div>
     @endif
@@ -114,6 +144,69 @@ document.getElementById('inboxSearch')?.addEventListener('input', function () {
     const q = this.value.toLowerCase();
     document.querySelectorAll('#convList .conv-item').forEach(el => {
         el.style.display = el.dataset.name.includes(q) ? '' : 'none';
+    });
+});
+
+// Pin/Unpin conversation
+document.querySelectorAll('.pin-conv').forEach(btn => {
+    btn.addEventListener('click', async function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const convId = this.dataset.convId;
+        const isPinned = this.dataset.pinned === '1';
+        
+        try {
+            const response = await fetch(`/messages/${convId}/pin`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (response.ok) {
+                location.reload();
+            }
+        } catch (error) {
+            console.error('Error pinning conversation:', error);
+        }
+    });
+});
+
+// Hide conversation
+document.querySelectorAll('.hide-conv').forEach(btn => {
+    btn.addEventListener('click', async function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        if (!confirm('Hide this conversation? You can still access it from the match profile.')) {
+            return;
+        }
+        
+        const convId = this.dataset.convId;
+        
+        try {
+            const response = await fetch(`/messages/${convId}/hide`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (response.ok) {
+                // Smoothly remove the conversation from view
+                const wrapper = this.closest('.conv-item-wrapper');
+                wrapper.style.transition = 'opacity 0.3s';
+                wrapper.style.opacity = '0';
+                setTimeout(() => wrapper.remove(), 300);
+            }
+        } catch (error) {
+            console.error('Error hiding conversation:', error);
+        }
     });
 });
 </script>

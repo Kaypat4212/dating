@@ -528,8 +528,20 @@ main { padding-bottom: 0 !important; }
                         <i class="bi bi-person me-2"></i>View Profile
                     </a>
                 </li>
-                <li><hr class="dropdown-divider"></li>
                 @endif
+                <li>
+                    <button type="button" class="dropdown-item" id="pinConversationBtn" data-conv-id="{{ $conversation->id }}" data-pinned="{{ $conversation->isPinnedFor(auth()->id()) ? '1' : '0' }}">
+                        <i class="bi bi-pin-angle{{ $conversation->isPinnedFor(auth()->id()) ? '-fill' : '' }} me-2"></i>
+                        {{ $conversation->isPinnedFor(auth()->id()) ? 'Unpin' : 'Pin' }} conversation
+                    </button>
+                </li>
+                <li><hr class="dropdown-divider"></li>
+                <li>
+                    <button type="button" class="dropdown-item text-warning" id="clearChatBtn" data-conv-id="{{ $conversation->id }}">
+                        <i class="bi bi-trash me-2"></i>Clear all messages
+                    </button>
+                </li>
+                <li><hr class="dropdown-divider"></li>
                 <li>
                     <button type="button" class="dropdown-item text-danger"
                             data-bs-toggle="modal" data-bs-target="#unmatchModal">
@@ -2580,6 +2592,88 @@ function showSnapModal(mediaUrl, mediaType, senderName) {
         document.addEventListener('click', () => popover.classList.add('d-none'));
         popover.addEventListener('click', (e) => e.stopPropagation());
     })();
+
+    // ───── Pin/Unpin Conversation ──────────────────────────────────────────
+    document.getElementById('pinConversationBtn')?.addEventListener('click', async function() {
+        const convId = this.dataset.convId;
+        const isPinned = this.dataset.pinned === '1';
+        
+        try {
+            const response = await fetch(`/messages/${convId}/pin`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                const icon = this.querySelector('i');
+                if (data.pinned) {
+                    this.innerHTML = '<i class="bi bi-pin-angle-fill me-2"></i>Unpin conversation';
+                    this.dataset.pinned = '1';
+                    showToast('Conversation pinned', 'success');
+                } else {
+                    this.innerHTML = '<i class="bi bi-pin-angle me-2"></i>Pin conversation';
+                    this.dataset.pinned = '0';
+                    showToast('Conversation unpinned', 'success');
+                }
+            }
+        } catch (error) {
+            console.error('Error pinning conversation:', error);
+            showToast('Failed to pin conversation', 'danger');
+        }
+    });
+
+    // ───── Clear All Messages ───────────────────────────────────────────────
+    document.getElementById('clearChatBtn')?.addEventListener('click', async function() {
+        if (!confirm('Are you sure you want to clear all messages in this conversation? This action cannot be undone.')) {
+            return;
+        }
+        
+        const convId = this.dataset.convId;
+        
+        try {
+            const response = await fetch(`/messages/${convId}/clear`, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (response.ok) {
+                showToast('All messages cleared', 'success');
+                // Reload the page to show empty chat
+                setTimeout(() => location.reload(), 1000);
+            }
+        } catch (error) {
+            console.error('Error clearing messages:', error);
+            showToast('Failed to clear messages', 'danger');
+        }
+    });
+
+    // ───── Toast Helper ──────────────────────────────────────────────────────
+    function showToast(message, type = 'success') {
+        const toastHtml = `
+            <div class="toast align-items-center text-white bg-${type} border-0" role="alert" style="position:fixed;top:20px;right:20px;z-index:9999">
+                <div class="d-flex">
+                    <div class="toast-body">${message}</div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                </div>
+            </div>
+        `;
+        const temp = document.createElement('div');
+        temp.innerHTML = toastHtml;
+        const toastEl = temp.firstElementChild;
+        document.body.appendChild(toastEl);
+        const toast = new bootstrap.Toast(toastEl, { delay: 3000 });
+        toast.show();
+        toastEl.addEventListener('hidden.bs.toast', () => toastEl.remove());
+    }
     // ─────────────────────────────────────────────────────────────────────────
 })();
 </script>

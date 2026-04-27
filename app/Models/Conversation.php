@@ -15,7 +15,14 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  */
 class Conversation extends Model
 {
-    protected $fillable = ['match_id', 'disappear_after'];
+    protected $fillable = [
+        'match_id', 
+        'disappear_after', 
+        'is_pinned_user1', 
+        'is_pinned_user2', 
+        'hidden_for_user1', 
+        'hidden_for_user2'
+    ];
 
     public function match(): BelongsTo
     {
@@ -49,5 +56,45 @@ class Conversation extends Model
             '7d'  => now()->addWeek(),
             default => null,
         };
+    }
+
+    /** Check if conversation is pinned for a specific user */
+    public function isPinnedFor(int $userId): bool
+    {
+        $match = $this->match;
+        return $match->user1_id === $userId 
+            ? $this->is_pinned_user1 
+            : $this->is_pinned_user2;
+    }
+
+    /** Check if conversation is hidden for a specific user */
+    public function isHiddenFor(int $userId): bool
+    {
+        $match = $this->match;
+        return $match->user1_id === $userId 
+            ? $this->hidden_for_user1 
+            : $this->hidden_for_user2;
+    }
+
+    /** Toggle pin status for a user */
+    public function togglePinFor(int $userId): void
+    {
+        $match = $this->match;
+        if ($match->user1_id === $userId) {
+            $this->update(['is_pinned_user1' => !$this->is_pinned_user1]);
+        } else {
+            $this->update(['is_pinned_user2' => !$this->is_pinned_user2]);
+        }
+    }
+
+    /** Hide conversation for a user */
+    public function hideFor(int $userId): void
+    {
+        $match = $this->match;
+        if ($match->user1_id === $userId) {
+            $this->update(['hidden_for_user1' => true]);
+        } else {
+            $this->update(['hidden_for_user2' => true]);
+        }
     }
 }
