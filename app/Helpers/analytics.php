@@ -1,3 +1,5 @@
+<?php
+
 /**
  * Analytics Helper Functions
  * 
