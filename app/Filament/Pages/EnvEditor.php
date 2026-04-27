@@ -158,6 +158,11 @@ class EnvEditor extends Page
             // reCAPTCHA
             'recaptcha_site_key'   => env('RECAPTCHA_SITE_KEY', ''),
             'recaptcha_secret_key' => env('RECAPTCHA_SECRET_KEY', ''),
+
+            // Paystack (card payments)
+            'paystack_public_key'     => env('PAYSTACK_PUBLIC_KEY', ''),
+            'paystack_secret_key'     => env('PAYSTACK_SECRET_KEY', ''),
+            'paystack_merchant_email' => env('PAYSTACK_MERCHANT_EMAIL', ''),
         ];
     }
 
@@ -327,6 +332,27 @@ class EnvEditor extends Page
                         Forms\Components\TextInput::make('paypal_client_secret')
                             ->label('Client Secret')
                             ->password()->revealable(),
+                    ])->columns(2),
+
+                Section::make('💳 Paystack (Card Payments - Nigeria)')
+                    ->icon('heroicon-o-credit-card')
+                    ->description('dashboard.paystack.com → Settings → API Keys & Webhooks')
+                    ->collapsible()->collapsed()
+                    ->schema([
+                        Forms\Components\TextInput::make('paystack_public_key')
+                            ->label('Public Key (pk_...)')
+                            ->placeholder('pk_live_... or pk_test_...')
+                            ->helperText('Safe to expose to clients'),
+                        Forms\Components\TextInput::make('paystack_secret_key')
+                            ->label('Secret Key (sk_...)')
+                            ->password()->revealable()
+                            ->placeholder('sk_live_... or sk_test_...')
+                            ->helperText('Keep this secret!'),
+                        Forms\Components\TextInput::make('paystack_merchant_email')
+                            ->label('Merchant Email')
+                            ->email()
+                            ->placeholder('noreply@heartsconnect.site')
+                            ->helperText('Email for payment notifications'),
                     ])->columns(2),
 
                 Section::make('🔐 Google OAuth & Maps')
@@ -685,6 +711,11 @@ class EnvEditor extends Page
                 // reCAPTCHA
                 'RECAPTCHA_SITE_KEY'   => $data['recaptcha_site_key'] ?? '',
                 'RECAPTCHA_SECRET_KEY' => $data['recaptcha_secret_key'] ?? '',
+
+                // Paystack
+                'PAYSTACK_PUBLIC_KEY'     => $data['paystack_public_key'] ?? '',
+                'PAYSTACK_SECRET_KEY'     => $data['paystack_secret_key'] ?? '',
+                'PAYSTACK_MERCHANT_EMAIL' => $data['paystack_merchant_email'] ?? '',
 
                 // Pusher / Reverb
                 'PUSHER_APP_ID'      => $data['pusher_app_id'] ?? '',

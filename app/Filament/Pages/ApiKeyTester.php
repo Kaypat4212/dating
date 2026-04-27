@@ -52,6 +52,7 @@ class ApiKeyTester extends Page
         $this->runGoogle();
         // Payments
         $this->runStripe();
+        $this->runPaystack();
         // Communications
         $this->runTwilio();
         $this->runTelegram();
@@ -80,6 +81,7 @@ class ApiKeyTester extends Page
     public function testOpenAI(): void     { $this->runOpenAI(); }
     public function testGoogle(): void     { $this->runGoogle(); }
     public function testStripe(): void     { $this->runStripe(); }
+    public function testPaystack(): void   { $this->runPaystack(); }
     public function testTwilio(): void     { $this->runTwilio(); }
     public function testTelegram(): void   { $this->runTelegram(); }
     public function testMailSmtp(): void   { $this->runMailSmtp(); }
@@ -332,6 +334,40 @@ class ApiKeyTester extends Page
     // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     // â”€â”€ COMMUNICATIONS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+    private function runPaystack(): void
+    {
+        $publicKey = config('services.paystack.public_key', '') ?: env('PAYSTACK_PUBLIC_KEY', '');
+        $secretKey = config('services.paystack.secret_key', '') ?: env('PAYSTACK_SECRET_KEY', '');
+
+        if (empty($secretKey)) {
+            $this->warn('paystack', 'Not configured', 'PAYSTACK_SECRET_KEY is empty — card payments will not work.');
+            return;
+        }
+
+        if (empty($publicKey)) {
+            $this->warn('paystack', 'Public key missing', 'PAYSTACK_PUBLIC_KEY is empty — required for frontend integration.');
+            return;
+        }
+
+        // Test API connection by fetching banks (lightweight endpoint)
+        [$response, $ms] = $this->timed(fn() =>
+            Http::timeout(8)
+                ->withHeaders(['Authorization' => 'Bearer ' . $secretKey])
+                ->get('https://api.paystack.co/bank')
+        );
+
+        if ($response->successful()) {
+            $mode = str_starts_with($secretKey, 'sk_live') ? 'LIVE ⚠️' : 'TEST';
+            $currency = 'NGN (Nigerian Naira)';
+            $this->pass('paystack', "Secret key valid ({$mode} mode)",
+                "Currency: {$currency} | Public key set: " . (empty($publicKey) ? 'NO' : 'YES'), $ms);
+        } elseif ($response->status() === 401) {
+            $this->fail('paystack', 'Invalid secret key (401)', 'Check PAYSTACK_SECRET_KEY in .env', $ms);
+        } else {
+            $this->fail('paystack', "HTTP {$response->status()}", substr($response->body(), 0, 200), $ms);
+        }
+    }
 
     private function runTwilio(): void
     {
