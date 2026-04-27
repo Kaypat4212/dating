@@ -28,6 +28,27 @@
 
     @vite(['resources/scss/app.scss', 'resources/js/app.js'])
 
+    {{-- Centralized Toast Notification System --}}
+    <script src="{{ asset('js/toast-notifications.js') }}"></script>
+    <script>
+        // Initialize toast system with admin settings
+        @php
+            $toastSettings = [
+                'position' => \App\Models\SiteSetting::get('toast_position', 'top-right'),
+                'duration' => (int)\App\Models\SiteSetting::get('toast_duration', 3000),
+                'animation' => \App\Models\SiteSetting::get('toast_animation', 'slide'),
+                'showIcon' => filter_var(\App\Models\SiteSetting::get('toast_show_icon', '1'), FILTER_VALIDATE_BOOLEAN),
+                'closeButton' => filter_var(\App\Models\SiteSetting::get('toast_close_button', '1'), FILTER_VALIDATE_BOOLEAN),
+                'successColor' => \App\Models\SiteSetting::get('toast_success_color', '#198754'),
+                'errorColor' => \App\Models\SiteSetting::get('toast_error_color', '#dc3545'),
+                'warningColor' => \App\Models\SiteSetting::get('toast_warning_color', '#ffc107'),
+                'infoColor' => \App\Models\SiteSetting::get('toast_info_color', '#0dcaf0'),
+                'primaryColor' => \App\Models\SiteSetting::get('toast_primary_color', '#0d6efd'),
+            ];
+        @endphp
+        ToastNotification.init({!! json_encode($toastSettings) !!});
+    </script>
+
     <style>
         /* ── Page background ──────────────────────────────────── */
         body.auth-page {

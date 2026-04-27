@@ -887,16 +887,20 @@ const likeUrl = '{{ url("like") }}';
 let isAnimating  = false;
 let _matchPending = false; // prevents fetchMoreCards running during match celebration
 
-const _toast     = document.getElementById('swipe-toast');
-const _toastBody = document.getElementById('swipe-toast-body');
-let   _bsToast   = null;
-
+// Use centralized toast notification system
 function showToast(msg, color = '#6f42c1') {
-    if (!_toast) return;
-    _toastBody.textContent = msg;
-    _toast.style.background = color;
-    if (!_bsToast) _bsToast = new bootstrap.Toast(_toast, { delay: 2200 });
-    _bsToast.show();
+    // Map colors to toast types for the centralized system
+    const colorTypeMap = {
+        '#6f42c1': 'primary',
+        '#6c757d': 'info',
+        '#f59e0b': 'warning',
+        '#dc3545': 'error',
+        '#e91e8c': 'primary',
+        '#10b981': 'success'
+    };
+    
+    const type = colorTypeMap[color] || 'primary';
+    ToastNotification.show(msg, type, 2200);
 }
 
 // Cards are rendered bottom-first in DOM; the last DOM node is the visual top card.

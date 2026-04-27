@@ -2021,18 +2021,20 @@ function showSnapModal(mediaUrl, mediaType, senderName) {
     }
     const giftBtn     = document.getElementById('giftBtn');
     const giftPopover = document.getElementById('giftPopover');
+    
+    // Use centralized toast notification for gifts
     function _giftToast(msg, type) {
-        const container = document.getElementById('toastContainer');
-        if (!container) return;
-        const el = document.createElement('div');
-        el.className = 'toast align-items-center text-bg-' + type + ' border-0';
-        el.setAttribute('role', 'alert');
-        el.setAttribute('aria-live', 'assertive');
-        el.innerHTML = '<div class="d-flex"><div class="toast-body fw-semibold">' + msg + '</div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button></div>';
-        container.appendChild(el);
-        new bootstrap.Toast(el, { delay: 5000 }).show();
-        el.addEventListener('hidden.bs.toast', () => el.remove());
+        // Map Bootstrap text-bg classes to toast types
+        const typeMap = {
+            'danger': 'error',
+            'warning': 'warning',
+            'success': 'success',
+            'info': 'info',
+            'primary': 'primary'
+        };
+        ToastNotification.show(msg, typeMap[type] || type, 5000);
     }
+    
     if (giftBtn && giftPopover) {
         giftBtn.addEventListener('click', e => { e.stopPropagation(); giftPopover.classList.toggle('d-none'); });
         giftPopover.addEventListener('click', async e => {
@@ -2614,16 +2616,16 @@ function showSnapModal(mediaUrl, mediaType, senderName) {
                 if (data.pinned) {
                     this.innerHTML = '<i class="bi bi-pin-angle-fill me-2"></i>Unpin conversation';
                     this.dataset.pinned = '1';
-                    showToast('Conversation pinned', 'success');
+                    ToastNotification.success('Conversation pinned');
                 } else {
                     this.innerHTML = '<i class="bi bi-pin-angle me-2"></i>Pin conversation';
                     this.dataset.pinned = '0';
-                    showToast('Conversation unpinned', 'success');
+                    ToastNotification.success('Conversation unpinned');
                 }
             }
         } catch (error) {
             console.error('Error pinning conversation:', error);
-            showToast('Failed to pin conversation', 'danger');
+            ToastNotification.error('Failed to pin conversation');
         }
     });
 
@@ -2646,34 +2648,15 @@ function showSnapModal(mediaUrl, mediaType, senderName) {
             });
             
             if (response.ok) {
-                showToast('All messages cleared', 'success');
+                ToastNotification.success('All messages cleared');
                 // Reload the page to show empty chat
                 setTimeout(() => location.reload(), 1000);
             }
         } catch (error) {
             console.error('Error clearing messages:', error);
-            showToast('Failed to clear messages', 'danger');
+            ToastNotification.error('Failed to clear messages');
         }
     });
-
-    // ───── Toast Helper ──────────────────────────────────────────────────────
-    function showToast(message, type = 'success') {
-        const toastHtml = `
-            <div class="toast align-items-center text-white bg-${type} border-0" role="alert" style="position:fixed;top:20px;right:20px;z-index:9999">
-                <div class="d-flex">
-                    <div class="toast-body">${message}</div>
-                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
-                </div>
-            </div>
-        `;
-        const temp = document.createElement('div');
-        temp.innerHTML = toastHtml;
-        const toastEl = temp.firstElementChild;
-        document.body.appendChild(toastEl);
-        const toast = new bootstrap.Toast(toastEl, { delay: 3000 });
-        toast.show();
-        toastEl.addEventListener('hidden.bs.toast', () => toastEl.remove());
-    }
     // ─────────────────────────────────────────────────────────────────────────
 })();
 </script>
