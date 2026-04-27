@@ -629,7 +629,7 @@
                     <a class="nav-link {{ request()->routeIs('swipe.*') ? 'active fw-semibold' : '' }}" href="{{ route('swipe.deck') }}">
                         <i class="bi bi-fire me-1"></i>Swipe
                     </a>
-                </l
+                </li>
 
                 {{-- Discover dropdown --}}
                 <li class="nav-item dropdown">
