@@ -225,6 +225,7 @@
                 <div class="card-body p-4">
                     <h5 class="fw-bold mb-3 text-center">Choose Payment Method</h5>
                     <div class="row g-3 justify-content-center">
+                        @if($paystackEnabled)
                         <div class="col-md-5">
                             <div class="card h-100 border-2 border-primary text-center p-4" style="cursor:pointer" id="paystackOption">
                                 <i class="bi bi-credit-card display-4 text-primary mb-3"></i>
@@ -233,8 +234,9 @@
                                 <span class="badge bg-success">Instant</span>
                             </div>
                         </div>
-                        <div class="col-md-5">
-                            <div class="card h-100 border text-center p-4" style="cursor:pointer" id="cryptoOption">
+                        @endif
+                        <div class="{{ $paystackEnabled ? 'col-md-5' : 'col-md-6' }}">
+                            <div class="card h-100 {{ $paystackEnabled ? 'border' : 'border-2 border-primary' }} text-center p-4" style="cursor:pointer" id="cryptoOption">
                                 <i class="bi bi-currency-bitcoin display-4 text-warning mb-3"></i>
                                 <h6 class="fw-bold mb-2">Pay with Crypto</h6>
                                 <p class="text-muted small mb-3">Pay with Bitcoin, USDT, or other cryptocurrencies</p>
@@ -246,6 +248,7 @@
             </div>
 
             {{-- Paystack Payment Form --}}
+            @if($paystackEnabled)
             <div class="card border-0 shadow p-4 mb-4" id="paystackPaymentForm" style="display:none">
                 <h5 class="fw-bold mb-2" id="paystackFormTitle">Pay with Card</h5>
                 <p class="text-muted small mb-4">
@@ -271,6 +274,7 @@
                     </p>
                 </form>
             </div>
+            @endif
 
             {{-- Crypto Payment form --}}
             <div class="card border-0 shadow p-4" id="paymentForm" style="display:none">
@@ -348,6 +352,7 @@
 let selectedPlan = null;
 let selectedPrice = null;
 let selectedLabel = null;
+const paystackEnabled = {{ $paystackEnabled ? 'true' : 'false' }};
 
 // ── Plan selection ────────────────────────────────────────────────────────────
 document.querySelectorAll('.select-plan').forEach(btn => {
@@ -356,38 +361,51 @@ document.querySelectorAll('.select-plan').forEach(btn => {
         selectedPrice = parseFloat(btn.dataset.price);
         selectedLabel = btn.dataset.label;
         
-        // Show payment method selection
-        document.getElementById('paymentMethodSection').style.removeProperty('display');
-        document.getElementById('paymentMethodSection').scrollIntoView({behavior:'smooth'});
-        
-        // Hide both payment forms
-        document.getElementById('paymentForm').style.display = 'none';
-        document.getElementById('paystackPaymentForm').style.display = 'none';
+        if (paystackEnabled) {
+            // Show payment method selection if Paystack is configured
+            document.getElementById('paymentMethodSection').style.removeProperty('display');
+            document.getElementById('paymentMethodSection').scrollIntoView({behavior:'smooth'});
+            
+            // Hide both payment forms
+            document.getElementById('paymentForm').style.display = 'none';
+            document.getElementById('paystackPaymentForm').style.display = 'none';
+        } else {
+            // Go directly to crypto payment if Paystack is not configured
+            document.getElementById('hiddenPlan').value = selectedPlan;
+            document.getElementById('payFormTitle').textContent = `Complete Payment — ${selectedLabel}`;
+            document.getElementById('paymentForm').style.removeProperty('display');
+            document.getElementById('paymentForm').scrollIntoView({behavior:'smooth'});
+        }
     });
 });
 
 // ── Payment method selection (Card vs Crypto) ─────────────────────────────────
-document.getElementById('paystackOption')?.addEventListener('click', function() {
-    // Highlight selected
-    document.getElementById('paystackOption').classList.add('border-2', 'border-primary');
-    document.getElementById('cryptoOption').classList.remove('border-2', 'border-primary');
-    
-    // Fill Paystack form
-    document.getElementById('paystackHiddenPlan').value = selectedPlan;
-    document.getElementById('paystackAmount').textContent = selectedPrice.toFixed(2);
-    document.getElementById('paystackAmountNgn').textContent = (selectedPrice * 1600).toFixed(0);
-    document.getElementById('paystackFormTitle').textContent = `Pay for ${selectedLabel}`;
-    
-    // Show Paystack form, hide crypto form
-    document.getElementById('paystackPaymentForm').style.removeProperty('display');
-    document.getElementById('paymentForm').style.display = 'none';
-    document.getElementById('paystackPaymentForm').scrollIntoView({behavior:'smooth'});
-});
+
+if (paystackEnabled) {
+    document.getElementById('paystackOption')?.addEventListener('click', function() {
+        // Highlight selected
+        document.getElementById('paystackOption').classList.add('border-2', 'border-primary');
+        document.getElementById('cryptoOption').classList.remove('border-2', 'border-primary');
+        
+        // Fill Paystack form
+        document.getElementById('paystackHiddenPlan').value = selectedPlan;
+        document.getElementById('paystackAmount').textContent = selectedPrice.toFixed(2);
+        document.getElementById('paystackAmountNgn').textContent = (selectedPrice * 1600).toFixed(0);
+        document.getElementById('paystackFormTitle').textContent = `Pay for ${selectedLabel}`;
+        
+        // Show Paystack form, hide crypto form
+        document.getElementById('paystackPaymentForm').style.removeProperty('display');
+        document.getElementById('paymentForm').style.display = 'none';
+        document.getElementById('paystackPaymentForm').scrollIntoView({behavior:'smooth'});
+    });
+}
 
 document.getElementById('cryptoOption')?.addEventListener('click', function() {
     // Highlight selected
     document.getElementById('cryptoOption').classList.add('border-2', 'border-primary');
-    document.getElementById('paystackOption').classList.remove('border-2', 'border-primary');
+    if (paystackEnabled) {
+        document.getElementById('paystackOption')?.classList.remove('border-2', 'border-primary');
+    }
     
     // Fill crypto form
     document.getElementById('hiddenPlan').value = selectedPlan;
@@ -395,7 +413,9 @@ document.getElementById('cryptoOption')?.addEventListener('click', function() {
     
     // Show crypto form, hide Paystack form
     document.getElementById('paymentForm').style.removeProperty('display');
-    document.getElementById('paystackPaymentForm').style.display = 'none';
+    if (paystackEnabled) {
+        document.getElementById('paystackPaymentForm').style.display = 'none';
+    }
     document.getElementById('paymentForm').scrollIntoView({behavior:'smooth'});
 });
 

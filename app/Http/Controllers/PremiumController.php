@@ -46,7 +46,11 @@ class PremiumController extends Controller
             $upgradeOptions = $this->buildUpgradeOptions($user);
         }
 
-        return view('premium.show', compact('user', 'wallets', 'plans', 'pending', 'upgradeOptions'));
+        // Check if Paystack is configured
+        $paystackEnabled = !empty(config('services.paystack.public_key')) && 
+                          !empty(config('services.paystack.secret_key'));
+
+        return view('premium.show', compact('user', 'wallets', 'plans', 'pending', 'upgradeOptions', 'paystackEnabled'));
     }
 
     public function submit(Request $request): RedirectResponse
