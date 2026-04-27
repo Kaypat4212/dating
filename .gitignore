@@ -2,7 +2,7 @@
 /node_modules
 /public/hot
 /public/storage
-/public/build
+# /public/build  # Temporarily committed for production deployment
 /storage/*.key
 /storage/pail
 /vendor

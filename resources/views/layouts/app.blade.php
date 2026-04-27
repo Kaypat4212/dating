@@ -48,11 +48,7 @@
     {{-- AOS (Animate On Scroll) --}}
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css">
 
-    {{-- Vite Assets - Commented out to prevent manifest errors on production without build --}}
-    {{-- @vite(['resources/scss/app.scss', 'resources/js/app.js']) --}}
-    
-    {{-- Bootstrap 5.3 CSS (replaces Vite-compiled SCSS) --}}
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    @vite(['resources/scss/app.scss', 'resources/js/app.js'])
     
     {{-- Centralized Toast Notification System --}}
     <script src="{{ asset('js/toast-notifications.js') }}"></script>
