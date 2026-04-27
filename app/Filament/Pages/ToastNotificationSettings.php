@@ -16,7 +16,7 @@ class ToastNotificationSettings extends Page
 {
     protected static ?string $navigationIcon = 'heroicon-o-bell-alert';
     protected static ?string $navigationLabel = 'Toast Notifications';
-    protected static ?string $navigationGroup = 'Settings';
+    protected static string $navigationGroup = 'Settings';
     protected static ?int $navigationSort = 30;
     protected static string $view = 'filament.pages.toast-notification-settings';
 
