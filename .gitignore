@@ -2,11 +2,15 @@
 /node_modules
 /public/hot
 /public/storage
+/public/build
 /storage/*.key
 /storage/pail
 /vendor
 
 .env
+.env.*
+env.production.txt
+*.env
 .env.backup
 .env.production
 env.production.txt
