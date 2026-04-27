@@ -123,6 +123,9 @@ Route::get('/sitemap.xml', function () {
     return response($xml, 200)->header('Content-Type', 'application/xml');
 })->name('sitemap');
 
+// ─── Paystack Webhook (public route) ──────────────────────────────────────────
+Route::post('/paystack/webhook', [\App\Http\Controllers\PaystackController::class, 'webhook'])->name('paystack.webhook');
+
 // ─── Auth routes (Breeze) ────────────────────────────────────────────────────
 require __DIR__ . '/auth.php';
 
@@ -246,6 +249,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/premium',                 [PremiumController::class, 'submit'])->name('premium.submit');
         Route::post('/premium/upgrade',         [PremiumController::class, 'submitUpgrade'])->name('premium.upgrade.submit');
         Route::get('/premium/invoice/{payment}',[PremiumController::class, 'invoice'])->name('premium.invoice');
+
+        // Paystack card payments
+        Route::post('/paystack/pay',            [\App\Http\Controllers\PaystackController::class, 'initialize'])->name('paystack.pay');
+        Route::get('/paystack/callback',        [\App\Http\Controllers\PaystackController::class, 'callback'])->name('paystack.callback');
 
         // Notifications
         Route::get('/notifications',            [NotificationController::class, 'index'])->name('notifications.index');

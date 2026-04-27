@@ -33,6 +33,53 @@ class UserResource extends Resource
                 Forms\Components\Select::make('seeking')->options(['male' => 'Male', 'female' => 'Female', 'everyone' => 'Everyone']),
                 Forms\Components\DatePicker::make('date_of_birth')->label('Date of Birth'),
             ])->columns(2),
+            Section::make('Location')->schema([
+                Forms\Components\TextInput::make('profile.city')
+                    ->label('City')
+                    ->maxLength(100)
+                    ->helperText('User\'s city location'),
+                Forms\Components\TextInput::make('profile.state')
+                    ->label('State/Province')
+                    ->maxLength(100)
+                    ->helperText('State, province, or region'),
+                Forms\Components\TextInput::make('profile.country')
+                    ->label('Country')
+                    ->maxLength(100)
+                    ->helperText('Country name'),
+                Forms\Components\TextInput::make('profile.latitude')
+                    ->label('Latitude')
+                    ->numeric()
+                    ->step(0.0000001)
+                    ->minValue(-90)
+                    ->maxValue(90)
+                    ->helperText('Geographic latitude (-90 to 90)'),
+                Forms\Components\TextInput::make('profile.longitude')
+                    ->label('Longitude')
+                    ->numeric()
+                    ->step(0.0000001)
+                    ->minValue(-180)
+                    ->maxValue(180)
+                    ->helperText('Geographic longitude (-180 to 180)'),
+                Forms\Components\Placeholder::make('location_info')
+                    ->label('Location Info')
+                    ->content(function ($record) {
+                        if (!$record || !$record->profile) {
+                            return 'No location set';
+                        }
+                        $profile = $record->profile;
+                        $parts = array_filter([
+                            $profile->city,
+                            $profile->state,
+                            $profile->country,
+                        ]);
+                        $location = !empty($parts) ? implode(', ', $parts) : 'Not set';
+                        $coords = ($profile->latitude && $profile->longitude)
+                            ? "Coordinates: {$profile->latitude}, {$profile->longitude}"
+                            : 'No coordinates';
+                        return "{$location}\n{$coords}";
+                    })
+                    ->columnSpanFull(),
+            ])->columns(2)->collapsible(),
             Section::make('Roles')->schema([
                 Forms\Components\Select::make('roles')
                     ->label('Assigned Roles')

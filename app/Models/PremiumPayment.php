@@ -34,6 +34,7 @@ class PremiumPayment extends Model
         'wallet_address', 'tx_hash', 'proof_image', 'status', 'notes',
         'approved_by', 'approved_at',
         'is_upgrade', 'upgrade_from_plan', 'upgrade_credit', 'invoice_number',
+        'payment_method', 'paystack_reference', 'paystack_access_code',
     ];
 
     protected function casts(): array

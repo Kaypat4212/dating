@@ -219,9 +219,61 @@
             </div>
             @endif
 
-            {{-- Payment form --}}
+            {{-- Payment Method Selection --}}
             @if(! auth()->user()->isPremiumActive() && ! $pending)
-            <div class="card border-0 shadow p-4" id="paymentForm" style="display:none !important">
+            <div id="paymentMethodSection" class="card border-0 shadow mb-4" style="display:none">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-3 text-center">Choose Payment Method</h5>
+                    <div class="row g-3 justify-content-center">
+                        <div class="col-md-5">
+                            <div class="card h-100 border-2 border-primary text-center p-4" style="cursor:pointer" id="paystackOption">
+                                <i class="bi bi-credit-card display-4 text-primary mb-3"></i>
+                                <h6 class="fw-bold mb-2">Pay with Card</h6>
+                                <p class="text-muted small mb-3">Instant activation with Debit/Credit Card via Paystack</p>
+                                <span class="badge bg-success">Instant</span>
+                            </div>
+                        </div>
+                        <div class="col-md-5">
+                            <div class="card h-100 border text-center p-4" style="cursor:pointer" id="cryptoOption">
+                                <i class="bi bi-currency-bitcoin display-4 text-warning mb-3"></i>
+                                <h6 class="fw-bold mb-2">Pay with Crypto</h6>
+                                <p class="text-muted small mb-3">Pay with Bitcoin, USDT, or other cryptocurrencies</p>
+                                <span class="badge bg-warning text-dark">Manual Review</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Paystack Payment Form --}}
+            <div class="card border-0 shadow p-4 mb-4" id="paystackPaymentForm" style="display:none">
+                <h5 class="fw-bold mb-2" id="paystackFormTitle">Pay with Card</h5>
+                <p class="text-muted small mb-4">
+                    <i class="bi bi-shield-check text-success me-1"></i>
+                    Secure payment powered by Paystack. Your card details are safe and encrypted.
+                </p>
+
+                <form method="POST" action="{{ route('paystack.pay') }}">
+                    @csrf
+                    <input type="hidden" name="plan" id="paystackHiddenPlan">
+                    
+                    <div class="alert alert-info mb-3">
+                        <i class="bi bi-info-circle me-2"></i>
+                        <strong>Amount:</strong> $<span id="paystackAmount"></span> USD 
+                        <span class="ms-2 text-muted small">(≈ ₦<span id="paystackAmountNgn"></span>)</span>
+                    </div>
+
+                    <button type="submit" class="btn btn-success btn-lg fw-bold px-5 w-100">
+                        <i class="bi bi-credit-card me-2"></i>Proceed to Payment
+                    </button>
+                    <p class="text-center text-muted small mt-2 mb-0">
+                        You'll be redirected to Paystack's secure checkout page
+                    </p>
+                </form>
+            </div>
+
+            {{-- Crypto Payment form --}}
+            <div class="card border-0 shadow p-4" id="paymentForm" style="display:none">
                 <h5 class="fw-bold mb-1" id="payFormTitle">Complete Payment</h5>
                 <p class="text-muted small mb-4">Send the exact amount to one of our wallet addresses below, then paste your transaction hash to confirm.</p>
 
@@ -292,6 +344,61 @@
 
 @push('scripts')
 <script>
+// ── Selected plan data ────────────────────────────────────────────────────────
+let selectedPlan = null;
+let selectedPrice = null;
+let selectedLabel = null;
+
+// ── Plan selection ────────────────────────────────────────────────────────────
+document.querySelectorAll('.select-plan').forEach(btn => {
+    btn.addEventListener('click', () => {
+        selectedPlan = btn.dataset.plan;
+        selectedPrice = parseFloat(btn.dataset.price);
+        selectedLabel = btn.dataset.label;
+        
+        // Show payment method selection
+        document.getElementById('paymentMethodSection').style.removeProperty('display');
+        document.getElementById('paymentMethodSection').scrollIntoView({behavior:'smooth'});
+        
+        // Hide both payment forms
+        document.getElementById('paymentForm').style.display = 'none';
+        document.getElementById('paystackPaymentForm').style.display = 'none';
+    });
+});
+
+// ── Payment method selection (Card vs Crypto) ─────────────────────────────────
+document.getElementById('paystackOption')?.addEventListener('click', function() {
+    // Highlight selected
+    document.getElementById('paystackOption').classList.add('border-2', 'border-primary');
+    document.getElementById('cryptoOption').classList.remove('border-2', 'border-primary');
+    
+    // Fill Paystack form
+    document.getElementById('paystackHiddenPlan').value = selectedPlan;
+    document.getElementById('paystackAmount').textContent = selectedPrice.toFixed(2);
+    document.getElementById('paystackAmountNgn').textContent = (selectedPrice * 1600).toFixed(0);
+    document.getElementById('paystackFormTitle').textContent = `Pay for ${selectedLabel}`;
+    
+    // Show Paystack form, hide crypto form
+    document.getElementById('paystackPaymentForm').style.removeProperty('display');
+    document.getElementById('paymentForm').style.display = 'none';
+    document.getElementById('paystackPaymentForm').scrollIntoView({behavior:'smooth'});
+});
+
+document.getElementById('cryptoOption')?.addEventListener('click', function() {
+    // Highlight selected
+    document.getElementById('cryptoOption').classList.add('border-2', 'border-primary');
+    document.getElementById('paystackOption').classList.remove('border-2', 'border-primary');
+    
+    // Fill crypto form
+    document.getElementById('hiddenPlan').value = selectedPlan;
+    document.getElementById('payFormTitle').textContent = `Complete Payment — ${selectedLabel}`;
+    
+    // Show crypto form, hide Paystack form
+    document.getElementById('paymentForm').style.removeProperty('display');
+    document.getElementById('paystackPaymentForm').style.display = 'none';
+    document.getElementById('paymentForm').scrollIntoView({behavior:'smooth'});
+});
+
 // ── Upgrade plan selection ───────────────────────────────────────────────────
 document.querySelectorAll('.select-upgrade').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -331,18 +438,7 @@ document.getElementById('upgrade_proof_image')?.addEventListener('change', funct
         preview.style.display = 'none';
     }
 });
-// ── New subscription plan selection ─────────────────────────────────────────
-document.querySelectorAll('.select-plan').forEach(btn => {
-    btn.addEventListener('click', () => {
-        const plan = btn.dataset.plan;
-        const label = btn.dataset.label;
-        const price = btn.dataset.price;
-        document.getElementById('hiddenPlan').value = plan;
-        document.getElementById('payFormTitle').textContent = `Complete Payment — ${label}`;
-        document.getElementById('paymentForm').style.removeProperty('display');
-        document.getElementById('paymentForm').scrollIntoView({behavior:'smooth'});
-    });
-});
+// ── Crypto wallet address reveal for new subscriptions (non-upgrade) ─────────
 document.querySelectorAll('[name="crypto_currency"]').forEach(r => {
     if (r.closest('form[action*="upgrade"]')) return;
     r.addEventListener('change', () => {

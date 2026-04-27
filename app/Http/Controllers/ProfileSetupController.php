@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Helpers\CountryHelper;
 use App\Models\Interest;
 use App\Models\UserPreference;
+use App\Notifications\ProfileCompleteNotification;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -84,6 +85,14 @@ class ProfileSetupController extends Controller
 
         if ($step >= self::TOTAL_STEPS) {
             $user->update(['profile_complete' => true]);
+            
+            // Send congratulatory notification for completing profile
+            try {
+                $user->notify(new ProfileCompleteNotification());
+            } catch (\Throwable) {
+                // Notification failed but profile is complete - continue
+            }
+            
             return redirect()->route('dashboard')->with('success', 'Welcome to HeartsConnect! ❤️');
         }
 
