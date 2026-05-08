@@ -241,7 +241,7 @@
 
             {{-- Card --}}
             <div class="auth-card p-4 p-sm-5">
-                {{ $slot }}
+                @yield('content')
             </div>
 
             {{-- Footer note --}}
