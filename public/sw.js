@@ -18,8 +18,13 @@ self.addEventListener('fetch', function (event) {
     event.respondWith(
         fetch(event.request)
             .then(function (response) {
-                // Cache successful navigation responses briefly
-                if (response.ok && event.request.mode === 'navigate') {
+                // Only cache successful responses
+                if (!response || response.status !== 200 || response.type === 'error') {
+                    return response;
+                }
+                
+                // Cache successful navigation responses
+                if (event.request.mode === 'navigate') {
                     const cloned = response.clone();
                     caches.open(CACHE_NAME).then(function (cache) {
                         cache.put(event.request, cloned);
@@ -28,8 +33,19 @@ self.addEventListener('fetch', function (event) {
                 return response;
             })
             .catch(function () {
+                // Try to return cached version
                 return caches.match(event.request).then(function (cached) {
-                    return cached || caches.match(OFFLINE_URL);
+                    if (cached) return cached;
+                    
+                    // Fallback to offline page for navigation requests
+                    if (event.request.mode === 'navigate') {
+                        return caches.match(OFFLINE_URL).then(function (offlinePage) {
+                            return offlinePage || new Response('Service unavailable', { status: 503 });
+                        });
+                    }
+                    
+                    // For other requests, return error response
+                    return new Response('Network request failed', { status: 503 });
                 });
             })
     );
@@ -40,12 +56,12 @@ self.addEventListener('message', function (event) {
     if (event.data && event.data.type === 'UPDATE_BADGE') {
         const count = event.data.count || 0;
         
-        if ('setAppBadge' in self.navigator) {
-            if (count > 0) {
-                self.navigator.setAppBadge(count);
-            } else {
-                self.navigator.clearAppBadge();
+        try {
+            if (count > 0 && typeof self.registration.badge !== 'undefined') {
+                self.registration.badge = count.toString();
             }
+        } catch (err) {
+            // Badge API not supported, silently fail
         }
     }
 });
@@ -59,19 +75,20 @@ self.addEventListener('push', function (event) {
         
         // If it's a message notification, increment badge
         if (data.type === 'message' || data.notification_type === 'new_message') {
-            if ('setAppBadge' in self.navigator) {
-                // Fetch current unread count from server
+            try {
                 event.waitUntil(
                     fetch('/api/unread-messages-count')
                         .then(response => response.json())
                         .then(result => {
                             const count = result.count || 0;
-                            if (count > 0) {
-                                self.navigator.setAppBadge(count);
+                            if (count > 0 && typeof self.registration.badge !== 'undefined') {
+                                self.registration.badge = count.toString();
                             }
                         })
                         .catch(err => console.error('Failed to update badge:', err))
                 );
+            } catch (err) {
+                // Badge API not supported
             }
         }
 
